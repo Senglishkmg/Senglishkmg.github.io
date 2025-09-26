@@ -1,0 +1,354 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동화 품사 퀴즈</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .result-item {
+            border-left: 4px solid;
+        }
+        .choice-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .choice-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .choice-btn:disabled {
+            cursor: not-allowed;
+        }
+        .correct {
+            background-color: #10B981 !important; /* Tailwind green-500 */
+            color: white !important;
+            border-color: #059669 !important; /* Tailwind green-600 */
+        }
+        .incorrect {
+            background-color: #EF4444 !important; /* Tailwind red-500 */
+            color: white !important;
+            border-color: #DC2626 !important; /* Tailwind red-600 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="container mx-auto max-w-4xl p-4 sm:p-8">
+        
+        <!-- Story Area -->
+        <div id="story-container" class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 mb-8 fade-in">
+            <h1 id="story-title" class="text-3xl font-bold text-center text-gray-800 mb-4"></h1>
+            <div id="story-text" class="text-base sm:text-lg leading-relaxed text-gray-700 space-y-4"></div>
+        </div>
+
+        <!-- Quiz Area -->
+        <div id="quiz-area" class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 fade-in">
+            <header class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">품사 퀴즈</h2>
+                <p class="text-gray-500 mt-1">제시된 단어의 품사를 고르세요.</p>
+            </header>
+
+            <div id="quiz-container">
+                <!-- Progress -->
+                <p id="progress-text" class="text-center text-sm text-gray-500 mb-4">문제 1 / 10</p>
+
+                <!-- Question -->
+                <div class="bg-indigo-50 border-l-4 border-indigo-400 rounded-r-lg p-6 text-center mb-6">
+                    <p id="question-word" class="text-3xl font-bold text-indigo-700"></p>
+                    <p id="question-meaning" class="text-lg text-gray-600 mt-1"></p>
+                </div>
+
+                <!-- Choices -->
+                <div id="choices-container" class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                    <!-- Choices injected by JS -->
+                </div>
+            </div>
+
+            <!-- Result Area -->
+            <div id="result-container" class="hidden">
+                 <!-- Results injected by JS -->
+            </div>
+
+             <!-- Button Area -->
+            <div id="button-container" class="flex justify-center mt-8">
+                <button id="next-btn" class="hidden w-1/2 bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                    다음 문제
+                </button>
+                <button id="download-btn" class="hidden w-auto bg-teal-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-transform transform hover:scale-105">
+                    결과 저장하기
+                </button>
+                <button id="restart-btn" class="hidden w-auto bg-gray-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-transform transform hover:scale-105 ml-4">
+                    새 이야기로 다시하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const storiesData = [
+                {
+                    title: "백설공주 (Snow White)",
+                    text: [
+                        "A beautiful princess lives in a castle. Her name is Snow White. She has black hair. Her skin is white. Everybody likes her.",
+                        "The Queen is her stepmother. The Queen has a magic mirror. She asks the mirror, \"Who is the most beautiful?\" The mirror says, \"Snow White is the most beautiful.\" The Queen is very angry.",
+                        "The Queen calls a huntsman. He takes Snow White to the forest. The forest is big and dark. Snow White is scared. She runs away.",
+                        "She finds a small house. It is a cottage. She opens the door. She sees seven small beds. She is tired. She sleeps on a bed.",
+                        "Seven dwarfs live in the cottage. They come home. They see Snow White. They are good friends. She cleans the house. They work in a mine.",
+                        "The Queen has a poison apple. The apple is red. She gives the apple to Snow White. Snow White eats the apple. She falls down. She sleeps for a long time.",
+                        "A prince rides his horse. He sees Snow White. He kisses her. Snow White wakes up. The prince and Snow White are very happy. They live in a big castle."
+                    ],
+                    vocab: [
+                        { word: 'princess', meaning: '공주', pos: '명사' }, { word: 'lives', meaning: '산다', pos: '동사' },
+                        { word: 'castle', meaning: '성', pos: '명사' }, { word: 'She', meaning: '그녀는', pos: '대명사' },
+                        { word: 'hair', meaning: '머리카락', pos: '명사' }, { word: 'white', meaning: '하얀', pos: '형용사' },
+                        { word: 'likes', meaning: '좋아한다', pos: '동사' }, { word: 'Queen', meaning: '여왕', pos: '명사' },
+                        { word: 'mirror', meaning: '거울', pos: '명사' }, { word: 'angry', meaning: '화가 난', pos: '형용사' },
+                        { word: 'takes', meaning: '데려간다', pos: '동사' }, { word: 'forest', meaning: '숲', pos: '명사' },
+                        { word: 'big', meaning: '큰', pos: '형용사' }, { word: 'runs', meaning: '달린다', pos: '동사' },
+                        { word: 'house', meaning: '집', pos: '명사' }, { word: 'small', meaning: '작은', pos: '형용사' },
+                        { word: 'sees', meaning: '본다', pos: '동사' }, { word: 'beds', meaning: '침대들', pos: '명사' },
+                        { word: 'tired', meaning: '피곤한', pos: '형용사' }, { word: 'dwarfs', meaning: '난쟁이들', pos: '명사' }, 
+                        { word: 'They', meaning: '그들은', pos: '대명사' }, { word: 'friends', meaning: '친구들', pos: '명사' },
+                        { word: 'cleans', meaning: '청소한다', pos: '동사' }, { word: 'apple', meaning: '사과', pos: '명사' },
+                        { word: 'red', meaning: '빨간', pos: '형용사' }, { word: 'eats', meaning: '먹는다', pos: '동사' }, 
+                        { word: 'prince', meaning: '왕자', pos: '명사' }, { word: 'happy', meaning: '행복한', pos: '형용사' }, 
+                        { word: 'He', meaning: '그는', pos: '대명사' }, { word: 'very', meaning: '매우', pos: '부사' },
+                        { word: 'away', meaning: '멀리', pos: '부사' }, { word: 'down', meaning: '아래로', pos: '부사' },
+                        { word: 'in', meaning: '~안에', pos: '전치사' }, { word: 'to', meaning: '~로', pos: '전치사' },
+                        { word: 'on', meaning: '~위에', pos: '전치사' }, { word: 'and', meaning: '그리고', pos: '접속사' }
+                    ]
+                },
+                {
+                    title: "잠자는 숲속의 공주 (Sleeping Beauty)",
+                    text: [
+                        "A King and a Queen have a baby. She is a beautiful princess. Her name is Aurora. Good fairies give gifts to the baby. An evil fairy is angry. She says, \"The princess will sleep forever.\" A good fairy changes the magic. \"A prince will kiss her. She will wake up.\"",
+                        "The princess grows up. She is sixteen years old. She finds a spinning wheel. She touches it. She falls asleep. Everyone in the castle sleeps too.",
+                        "Many years pass. A brave prince comes to the castle. He sees the beautiful princess. Wow! He kisses her. The princess wakes up. The prince and the princess are very happy. They get married and live in the castle."
+                    ],
+                    vocab: [
+                        { word: 'King', meaning: '왕', pos: '명사' }, { word: 'have', meaning: '가진다', pos: '동사' },
+                        { word: 'baby', meaning: '아기', pos: '명사' }, { word: 'beautiful', meaning: '아름다운', pos: '형용사' },
+                        { word: 'fairies', meaning: '요정들', pos: '명사' }, { word: 'give', meaning: '준다', pos: '동사' },
+                        { word: 'gifts', meaning: '선물들', pos: '명사' }, { word: 'evil', meaning: '사악한', pos: '형용사' },
+                        { word: 'sleep', meaning: '잠들다', pos: '동사' }, { word: 'changes', meaning: '바꾼다', pos: '동사' },
+                        { word: 'prince', meaning: '왕자', pos: '명사' }, { word: 'grows up', meaning: '성장한다', pos: '동사' },
+                        { word: 'old', meaning: '나이든', pos: '형용사' }, { word: 'finds', meaning: '찾는다', pos: '동사' },
+                        { word: 'it', meaning: '그것을', pos: '대명사' }, { word: 'Everyone', meaning: '모두', pos: '대명사' },
+                        { word: 'years', meaning: '해/년', pos: '명사' }, { word: 'brave', meaning: '용감한', pos: '형용사' },
+                        { word: 'happy', meaning: '행복한', pos: '형용사' }, { word: 'They', meaning: '그들은', pos: '대명사' },
+                        { word: 'forever', meaning: '영원히', pos: '부사' }, { word: 'too', meaning: '또한', pos: '부사' },
+                        { word: 'and', meaning: '그리고', pos: '접속사' }, { word: 'to', meaning: '~에게', pos: '전치사' },
+                        { word: 'in', meaning: '~안에', pos: '전치사' }, { word: 'Wow', meaning: '와!', pos: '감탄사' }
+                    ]
+                },
+                {
+                    title: "라푼젤 (Rapunzel)",
+                    text: [
+                        "A woman wants a special plant. An evil witch has the plant. The witch takes their baby. The baby's name is Rapunzel. The witch puts her in a tall tower. The tower has no doors. It has one window.",
+                        "Rapunzel has very long, golden hair. The witch says, \"Rapunzel, let down your hair.\" The witch climbs her long hair.",
+                        "A prince hears Rapunzel sing. He sees the witch. He learns the magic words. He climbs her hair. They fall in love. The witch is angry. She cuts Rapunzel's hair. She sends Rapunzel to a desert.",
+                        "The prince is very sad. He looks for her. He finds her. They are very happy. They go to his kingdom."
+                    ],
+                    vocab: [
+                        { word: 'woman', meaning: '여자', pos: '명사' }, { word: 'wants', meaning: '원한다', pos: '동사' },
+                        { word: 'special', meaning: '특별한', pos: '형용사' }, { word: 'plant', meaning: '식물', pos: '명사' },
+                        { word: 'witch', meaning: '마녀', pos: '명사' }, { word: 'takes', meaning: '데려간다', pos: '동사' },
+                        { word: 'their', meaning: '그들의', pos: '대명사' }, { word: 'her', meaning: '그녀를', pos: '대명사' },
+                        { word: 'tall', meaning: '높은', pos: '형용사' }, { word: 'tower', meaning: '탑', pos: '명사' },
+                        { word: 'long', meaning: '긴', pos: '형용사' }, { word: 'climbs', meaning: '오른다', pos: '동사' },
+                        { word: 'hears', meaning: '듣는다', pos: '동사' }, { word: 'He', meaning: '그는', pos: '대명사' },
+                        { word: 'learns', meaning: '배운다', pos: '동사' }, { word: 'love', meaning: '사랑', pos: '명사' },
+                        { word: 'cuts', meaning: '자른다', pos: '동사' }, { word: 'sad', meaning: '슬픈', pos: '형용사' },
+                        { word: 'happy', meaning: '행복한', pos: '형용사' }, { word: 'go', meaning: '간다', pos: '동사' },
+                        { word: 'his', meaning: '그의', pos: '대명사' }, { word: 'very', meaning: '매우', pos: '부사' },
+                        { word: 'down', meaning: '아래로', pos: '부사' }, { word: 'in', meaning: '~안에', pos: '전치사' },
+                        { word: 'to', meaning: '~로', pos: '전치사' }
+                    ]
+                }
+            ];
+
+            const POS_CHOICES = ['명사', '대명사', '동사', '형용사', '부사', '전치사', '접속사', '감탄사'];
+            const QUIZ_LENGTH = 10;
+            
+            let currentQuiz = [];
+            let currentQuestionIndex = 0;
+            let userResults = [];
+
+            const storyTitle = document.getElementById('story-title');
+            const storyText = document.getElementById('story-text');
+            const quizArea = document.getElementById('quiz-area');
+            const quizContainer = document.getElementById('quiz-container');
+            const resultContainer = document.getElementById('result-container');
+            const progressText = document.getElementById('progress-text');
+            const questionWord = document.getElementById('question-word');
+            const questionMeaning = document.getElementById('question-meaning');
+            const choicesContainer = document.getElementById('choices-container');
+            const nextBtn = document.getElementById('next-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const restartBtn = document.getElementById('restart-btn');
+
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            function startApp() {
+                // 1. Select and display a story
+                const randomStory = storiesData[Math.floor(Math.random() * storiesData.length)];
+                storyTitle.textContent = randomStory.title;
+                storyText.innerHTML = randomStory.text.map(p => `<p>${p}</p>`).join('');
+
+                // 2. Prepare quiz
+                currentQuiz = shuffleArray([...randomStory.vocab]).slice(0, QUIZ_LENGTH);
+                currentQuestionIndex = 0;
+                userResults = [];
+
+                // 3. Reset UI
+                resultContainer.classList.add('hidden');
+                quizContainer.classList.remove('hidden');
+                nextBtn.classList.add('hidden');
+                downloadBtn.classList.add('hidden');
+                restartBtn.classList.add('hidden');
+                
+                loadQuestion();
+            }
+
+            function loadQuestion() {
+                progressText.textContent = `문제 ${currentQuestionIndex + 1} / ${QUIZ_LENGTH}`;
+                nextBtn.classList.add('hidden');
+                const currentQuestion = currentQuiz[currentQuestionIndex];
+                
+                questionWord.textContent = currentQuestion.word;
+                questionMeaning.textContent = currentQuestion.meaning;
+                choicesContainer.innerHTML = '';
+
+                POS_CHOICES.forEach(choice => {
+                    const button = document.createElement('button');
+                    button.textContent = choice;
+                    button.className = "choice-btn w-full bg-white border-2 border-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-100 hover:border-indigo-400 focus:outline-none";
+                    button.onclick = () => selectAnswer(button, choice, currentQuestion.pos);
+                    choicesContainer.appendChild(button);
+                });
+            }
+
+            function selectAnswer(button, selectedChoice, correctAnswer) {
+                 const isCorrect = selectedChoice === correctAnswer;
+                userResults.push({
+                    word: currentQuiz[currentQuestionIndex].word,
+                    meaning: currentQuiz[currentQuestionIndex].meaning,
+                    selected: selectedChoice,
+                    correct: correctAnswer,
+                    isCorrect: isCorrect
+                });
+
+                Array.from(choicesContainer.children).forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.textContent === correctAnswer) {
+                        btn.classList.add('correct');
+                    }
+                });
+
+                if (!isCorrect) {
+                    button.classList.add('incorrect');
+                }
+                
+                nextBtn.classList.remove('hidden');
+                if (currentQuestionIndex === QUIZ_LENGTH - 1) {
+                    nextBtn.textContent = '결과 보기';
+                } else {
+                    nextBtn.textContent = '다음 문제';
+                }
+            }
+
+            function showResults() {
+                quizContainer.classList.add('hidden');
+                resultContainer.classList.remove('hidden');
+                nextBtn.classList.add('hidden');
+                downloadBtn.classList.remove('hidden');
+                restartBtn.classList.remove('hidden');
+
+                const correctCount = userResults.filter(res => res.isCorrect).length;
+                let resultHTML = `
+                    <div class="fade-in p-4 bg-gray-100 rounded-lg text-center">
+                        <h2 class="text-2xl font-bold text-gray-800">퀴즈 결과</h2>
+                        <p class="text-3xl font-bold text-indigo-600 my-2">${QUIZ_LENGTH}문제 중 ${correctCount}문제 정답!</p>
+                    </div>`;
+                
+                const wrongAnswers = userResults.filter(res => !res.isCorrect);
+                if (wrongAnswers.length > 0) {
+                    resultHTML += `<div class="mt-6 text-left space-y-4">
+                                    <h3 class="text-xl font-bold text-gray-700">틀린 문제 다시보기</h3>`;
+                    wrongAnswers.forEach(res => {
+                        resultHTML += `
+                            <div class="result-item border-red-400 bg-red-50 p-4 rounded-lg">
+                                <p class="text-gray-600 font-semibold">"${res.word}" (${res.meaning})</p>
+                                <p class="text-red-600 mt-2">나의 답: ${res.selected}</p>
+                                <p class="text-green-600">정답: ${res.correct}</p>
+                            </div>`;
+                    });
+                    resultHTML += `</div>`;
+                } else {
+                     resultHTML += `<div class="mt-6 text-center">
+                                    <p class="text-xl font-bold text-green-600">🎉 모든 문제를 맞혔습니다! 완벽해요!</p>
+                                  </div>`;
+                }
+                resultContainer.innerHTML = resultHTML;
+            }
+
+            function downloadResultsFile() {
+                let textContent = `동화 품사 퀴즈 결과 (${new Date().toLocaleString('ko-KR')})\n\n`;
+                const correctCount = userResults.filter(res => res.isCorrect).length;
+                textContent += `총 ${QUIZ_LENGTH}문제 중 ${correctCount}문제 정답\n\n`;
+
+                const wrongAnswers = userResults.filter(res => !res.isCorrect);
+                if (wrongAnswers.length > 0) {
+                    textContent += "--- 틀린 문제 ---\n\n";
+                    wrongAnswers.forEach((res, index) => {
+                        textContent += `${index + 1}. 단어: "${res.word}" (${res.meaning})\n`;
+                        textContent += `   나의 답: ${res.selected}\n`;
+                        textContent += `   정답: ${res.correct}\n\n`;
+                    });
+                } else {
+                    textContent += "모든 문제를 맞혔습니다!\n";
+                }
+                
+                const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'FairyTale_Quiz_Result.txt';
+                link.click();
+            }
+
+            nextBtn.addEventListener('click', () => {
+                if (currentQuestionIndex < QUIZ_LENGTH - 1) {
+                    currentQuestionIndex++;
+                    loadQuestion();
+                } else {
+                    showResults();
+                }
+            });
+
+            downloadBtn.addEventListener('click', downloadResultsFile);
+            restartBtn.addEventListener('click', startApp);
+
+            // Start the application
+            startApp();
+        });
+    </script>
+</body>
+</html>
+

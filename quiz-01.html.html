@@ -1,0 +1,320 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인칭대명사 암기 테스트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .result-item {
+            border-left: 4px solid;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-6 sm:p-8 space-y-6">
+        <header class="text-center">
+            <h1 class="text-3xl font-bold text-slate-800">인칭대명사 암기 테스트</h1>
+            <p class="text-slate-500 mt-2 leading-relaxed">
+                제시된 단어의 정보를 형식에 맞게 모두 입력하세요. <br>
+                <strong class="text-indigo-600">쉼표(,)와 슬래시(/) 외에는 띄어쓰기 없이 붙여서 작성해 주세요.</strong><br>
+                <span class="text-sm text-gray-400">(예시) 문제: me → 정답: 1인칭단수,목적격,나를</span>
+            </p>
+        </header>
+
+        <div id="quiz-area">
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center">
+                <p id="progress-area" class="text-lg text-slate-600 mb-2">문제 (1 / 5)</p>
+                <div id="question-box" class="text-5xl font-bold text-indigo-600 mb-6 h-16 flex items-center justify-center">
+                    <!-- Question will be injected here -->
+                </div>
+                <input type="text" id="answer-input" class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg text-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="정답을 입력하세요...">
+            </div>
+        </div>
+
+        <div id="feedback-area" class="min-h-[140px] space-y-2">
+            <!-- Feedback and results will be injected here -->
+        </div>
+
+        <div id="button-container" class="flex flex-col sm:flex-row gap-4">
+            <button id="check-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                정답 확인
+            </button>
+            <button id="next-btn" class="w-full bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-transform transform hover:scale-105" style="display: none;">
+                다음 문제
+            </button>
+            <button id="next-batch-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105" style="display: none;">
+                다음 단계
+            </button>
+            <button id="download-btn" class="w-full bg-teal-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-transform transform hover:scale-105" style="display: none;">
+                결과 저장하기
+            </button>
+        </div>
+        
+        <footer class="text-center">
+             <button id="restart-btn" class="text-sm text-slate-500 hover:text-indigo-600">
+                처음부터 다시하기
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const quizArea = document.getElementById('quiz-area');
+            const questionBox = document.getElementById('question-box');
+            const answerInput = document.getElementById('answer-input');
+            const feedbackArea = document.getElementById('feedback-area');
+            const progressArea = document.getElementById('progress-area');
+            
+            const checkBtn = document.getElementById('check-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const nextBatchBtn = document.getElementById('next-batch-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const restartBtn = document.getElementById('restart-btn');
+
+            const quizData = [
+                // 1인칭 단수
+                { q: 'I', a: '1인칭단수,주격,나는' }, { q: '나는', a: '1인칭단수,주격,I' },
+                { q: 'my', a: '1인칭단수,소유격,나의' }, { q: '나의', a: '1인칭단수,소유격,my' },
+                { q: 'me', a: '1인칭단수,목적격,나를' }, { q: '나를', a: '1인칭단수,목적격,me' },
+                { q: 'mine', a: '1인칭단수,소유대명사,나의것' }, { q: '나의 것', a: '1인칭단수,소유대명사,mine' },
+                // 2인칭 (단수/복수)
+                { q: 'you', a: '2인칭단수/복수,주격/목적격,너는/너희는,너를/너희를' },
+                { q: '너는', a: '2인칭단수,주격,you' }, { q: '네가', a: '2인칭단수,주격,you' },
+                { q: '너를', a: '2인칭단수,목적격,you' }, { q: '너희는', a: '2인칭복수,주격,you' },
+                { q: '너희가', a: '2인칭복수,주격,you' }, { q: '너희를', a: '2인칭복수,목적격,you' },
+                { q: 'your', a: '2인칭단수/복수,소유격,너의/너희의' },
+                { q: '너의', a: '2인칭단수,소유격,your' }, { q: '너희의', a: '2인칭복수,소유격,your' },
+                { q: 'yours', a: '2인칭단수/복수,소유대명사,너의것/너희의것' },
+                { q: '너의 것', a: '2인칭단수,소유대명사,yours' }, { q: '너희의 것', a: '2인칭복수,소유대명사,yours' },
+                // 3인칭 단수 (남자)
+                { q: 'he', a: '3인칭단수(남자),주격,그는' }, { q: '그는', a: '3인칭단수(남자),주격,he' },
+                { q: 'his', a: '3인칭단수(남자),소유격/소유대명사,그의/그의것' },
+                { q: '그의', a: '3인칭단수(남자),소유격,his' }, { q: '그의 것', a: '3인칭단수(남자),소유대명사,his' },
+                { q: 'him', a: '3인칭단수(남자),목적격,그를' }, { q: '그를', a: '3인칭단수(남자),목적격,him' },
+                // 3인칭 단수 (여자)
+                { q: 'she', a: '3인칭단수(여자),주격,그녀는' }, { q: '그녀는', a: '3인칭단수(여자),주격,she' },
+                { q: 'her', a: '3인칭단수(여자),소유격/목적격,그녀의/그녀를' },
+                { q: '그녀의', a: '3인칭단수(여자),소유격,her' }, { q: '그녀를', a: '3인칭단수(여자),목적격,her' },
+                { q: 'hers', a: '3인칭단수(여자),소유대명사,그녀의것' }, { q: '그녀의 것', a: '3인칭단수(여자),소유대명사,hers' },
+                // 3인칭 단수 (사물)
+                { q: 'it', a: '3인칭단수(사물),주격/목적격,그것은/그것을' },
+                { q: '그것은', a: '3인칭단수(사물),주격,it' }, { q: '그것이', a: '3인칭단수(사물),주격,it' },
+                { q: 'its', a: '3인칭단수(사물),소유격,그것의' }, { q: '그것의', a: '3인칭단수(사물),소유격,its' },
+                { q: '그것을', a: '3인칭단수(사물),목적격,it' },
+                // 1인칭 복수
+                { q: 'we', a: '1인칭복수,주격,우리는' }, { q: '우리는', a: '1인칭복수,주격,we' },
+                { q: 'our', a: '1인칭복수,소유격,우리의' }, { q: '우리의', a: '1인칭복수,소유격,our' },
+                { q: 'us', a: '1인칭복수,목적격,우리를' }, { q: '우리를', a: '1인칭복수,목적격,us' },
+                { q: 'ours', a: '1인칭복수,소유대명사,우리의것' }, { q: '우리의 것', a: '1인칭복수,소유대명사,ours' },
+                // 3인칭 복수
+                { q: 'they', a: '3인칭복수,주격,그들은/그것들은' }, { q: '그들은', a: '3인칭복수,주격,they' },
+                { q: 'their', a: '3인칭복수,소유격,그들의/그것들의' }, { q: '그들의', a: '3인칭복수,소유격,their' },
+                { q: 'them', a: '3인칭복수,목적격,그들을/그것들을' }, { q: '그들을', a: '3인칭복수,목적격,them' },
+                { q: 'theirs', a: '3인칭복수,소유대명사,그들의것/그것들의것' }, { q: '그들의 것', a: '3인칭복수,소유대명사,theirs' },
+            ];
+
+            const questionsPerBatch = 5;
+            let currentQuestion = {};
+            let shuffledQuizData = [];
+            let currentIndex = 0;
+            let questionCounterInBatch = 0;
+            let resultsForBatch = [];
+
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            function startQuiz() {
+                shuffledQuizData = [...quizData];
+                shuffleArray(shuffledQuizData);
+                currentIndex = 0;
+                questionCounterInBatch = 0;
+                resultsForBatch = [];
+                quizArea.style.display = 'block';
+                answerInput.style.display = 'block';
+                startNextBatch();
+            }
+
+            function loadQuestion() {
+                if (questionCounterInBatch >= questionsPerBatch) {
+                    showBatchResult();
+                    return;
+                }
+                
+                if (currentIndex >= shuffledQuizData.length) {
+                    showFinalMessage();
+                    return;
+                }
+
+                currentQuestion = shuffledQuizData[currentIndex];
+                questionBox.textContent = currentQuestion.q;
+                answerInput.value = '';
+                answerInput.disabled = false;
+                answerInput.focus();
+                feedbackArea.innerHTML = '';
+                progressArea.textContent = `문제 (${questionCounterInBatch + 1} / ${questionsPerBatch})`;
+                
+                checkBtn.style.display = 'block';
+                nextBtn.style.display = 'none';
+                nextBatchBtn.style.display = 'none';
+                downloadBtn.style.display = 'none';
+            }
+            
+            function showBatchResult() {
+                quizArea.style.display = 'none';
+                let correctCount = resultsForBatch.filter(r => r.isCorrect).length;
+                let resultHTML = `
+                    <div class="fade-in p-4 bg-slate-100 rounded-lg text-center">
+                        <p class="text-2xl font-bold text-slate-700">결과: ${questionsPerBatch}문제 중 ${correctCount}문제 정답!</p>
+                    </div>`;
+
+                const wrongAnswers = resultsForBatch.filter(r => !r.isCorrect);
+                if (wrongAnswers.length > 0) {
+                    resultHTML += `<div class="mt-4 text-left space-y-3">
+                                    <h3 class="font-bold text-slate-600">틀린 문제 다시보기</h3>`;
+                    wrongAnswers.forEach(res => {
+                        resultHTML += `
+                            <div class="result-item border-red-400 bg-red-50 p-3 rounded-md">
+                                <p class="text-slate-500">문제: <strong class="text-slate-800">${res.question}</strong></p>
+                                <p class="text-red-600">나의 답: ${res.userAnswer || '(입력 안 함)'}</p>
+                                <p class="text-green-600">정답: ${res.correctAnswer}</p>
+                            </div>`;
+                    });
+                    resultHTML += `</div>`;
+                }
+                feedbackArea.innerHTML = resultHTML;
+                
+                checkBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+
+                if (currentIndex < shuffledQuizData.length) {
+                    nextBatchBtn.style.display = 'block';
+                } else {
+                    showFinalMessage(false);
+                }
+                downloadBtn.style.display = 'block';
+            }
+
+            function startNextBatch() {
+                questionCounterInBatch = 0;
+                resultsForBatch = [];
+                quizArea.style.display = 'block';
+                loadQuestion();
+            }
+
+            function downloadResults() {
+                let textContent = `인칭대명사 테스트 결과 (${new Date().toLocaleString('ko-KR')})\n\n`;
+                const wrongAnswers = resultsForBatch.filter(r => !r.isCorrect);
+
+                if (wrongAnswers.length === 0) {
+                    textContent += "모두 정답입니다! 훌륭해요!\n";
+                } else {
+                    textContent += "--- 틀린 문제 ---\n\n";
+                    wrongAnswers.forEach((res, index) => {
+                        textContent += `${index + 1}. 문제: ${res.question}\n`;
+                        textContent += `   나의 답: ${res.userAnswer || '(입력 안 함)'}\n`;
+                        textContent += `   정답: ${res.correctAnswer}\n\n`;
+                    });
+                }
+                
+                const blob = new Blob([textContent], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'quiz_results.txt';
+                link.click();
+            }
+
+            function showFinalMessage(showInFeedback = true) {
+                const message = `
+                    <div class="fade-in p-4 text-center">
+                        <p class="text-2xl font-bold text-slate-700">🎉 모든 문제를 다 풀었습니다!</p>
+                        <p class="text-slate-500 mt-2">'처음부터 다시하기'를 눌러 복습할 수 있습니다.</p>
+                    </div>`;
+                if(showInFeedback) {
+                   feedbackArea.innerHTML = message;
+                } else {
+                   feedbackArea.innerHTML += message;
+                }
+                
+                quizArea.style.display = 'none';
+                answerInput.style.display = 'none';
+                checkBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                nextBatchBtn.style.display = 'none';
+                downloadBtn.style.display = 'none';
+            }
+
+            function normalizeString(str) {
+                return str.replace(/\s+/g, '');
+            }
+
+            function checkAnswer() {
+                const userAnswer = normalizeString(answerInput.value);
+                const correctAnswer = normalizeString(currentQuestion.a);
+                const isCorrect = userAnswer === correctAnswer;
+
+                resultsForBatch.push({
+                    question: currentQuestion.q,
+                    userAnswer: answerInput.value,
+                    correctAnswer: currentQuestion.a,
+                    isCorrect: isCorrect
+                });
+                
+                answerInput.disabled = true;
+                checkBtn.style.display = 'none';
+                nextBtn.style.display = 'block';
+
+                if (isCorrect) {
+                    feedbackArea.innerHTML = `
+                        <div class="fade-in p-4 bg-green-100 border border-green-300 rounded-lg text-center">
+                            <p class="font-bold text-lg text-green-700">정답입니다!</p>
+                        </div>`;
+                } else {
+                    feedbackArea.innerHTML = `
+                        <div class="fade-in p-4 bg-red-100 border border-red-300 rounded-lg text-center space-y-2">
+                            <p class="font-bold text-lg text-red-700">틀렸습니다.</p>
+                            <p class="text-slate-600">정답: <strong class="text-slate-800">${currentQuestion.a}</strong></p>
+                        </div>`;
+                }
+                currentIndex++;
+                questionCounterInBatch++; // 이 줄을 추가합니다.
+            }
+
+            checkBtn.addEventListener('click', checkAnswer);
+            nextBtn.addEventListener('click', loadQuestion);
+            nextBatchBtn.addEventListener('click', startNextBatch);
+            downloadBtn.addEventListener('click', downloadResults);
+            restartBtn.addEventListener('click', startQuiz);
+
+            answerInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && checkBtn.style.display === 'block') {
+                    checkAnswer();
+                } else if (e.key === 'Enter' && nextBtn.style.display === 'block') {
+                    loadQuestion();
+                }
+            });
+
+            startQuiz();
+        });
+    </script>
+</body>
+</html>
+
+
+
+
