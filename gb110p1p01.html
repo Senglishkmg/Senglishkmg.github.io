@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에스영어전문학원: To부정사 실전 테스트</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 550px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; }
+        .hidden { display: none; }
+        
+        /* 헤더 & 가이드 */
+        h2 { text-align: center; margin-top: 0; color: #1A365D; }
+        .guide-text { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        
+        /* 입력창 */
+        input { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        
+        /* 버튼 */
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-option { background-color: #FFFFFF; color: #4A5568; border: 2px solid #EDF2F7; }
+        .btn-option:hover { border-color: var(--primary-color); color: var(--primary-color); }
+
+        /* 문제 박스 */
+        #question-box { font-size: 1.3rem; font-weight: 700; color: #1A202C; margin: 30px 0; line-height: 1.6; text-align: center; min-height: 110px; display: flex; align-items: center; justify-content: center; word-break: keep-all; }
+        
+        /* 진행률 */
+        .progress-container { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .progress-bar { flex-grow: 1; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85rem; color: #A0AEC0; font-weight: bold; }
+
+        /* 결과 및 오답노트 */
+        .score-circle { width: 100px; height: 100px; border-radius: 50%; border: 6px solid var(--primary-color); display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 10px auto; }
+        .score-num { font-size: 1.8rem; font-weight: 800; color: var(--primary-color); }
+        
+        .wrong-answer-note { margin-top: 30px; text-align: left; border-top: 2px solid #EDF2F7; padding-top: 20px; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); }
+        .wrong-q { font-weight: bold; margin-bottom: 8px; display: block; }
+        .wrong-compare { font-size: 0.9rem; }
+        .my-ans { color: var(--wrong-color); font-weight: bold; margin-right: 10px; }
+        .correct-ans { color: var(--correct-color); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="setup-page">
+        <h2>To부정사 실전 테스트</h2>
+        <div class="guide-text">학교와 이름을 입력하고 시험을 시작하세요.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+
+    <div id="quiz-page" class="hidden">
+        <div class="progress-container">
+            <div class="progress-bar"><div id="progress-inner"></div></div>
+            <span class="progress-text"><span id="current-num">1</span>/10</span>
+        </div>
+        <div class="guide-text">💡 다음 문장에 쓰인 to부정사의 역할을 고르시오.</div>
+        <div id="question-box"></div>
+        <button class="btn-option" onclick="handleAnswer('주어')">1. 주어 역할</button>
+        <button class="btn-option" onclick="handleAnswer('목적어')">2. 목적어 역할</button>
+        <button class="btn-option" onclick="handleAnswer('보어')">3. 보어 역할</button>
+    </div>
+
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <p id="user-display" style="font-weight: bold;"></p>
+            <div class="score-circle">
+                <span class="score-num" id="final-score">0</span>
+                <span style="font-size:0.7rem; color:#718096;">/ 10 점</span>
+            </div>
+        </div>
+
+        <div id="wrong-section" class="wrong-answer-note hidden">
+            <h3 style="font-size: 1.1rem; color: #E53E3E;">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+
+        <button class="btn-main" style="margin-top:20px;" onclick="downloadResult()">결과 파일 저장하기</button>
+        <button class="btn-option" onclick="copyResult()" style="border-style: dashed;">결과 요약 복사</button>
+        <button style="background:none; color:#A0AEC0; font-size:0.85rem; border:none; cursor:pointer;" onclick="location.reload()">새로운 문제 풀기</button>
+    </div>
+</div>
+
+<script>
+    const allQuestions = [
+        {"question": "She wanted to take good pictures, too.", "answer": "목적어"},
+        {"question": "She really likes to take pictures.", "answer": "목적어"},
+        {"question": "My plan is to learn Spanish.", "answer": "보어"},
+        {"question": "It was to do a presentation about their own special talents.", "answer": "보어"},
+        {"question": "He liked to go out and meet his people.", "answer": "목적어"},
+        {"question": "Oh, I forgot to have lunch.", "answer": "목적어"},
+        {"question": "He picked up a long brush and started to paint.", "answer": "목적어"},
+        {"question": "After dinner, he and Dad started to sing together.", "answer": "목적어"},
+        {"question": "Don't forget to smile!", "answer": "목적어"},
+        {"question": "My wish is to live in a beautiful house on the hill.", "answer": "보어"},
+        {"question": "I try to memorize three expressions every day.", "answer": "목적어"},
+        {"question": "I want to be good at it.", "answer": "목적어"},
+        {"question": "Eric wants to have an animal friend.", "answer": "목적어"},
+        {"question": "I don't like to practice the same thing again.", "answer": "목적어"},
+        {"question": "I want to hang out with my friends after school.", "answer": "목적어"},
+        {"question": "I will try to give you fun and useful homework.", "answer": "목적어"},
+        {"question": "Many people from all over the world try to do something green on this day.", "answer": "목적어"},
+        {"question": "Do you want to join them?", "answer": "목적어"},
+        {"question": "Sally liked to walk along the beach.", "answer": "목적어"},
+        {"question": "She hoped to find someone tomorrow.", "answer": "목적어"},
+        {"question": "I try to think of something or someone with a new word.", "answer": "목적어"},
+        {"question": "Sally's pet feels cool and dry and likes to eat vegetables.", "answer": "목적어"},
+        {"question": "It likes to eat carrots, and grass.", "answer": "목적어"},
+        {"question": "Jamal's pet likes to swim.", "answer": "목적어"},
+        {"question": "To swim in this river is dangerous.", "answer": "주어"},
+        {"question": "This year, we plan to visit nursing homes in our town.", "answer": "목적어"},
+        {"question": "My mom and I want to cook for the elderly people.", "answer": "목적어"},
+        {"question": "We want to sing and dance for the elderly people.", "answer": "목적어"},
+        {"question": "We're planning to visit Evergreen Nursing Home.", "answer": "목적어"},
+        {"question": "I'll learn to fly an airplane in China and become a pilot.", "answer": "목적어"},
+        {"question": "It is fun to watch this program.", "answer": "주어"},
+        {"question": "A young man, Lord Hunter, wanted to marry her.", "answer": "목적어"},
+        {"question": "To know oneself is very difficult.", "answer": "주어"},
+        {"question": "I decided to overcome my limitations.", "answer": "목적어"},
+        {"question": "I began to master daily tasks.", "answer": "목적어"},
+        {"question": "The fire truck tried to pull the truck.", "answer": "목적어"},
+        {"question": "My parents want to know everything about my life.", "answer": "목적어"},
+        {"question": "People love to make sandwiches with bagels or just eat them with cream cheese.", "answer": "목적어"},
+        {"question": "Then, you need to learn some magic words.", "answer": "목적어"},
+        {"question": "When your friend gives you a hand, you must not forget to say 'thank you.'", "answer": "목적어"},
+        {"question": "Then, do not hesitate to apologize for your mistake.", "answer": "목적어"},
+        {"question": "A happy little dog learned of this place and decided to visit it.", "answer": "목적어"},
+        {"question": "In this same village, another little dog decided to visit the house.", "answer": "목적어"},
+        {"question": "The easiest way is to take a taxi.", "answer": "보어"},
+        {"question": "The referee needs to tell the goalkeeper from the other players.", "answer": "목적어"},
+        {"question": "We didn't want to write anything good about our group members.", "answer": "목적어"},
+        {"question": "People began to eat bread around 10,000 years ago.", "answer": "목적어"},
+        {"question": "My hobby is to collect stamps.", "answer": "보어"},
+        {"question": "I hoped not to see you again.", "answer": "목적어"},
+        {"question": "After three weeks, the other young people began to talk about their plants.", "answer": "목적어"},
+        {"question": "His mother told him to be honest.", "answer": "보어"},
+        {"question": "He told Ling to come to the front.", "answer": "보어"},
+        {"question": "Amy thought about her wish and started to write.", "answer": "목적어"},
+        {"question": "Ask your mother to cut down your weekly allowance when you do your bad habit.", "answer": "보어"},
+        {"question": "Many people want to eat sweets.", "answer": "목적어"},
+        {"question": "First, camels started to store fat in their bodies.", "answer": "목적어"},
+        {"question": "My job is to translate English into Korean.", "answer": "보어"},
+        {"question": "It is pleasant to talk with Mary.", "answer": "주어"},
+        {"question": "It is interesting to study grammar.", "answer": "주어"},
+        {"question": "To ride a motorcycle without a helmet is dangerous.", "answer": "주어"},
+        {"question": "He promised not to lie again.", "answer": "목적어"}
+    ];
+
+    let quizSet = [];
+    let currentIdx = 0;
+    let score = 0;
+    let results = []; // 전체 풀이 결과 저장
+
+    function prepareQuiz() {
+        if (!document.getElementById('name').value) return alert("성명을 입력해 주세요.");
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        document.getElementById('question-box').innerText = quizSet[currentIdx].question;
+        document.getElementById('current-num').innerText = currentIdx + 1;
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / quizSet.length * 100) + "%";
+    }
+
+    function handleAnswer(choice) {
+        const correct = quizSet[currentIdx].answer;
+        const isCorrect = choice === correct;
+        
+        // 결과 배열에 상세 정보 저장
+        results.push({
+            question: quizSet[currentIdx].question,
+            userChoice: choice,
+            correctAnswer: correct,
+            isCorrect: isCorrect
+        });
+
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('user-display').innerText = 
+            `${document.getElementById('school').value} ${document.getElementById('student-info').value} ${document.getElementById('name').value} 학생`;
+        document.getElementById('final-score').innerText = score;
+
+        // 오답 리스트 생성
+        const wrongList = results.filter(r => !r.isCorrect);
+        const listDiv = document.getElementById('wrong-list');
+        listDiv.innerHTML = '';
+
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            wrongList.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = 'wrong-item';
+                div.innerHTML = `
+                    <span class="wrong-q">Q. ${item.question}</span>
+                    <div class="wrong-compare">
+                        내 답: <span class="my-ans">${item.userChoice}</span> 
+                        정답: <span class="correct-ans">${item.correctAnswer}</span>
+                    </div>
+                `;
+                listDiv.appendChild(div);
+            });
+        }
+    }
+
+    function getResultSummary() {
+        const name = document.getElementById('name').value;
+        const wrongText = results.filter(r => !r.isCorrect)
+            .map(r => `- 문제: ${r.question}\n  (나의답: ${r.userChoice} / 정답: ${r.correctAnswer})`).join('\n');
+        
+        return `[테스트 결과] ${name} 학생\n- 점수: ${score}/10\n- 일시: ${new Date().toLocaleString()}\n\n[오답노트]\n${wrongText || "없음(만점!)"}`;
+    }
+
+    function downloadResult() {
+        const text = getResultSummary();
+        const blob = new Blob([text], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${document.getElementById('name').value}_테스트결과.txt`;
+        a.click();
+    }
+
+    function copyResult() {
+        const text = `${document.getElementById('name').value}: ${score}/10점 완료!`;
+        navigator.clipboard.writeText(text).then(() => alert("요약 결과가 복사되었습니다."));
+    }
+</script>
+
+</body>
+</html>

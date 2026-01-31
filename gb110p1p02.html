@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에스영어전문학원: 그바유1 Part 2</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 550px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
+        .hidden { display: none; }
+        .guide-box { background: var(--secondary-bg); padding: 15px; border-radius: 10px; font-size: 0.95rem; margin-bottom: 20px; border-left: 5px solid var(--primary-color); text-align: left; }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #E2E8F0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-bottom: 10px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-option { background-color: #FFFFFF; color: #4A5568; border: 2px solid #EDF2F7; }
+        .btn-option.selected { border-color: var(--primary-color); background-color: #EBF8FF; color: var(--primary-color); }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 10px; }
+        #question-text { font-size: 1.3rem; font-weight: 700; margin: 30px 0; line-height: 1.6; min-height: 80px; display: flex; align-items: center; justify-content: center; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid var(--wrong-color); text-align: left; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="setup-page">
+        <h2>To부정사 실전 Part 2</h2>
+        <div class="guide-box">학생 정보를 입력한 후 시험을 시작하세요.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 괄호 안에서 알맞은 것을 고르시오. (정답이 여러 개인 경우 모두 선택)</div>
+        <div id="question-text"></div>
+        <div id="options-area"></div>
+        <button class="btn-submit" onclick="submitAnswer()">정답 제출</button>
+    </div>
+
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="user-display"></strong> 학생</div>
+        <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary-color); margin-bottom: 20px;">
+            <span id="final-score">0</span> / 10
+        </div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 노트</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; color:#A0AEC0; border:none; cursor:pointer;" onclick="location.reload()">다시 풀기</button>
+    </div>
+</div>
+
+<script>
+    // 23~25쪽 전체 47문항 데이터
+    const allQuestions = [
+        {"q": "She wanted (to take / taking) good pictures, too.", "opts": ["to take", "taking"], "ans": ["to take"]},
+        {"q": "She really likes (to take / take) pictures.", "opts": ["to take", "take"], "ans": ["to take"]},
+        {"q": "My plan is (to learn / learn) Spanish.", "opts": ["to learn", "learn"], "ans": ["to learn"]},
+        {"q": "It was (to do / do) a presentation about their own special talents.", "opts": ["to do", "do"], "ans": ["to do"]},
+        {"q": "He liked (to go / going) out and meet his people.", "opts": ["to go", "going"], "ans": ["to go", "going"]},
+        {"q": "Oh, I forgot (to have / have) lunch.", "opts": ["to have", "have"], "ans": ["to have"]},
+        {"q": "He picked up a long brush and started (to paint / painted).", "opts": ["to paint", "painted"], "ans": ["to paint"]},
+        {"q": "I want (to be / being) a painter like him.", "opts": ["to be", "being"], "ans": ["to be"]},
+        {"q": "After dinner, he and Dad started (to sing / sang) together.", "opts": ["to sing", "sang"], "ans": ["to sing"]},
+        {"q": "When you take a picture, don't forget (to smile / smiling)!", "opts": ["to smile", "smiling"], "ans": ["to smile"]},
+        {"q": "My wish is (to live / live) in a beautiful house on the hill.", "opts": ["to live", "live"], "ans": ["to live"]},
+        {"q": "I try (to memorize / memorize) three expressions every day.", "opts": ["to memorize", "memorize"], "ans": ["to memorize"]},
+        {"q": "Sally liked (to walk / walked) along the beach.", "opts": ["to walk", "walked"], "ans": ["to walk"]},
+        {"q": "She hoped (to find / finding) someone tomorrow.", "opts": ["to find", "finding"], "ans": ["to find"]},
+        {"q": "She wants (to be / being) a singer.", "opts": ["to be", "being"], "ans": ["to be"]},
+        {"q": "To swim in this river (is / are) dangerous.", "opts": ["is", "are"], "ans": ["is"]},
+        {"q": "This year, we plan (to visit / visiting) nursing homes in our town.", "opts": ["to visit", "visiting"], "ans": ["to visit"]},
+        {"q": "Turtles like (to swim / swims) in the water.", "opts": ["to swim", "swims"], "ans": ["to swim"]},
+        {"q": "I'll learn (to fly / flying) an airplane in China and become a pilot.", "opts": ["to fly", "flying"], "ans": ["to fly"]},
+        {"q": "It is fun (to watch / watch) this program.", "opts": ["to watch", "watch"], "ans": ["to watch"]},
+        {"q": "(To know /Know) oneself is very difficult.", "opts": ["To know", "Know"], "ans": ["To know"]},
+        {"q": "I decided (to overcome / overcame) my limitations.", "opts": ["to overcome", "overcame"], "ans": ["to overcome"]},
+        {"q": "I began (to master / master) daily tasks.", "opts": ["to master", "master"], "ans": ["to master"]},
+        {"q": "People love (to make / making) sandwiches with bagels.", "opts": ["to make", "making"], "ans": ["to make", "making"]},
+        {"q": "Then, you need (to learn / learning) some magic words.", "opts": ["to learn", "learning"], "ans": ["to learn"]},
+        {"q": "When your friend gives you a hand, you must not forget (to say / saying) 'thank you.'", "opts": ["to say", "saying"], "ans": ["to say"]},
+        {"q": "Then, do not hesitate (to apologize / apologizing) for your mistake.", "opts": ["to apologize", "apologizing"], "ans": ["to apologize"]},
+        {"q": "A happy little dog learned of this place and decided (to visit / visited) it.", "opts": ["to visit", "visited"], "ans": ["to visit"]},
+        {"q": "The easiest way is (to take / take) a taxi.", "opts": ["to take", "take"], "ans": ["to take"]},
+        {"q": "The referee needs (to tell / telling) the goalkeeper from the other players.", "opts": ["to tell", "telling"], "ans": ["to tell"]},
+        {"q": "They wanted (to look / looking) serious like judges in courts.", "opts": ["to look", "looking"], "ans": ["to look"]},
+        {"q": "I don't want (to gain / gain) weight, but I can't help it.", "opts": ["to gain", "gain"], "ans": ["to gain"]},
+        {"q": "People began (to eat / eat) bread around 10,000 years ago.", "opts": ["to eat", "eat"], "ans": ["to eat"]},
+        {"q": "My hobby is (to collect / collects) stamps.", "opts": ["to collect", "collects"], "ans": ["to collect"]},
+        {"q": "I hoped (not to see / to not see / not seeing) you again.", "opts": ["not to see", "to not see", "not seeing"], "ans": ["not to see"]},
+        {"q": "After three weeks, the other young people began (to talk / talk) about their plants.", "opts": ["to talk", "talk"], "ans": ["to talk"]},
+        {"q": "His mother told him (to be / being) honest.", "opts": ["to be", "being"], "ans": ["to be"]},
+        {"q": "He told Ling (to come / come) to the front.", "opts": ["to come", "come"], "ans": ["to come"]},
+        {"q": "Amy thought about her wish and started (to write / write).", "opts": ["to write", "write"], "ans": ["to write"]},
+        {"q": "Ask your mother (to cut / cut) down your weekly allowance when you do your bad habit.", "opts": ["to cut", "cut"], "ans": ["to cut"]},
+        {"q": "We should try (to walk / walking) more.", "opts": ["to walk", "walking"], "ans": ["to walk"]},
+        {"q": "First, camels started (to store / storing) fat in their bodies.", "opts": ["to store", "storing"], "ans": ["to store", "storing"]},
+        {"q": "My job is (to translate / translate) English into Korean.", "opts": ["to translate", "translate"], "ans": ["to translate"]},
+        {"q": "(It / That) is pleasant to talk with Mary.", "opts": ["It", "That"], "ans": ["It"]},
+        {"q": "It is interesting to (study / studying) grammar.", "opts": ["study", "studying"], "ans": ["study"]},
+        {"q": "(To ride / Riding / Ride) a motorcycle without a helmet is dangerous.", "opts": ["To ride", "Riding", "Ride"], "ans": ["To ride", "Riding"]},
+        {"q": "He promised (not to / to not) lie again.", "opts": ["not to", "to not"], "ans": ["not to"]}
+    ];
+
+    let quizSet = [], currentIdx = 0, score = 0, selected = [], results = [];
+
+    function prepareQuiz() {
+        try {
+            if (!document.getElementById('name').value.trim()) return alert("성명을 입력하세요.");
+            quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+            currentIdx = 0; score = 0; results = [];
+            document.getElementById('setup-page').classList.add('hidden');
+            document.getElementById('quiz-page').classList.remove('hidden');
+            loadQuestion();
+        } catch(e) { console.error(e); alert("오류가 발생했습니다: " + e.message); }
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('question-text').innerText = item.q;
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+        
+        const area = document.getElementById('options-area');
+        area.innerHTML = ''; selected = [];
+        item.opts.forEach(opt => {
+            const b = document.createElement('button');
+            b.className = 'btn-option';
+            b.innerText = opt;
+            b.onclick = () => {
+                b.classList.toggle('selected');
+                if (selected.includes(opt)) selected = selected.filter(s => s !== opt);
+                else selected.push(opt);
+            };
+            area.appendChild(b);
+        });
+    }
+
+    function submitAnswer() {
+        if (selected.length === 0) return alert("최소 하나 이상의 정답을 선택하세요.");
+        const item = quizSet[currentIdx];
+        const isCorrect = JSON.stringify([...selected].sort()) === JSON.stringify([...item.ans].sort());
+        
+        results.push({ q: item.q, user: selected.join(", "), ans: item.ans.join(", "), isCorrect });
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('user-display').innerText = document.getElementById('name').value;
+        document.getElementById('final-score').innerText = score;
+
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>Q: ${w.q}</strong><br>내 답: <span style="color:red">${w.user}</span> | 정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[테스트 결과] 성명: ${document.getElementById('name').value}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q}\n(답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${document.getElementById('name').value}_성적.txt`;
+        a.click();
+    }
+</script>
+</body>
+</html>

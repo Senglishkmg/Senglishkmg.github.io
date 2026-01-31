@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에스영어전문학원: 그바유5 (영작)</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --hint-bg: #FFF5F5; --hint-text: #E53E3E; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 550px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        
+        h2 { color: #1A365D; margin-bottom: 20px; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; margin-bottom: 20px; border-left: 4px solid var(--primary-color); }
+        
+        /* 힌트 정보창 */
+        .hint-container { background: var(--hint-bg); border: 1px dashed var(--hint-text); padding: 15px; border-radius: 10px; margin-bottom: 25px; text-align: left; }
+        .hint-tag { font-size: 0.85rem; font-weight: bold; color: var(--hint-text); margin-bottom: 5px; display: block; }
+        .hint-content { font-size: 1rem; color: #2D3748; font-weight: 600; }
+
+        input[type="text"] { width: 100%; padding: 16px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 1.1rem; outline: none; }
+        input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1); }
+        
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-main { background-color: var(--primary-color); color: white; margin-bottom: 10px; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 10px; }
+
+        .korean-text { font-size: 1.25rem; font-weight: 800; color: #1A202C; margin-bottom: 20px; word-break: keep-all; }
+        
+        .progress-bar { width: 100%; height: 6px; background: #EDF2F7; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--hint-text); text-align: left; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="setup-page">
+        <h2>To부정사 실전 Part 5</h2>
+        <div class="guide-box">힌트 단어와 단어 수를 확인하며 영작하세요.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="korean-text" id="korean-display"></div>
+        
+        <div class="hint-container">
+            <span class="hint-tag">KEYWORD HINT</span>
+            <div class="hint-content" id="keyword-hint"></div>
+            <hr style="border:0; border-top:1px solid #fee2e2; margin:10px 0;">
+            <span class="hint-tag">WORD COUNT</span>
+            <div class="hint-content" id="count-hint"></div>
+        </div>
+
+        <input type="text" id="user-input" placeholder="영문장을 입력하세요" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">정답 제출</button>
+    </div>
+
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <h1 id="res-score" style="color:var(--primary-color); font-size: 3rem; margin: 20px 0;">0 / 10</h1>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--hint-text);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제 풀기</button>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        { "korean": "그녀도 역시 좋은 사진을 찍고 싶었다.", "hints": ["take", "wanted"], "count": 7, "ans": "She wanted to take good pictures, too" },
+        { "korean": "나의 계획은 스페인어를 배우는 것이다.", "hints": ["learn", "plan"], "count": 6, "ans": "My plan is to learn Spanish" },
+        { "korean": "그는 밖에 나가서 그의 백성들을 만나는 것을 좋아했습니다.", "hints": ["meet", "liked"], "count": 9, "ans": "He liked to go out and meet his people" },
+        { "korean": "점심 먹는 것을 잊었네.", "hints": ["forgot", "have"], "count": 5, "ans": "I forgot to have lunch" },
+        { "korean": "미소를 짓는 것을 잊지 마세요!", "hints": ["smile", "forget"], "count": 4, "ans": "Don't forget to smile" },
+        { "korean": "내 소원은 언덕에 있는 집에서 사는 것이야.", "hints": ["is", "live"], "count": 10, "ans": "My wish is to live in a house on the hill" },
+        { "korean": "나는 매일 3개의 표현을 외우려고 노력한다.", "hints": ["try", "memorize"], "count": 8, "ans": "I try to memorize three expressions every day" },
+        { "korean": "나는 영어를 잘하고 싶어.", "hints": ["want", "be"], "count": 7, "ans": "I want to be good at English" },
+        { "korean": "그는 동물 친구를 얻게 되기를 원한다.", "hints": ["wants", "have"], "count": 6, "ans": "He wants to have an animal friend" },
+        { "korean": "그는 긴 붓을 집어 들고 그림을 그리기 시작했다.", "hints": ["started", "picked up"], "count": 10, "ans": "He picked up a long brush and started to paint" }
+    ];
+
+    let quizSet = [], currentIdx = 0, score = 0, results = [];
+
+    function prepareQuiz() {
+        if (!document.getElementById('name').value) return alert("성명을 입력하세요.");
+        quizSet = [...quizData].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= 10) return finishQuiz();
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = item.korean;
+        document.getElementById('keyword-hint').innerText = item.hints.join(", ");
+        document.getElementById('count-hint').innerText = `${item.count} 단어로 작성하세요.`;
+        document.getElementById('user-input').value = '';
+        document.getElementById('user-input').focus();
+        document.getElementById('progress-inner').style.width = (currentIdx / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userAns = document.getElementById('user-input').value.trim();
+        if (!userAns) return alert("문장을 입력하세요.");
+        
+        const item = quizSet[currentIdx];
+        const isCorrect = userAns.replace(/[\.\,\?]/g, "").toLowerCase() === item.ans.replace(/[\.\,\?]/g, "").toLowerCase();
+        
+        results.push({ q: item.korean, user: userAns, ans: item.ans, isCorrect });
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-score').innerText = score + " / 10";
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>${w.q}</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q}\n답: ${r.user}\n정: ${r.ans}`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${document.getElementById('name').value}_그바유5.txt`;
+        a.click();
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에스영어전문학원: 그바유3 (단어 변형)</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 550px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 60% !important; display: inline-block !important; text-align: center; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 10px; }
+        #question-display { font-size: 1.25rem; font-weight: 700; color: #1A202C; margin: 40px 0; line-height: 1.8; word-break: keep-all; }
+        .word-hint { color: #718096; font-size: 0.9rem; margin-bottom: 10px; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="setup-page">
+        <h2>To부정사 실전 Part 3</h2>
+        <div class="guide-box">빈칸에 알맞은 단어의 형태를 입력하세요.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 괄호 안의 단어를 알맞은 형태로 변형하여 입력하시오.</div>
+        <div id="question-display"></div>
+        <div class="word-hint">제시 단어: <strong id="hint-word" style="color:var(--primary-color)"></strong></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="정답 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+
+<script>
+    const allQuestions = [
+        { "question": "My plan is ______ Spanish.", "word": "learn", "answer": ["to learn", "learning"] },
+        { "question": "It was ______ a presentation about their own special talents.", "word": "do", "answer": ["to do", "doing"] },
+        { "question": "He liked ______ out and meet his people.", "word": "go", "answer": ["to go", "going"] },
+        { "question": "Oh, I forgot ______ lunch.", "word": "have", "answer": ["to have"] },
+        { "question": "He picked up a long brush and started ______.", "word": "paint", "answer": ["to paint", "painting"] },
+        { "question": "I want ______ a painter like him.", "word": "be", "answer": ["to be"] },
+        { "question": "After dinner, he and Dad started ______ together.", "word": "sing", "answer": ["to sing", "singing"] },
+        { "question": "My wish is ______ in a beautiful house on the hill.", "word": "live", "answer": ["to live", "living"] },
+        { "question": "Eric wants ______ an animal friend.", "word": "have", "answer": ["to have"] },
+        { "question": "I want ______ on his legs, too.", "word": "sleep", "answer": ["to sleep"] },
+        { "question": "I don't like ______ the same thing again.", "word": "practice", "answer": ["to practice", "practicing"] },
+        { "question": "I want ______ out with my friends after school.", "word": "hang", "answer": ["to hang"] },
+        { "question": "I don't want ______ my money.", "word": "waste", "answer": ["to waste"] },
+        { "question": "I always try ______ a smart shopper.", "word": "be", "answer": ["to be"] },
+        { "question": "Many people try ______ something green on this day.", "word": "do", "answer": ["to do"] },
+        { "question": "Do you want ______ them?", "word": "join", "answer": ["to join"] },
+        { "question": "She hoped ______ someone tomorrow.", "word": "find", "answer": ["to find"] },
+        { "question": "Sally's pet likes ______ vegetables.", "word": "eat", "answer": ["to eat", "eating"] },
+        { "question": "Jamal's pet likes ______.", "word": "swim", "answer": ["to swim", "swimming"] },
+        { "question": "______ in this river is dangerous.", "word": "swim", "answer": ["To swim", "Swimming"] },
+        { "question": "We plan ______ nursing homes in our town.", "word": "visit", "answer": ["to visit"] },
+        { "question": "My mom and I want ______ for the elderly people.", "word": "cook", "answer": ["to cook"] },
+        { "question": "We're planning ______ Evergreen Nursing Home.", "word": "visit", "answer": ["to visit"] },
+        { "question": "I'll learn ______ an airplane.", "word": "fly", "answer": ["to fly"] },
+        { "question": "______ oneself is very difficult.", "word": "know", "answer": ["To know", "Knowing"] },
+        { "question": "I want ______ them to my friends.", "word": "show", "answer": ["to show"] },
+        { "question": "I didn't want ______ to school.", "word": "go", "answer": ["to go"] },
+        { "question": "I decided ______ my limitations.", "word": "not, overcome", "answer": ["not to overcome"] },
+        { "question": "I began ______ daily tasks.", "word": "master", "answer": ["to master", "mastering"] },
+        { "question": "My parents want ______ everything about my life.", "word": "know", "answer": ["to know"] },
+        { "question": "People like ______ croissants.", "word": "eat", "answer": ["to eat", "eating"] },
+        { "question": "You need ______ some magic words.", "word": "learn", "answer": ["to learn"] },
+        { "question": "Don't forget ______ 'thank you.'", "word": "say", "answer": ["to say"] },
+        { "question": "Do not hesitate ______ for your mistake.", "word": "apologize", "answer": ["to apologize"] },
+        { "question": "A happy dog decided ______ it.", "word": "not, visit", "answer": ["not to visit"] },
+        { "question": "Another dog decided ______ the house.", "word": "visit", "answer": ["to visit"] },
+        { "question": "The easiest way is ______ a taxi.", "word": "take", "answer": ["to take", "taking"] },
+        { "question": "The referee needs ______ the goalkeeper.", "word": "tell", "answer": ["to tell"] },
+        { "question": "I wanted ______ the balloon.", "word": "control", "answer": ["to control"] },
+        { "question": "I don't want ______ weight.", "word": "gain", "answer": ["to gain"] },
+        { "question": "People began ______ bread 10,000 years ago.", "word": "eat", "answer": ["to eat", "eating"] },
+        { "question": "My hobby is ______ stamps.", "word": "collect", "answer": ["to collect", "collecting"] },
+        { "question": "I hoped ______ you again.", "word": "not, see", "answer": ["not to see"] },
+        { "question": "They began ______ about their plants.", "word": "talk", "answer": ["to talk", "talking"] },
+        { "question": "His mother told him ______ honest.", "word": "be", "answer": ["to be"] },
+        { "question": "He told Ling ______ to the front.", "word": "not, come", "answer": ["not to come"] },
+        { "question": "Amy started ______.", "word": "write", "answer": ["to write", "writing"] },
+        { "question": "Ask your mother ______ down your allowance.", "word": "cut", "answer": ["to cut"] },
+        { "question": "Many people want ______ sweets.", "word": "eat", "answer": ["to eat"] },
+        { "question": "Some people don't want ______ medicine.", "word": "take", "answer": ["to take"] },
+        { "question": "We should try ______ more.", "word": "walk", "answer": ["to walk"] },
+        { "question": "I want ______ this forest.", "word": "save", "answer": ["to save"] },
+        { "question": "Do you want ______ more?", "word": "learn", "answer": ["to learn"] },
+        { "question": "They wanted ______ there forever.", "word": "stay", "answer": ["to stay"] },
+        { "question": "Camels started ______ fat in their bodies.", "word": "store", "answer": ["to store", "storing"] },
+        { "question": "My job is ______ English into Korean.", "word": "translate", "answer": ["to translate", "translating"] },
+        { "question": "It is pleasant ______ with Mary.", "word": "talk", "answer": ["to talk"] },
+        { "question": "It is interesting ______ grammar.", "word": "study", "answer": ["to study"] },
+        { "question": "______ a motorcycle without a helmet is dangerous.", "word": "ride", "answer": ["To ride", "Riding"] },
+        { "question": "He promised ______ again.", "word": "not, lie", "answer": ["not to lie"] }
+    ];
+
+    let quizSet = [], currentIdx = 0, score = 0, results = [];
+
+    function prepareQuiz() {
+        if (!document.getElementById('name').value.trim()) return alert("성명을 입력하세요.");
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('question-display').innerText = item.question;
+        document.getElementById('hint-word').innerText = item.word;
+        document.getElementById('user-input').value = '';
+        document.getElementById('user-input').focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userInput = document.getElementById('user-input').value.trim();
+        if (!userInput) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        const isCorrect = item.answer.some(ans => ans.toLowerCase() === userInput.toLowerCase());
+        results.push({ q: item.question, user: userInput, ans: item.answer.join(" / "), isCorrect });
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = document.getElementById('name').value;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>${w.q}</strong><br>내 답: <span style="color:red">${w.user}</span> | 정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[그바유3 결과] 성명: ${document.getElementById('name').value}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q} (답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${document.getElementById('name').value}_그바유3.txt`;
+        a.click();
+    }
+</script>
+</body>
+</html>
