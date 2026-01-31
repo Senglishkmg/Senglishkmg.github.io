@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중2 문법 완성 - 목록</title>
+    <style>
+        :root {
+            --primary-color: #0ca678; /* 중2 테마 색상 (에메랄드) */
+            --bg-color: #f1fbf0;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .back-btn {
+            display: inline-block;
+            text-decoration: none;
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .grid-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            border: 1.5px solid #eee;
+            border-radius: 12px;
+            padding: 1rem 0.5rem;
+            text-decoration: none;
+            color: var(--text-main);
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .grid-item:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background-color: #ebfbee;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 480px) {
+            .grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <a href="index.html" class="back-btn">← 메인으로 돌아가기</a>
+        <div class="header">
+            <h1>중2 문법 완성</h1>
+            <p>그래머바이블 2 과정입니다.</p>
+        </div>
+        
+        <div class="grid-container">
+            <a href="gb201.html" class="grid-item">01. 문장의 구조</a>
+            <a href="gb202.html" class="grid-item">02. 문장의 형태 I</a>
+            <a href="gb203.html" class="grid-item">03. 문장의 형태 II</a>
+            <a href="gb204.html" class="grid-item">04. to부정사</a>
+            <a href="gb205.html" class="grid-item">05. 동명사</a>
+            <a href="gb206.html" class="grid-item">06. 시제</a>
+            <a href="gb207.html" class="grid-item">07. 분사</a>
+            <a href="gb208.html" class="grid-item">08. 조동사</a>
+            <a href="gb209.html" class="grid-item">09. 의문문</a>
+            <a href="gb210.html" class="grid-item">10. 관계사</a>
+            <a href="gb211.html" class="grid-item">11. 수동태</a>
+            <a href="gb212.html" class="grid-item">12. 비교</a>
+            <a href="gb213.html" class="grid-item">13. 명사와 대명사</a>
+            <a href="gb214.html" class="grid-item">14. 형용사와 부사</a>
+            <a href="gb215.html" class="grid-item">15. 접속사</a>
+        </div>
+
+        <div class="footer">
+            중2 영문법의 핵심을 마스터하세요!
+        </div>
+    </div>
+
+</body>
+</html>
