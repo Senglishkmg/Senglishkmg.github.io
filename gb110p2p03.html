@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에스영어전문학원: 그바유7 (문장 전환)</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 600px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        
+        .original-sentences { background: #F8FAFC; padding: 20px; border-radius: 12px; margin-bottom: 25px; text-align: left; border: 1px solid #E2E8F0; }
+        .sentence-tag { font-size: 0.75rem; color: var(--primary-color); font-weight: bold; margin-bottom: 5px; display: block; }
+        .sentence-text { font-size: 1.1rem; font-weight: 600; line-height: 1.5; }
+
+        textarea { width: 100%; height: 80px; padding: 16px; border: 2px solid #E2E8F0; border-radius: 12px; box-sizing: border-box; font-size: 1.1rem; outline: none; resize: none; margin-bottom: 15px; font-family: inherit; }
+        textarea:focus { border-color: var(--primary-color); }
+        
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-main { background-color: var(--primary-color); color: white; margin-bottom: 10px; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 10px; }
+
+        .progress-bar { width: 100%; height: 6px; background: #EDF2F7; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="setup-page">
+        <h2>To부정사 실전 Part 7</h2>
+        <div class="guide-box">두 문장을 to부정사를 사용하여 한 문장으로 합쳐보세요.</div>
+        <input type="text" id="school" placeholder="학교명" style="width:100%; padding:14px; margin-bottom:12px; border:1px solid #E2E8F0; border-radius:10px; box-sizing:border-box;">
+        <input type="text" id="name" placeholder="성명" style="width:100%; padding:14px; margin-bottom:12px; border:1px solid #E2E8F0; border-radius:10px; box-sizing:border-box;">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="original-sentences">
+            <span class="sentence-tag">ORIGINAL SENTENCES</span>
+            <div class="sentence-text" id="original-display"></div>
+        </div>
+        <div class="guide-box">💡 위 두 문장을 하나로 합친 문장을 아래에 입력하세요.</div>
+        <textarea id="user-input" placeholder="여기에 정답 문장을 입력하세요..."></textarea>
+        <button class="btn-submit" onclick="submitAnswer()">정답 제출</button>
+    </div>
+
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <h1 id="res-score" style="color:var(--primary-color); font-size: 3rem; margin: 20px 0;">0 / 10</h1>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list" style="font-size: 0.9rem;"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제 풀기</button>
+    </div>
+</div>
+
+<script>
+    // 66~71쪽 전체 51문항 데이터 (일부 생략)
+    const allQuestions = [
+        { "original": "We need homework. We review the lessons.", "answer": "We need homework to review the lessons" },
+        { "original": "Every Sunday I make a plan. I want to spend my money wisely.", "answer": "Every Sunday I make a plan to spend my money wisely" },
+        { "original": "She worked in a factory. She helped her family.", "answer": "She worked in a factory to help her family" },
+        { "original": "I'm here. I want to collect my gold.", "answer": "I'm here to collect my gold" },
+        { "original": "I'm here. I want to get it.", "answer": "I'm here to get it" },
+        { "original": "On New Year's Eve, they wear something red. They want to avoid evil spirits.", "answer": "On New Year's Eve, they wear something red to avoid evil spirits" },
+        { "original": "In late fall, they go far from the sea. They have a baby there.", "answer": "In late fall, they go far from the sea to have a baby" },
+        { "original": "After laying an egg, she goes back to the sea. She wants to get food for her baby.", "answer": "After laying an egg, she goes back to the sea to get food for her baby" },
+        { "original": "The father still has to hold the chick on his feet. He has to protect it from the freezing cold.", "answer": "The father still has to hold the chick on his feet to protect it from the freezing cold" },
+        { "original": "He heads to the sea. He has to find food.", "answer": "He heads to the sea to find food" },
+        { "original": "By the end of summer, the chicks are ready. They can swim and find food by themselves.", "answer": "By the end of summer, the chicks are ready to swim and find food by themselves" },
+        { "original": "In Europe, however, people wave the hand sideways. They want to say “no.”", "answer": "In Europe, however, people wave the hand sideways to say “no”" },
+        { "original": "Mix the dark and white chocolate together. You can make brown chocolate.", "answer": "Mix the dark and white chocolate together to make brown chocolate" },
+        { "original": "Russians give others bread. They want to welcome them.", "answer": "Russians give others bread to welcome them" },
+        { "original": "In the U.S., some people bake bread. They want to help sell their houses.", "answer": "In the U.S., some people bake bread to help sell their houses" },
+        { "original": "He needs Lucky's help. He wants to walk on busy streets and to cross roads safely.", "answer": "He needs Lucky's help to walk on busy streets and to cross roads safely" },
+        { "original": "She runs back and forth. She informs Mrs. Jang of the sounds.", "answer": "She runs back and forth to inform Mrs. Jang of the sounds" },
+        { "original": "Dolphins and whales come to the surface of the water. They want to breathe.", "answer": "Dolphins and whales come to the surface of the water to breathe" },
+        { "original": "Make a greater effort. You can fix your bad habit.", "answer": "Make a greater effort to fix your bad habit" },
+        { "original": "They take part in the festival. They want to have fun.", "answer": "They take part in the festival to have fun" },
+        { "original": "I have a special way. I can learn new words that way.", "answer": "I have a special way to learn new words" },
+        { "original": "Everyone has the right. They should be happy.", "answer": "Everyone has the right to be happy" },
+        { "original": "I need something. I want to drink something.", "answer": "I need something to drink" },
+        { "original": "I have too much work. I have to handle it.", "answer": "I have too much work to handle" }
+    ];
+
+    let quizSet = [], currentIdx = 0, score = 0, results = [];
+
+    function prepareQuiz() {
+        if (!document.getElementById('name').value) return alert("성명을 입력하세요.");
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= 10) return finishQuiz();
+        const item = quizSet[currentIdx];
+        document.getElementById('original-display').innerHTML = item.original.replace(". ", ".<br>");
+        document.getElementById('user-input').value = '';
+        document.getElementById('user-input').focus();
+        document.getElementById('progress-inner').style.width = (currentIdx / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userAns = document.getElementById('user-input').value.trim();
+        if (!userAns) return alert("문장을 입력하세요.");
+        
+        const item = quizSet[currentIdx];
+        // 유연한 정답 비교 (문장 부호 제거 및 소문자화)
+        const clean = (str) => str.replace(/[\.\,\?\“\”\']/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+        const isCorrect = clean(userAns) === clean(item.answer);
+        
+        results.push({ q: item.original, user: userAns, ans: item.answer, isCorrect });
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-score').innerText = score + " / 10";
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>${w.q}</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q}\n답: ${r.user}\n정: ${r.ans}`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${document.getElementById('name').value}_그바유7.txt`;
+        a.click();
+    }
+</script>
+</body>
+</html>
