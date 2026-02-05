@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에스영어전문학원: 그바유6 (57-61쪽)</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --accent-color: #ED8936; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); text-align: center; margin: 20px; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-top: 0; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; margin-bottom: 25px; border-left: 4px solid var(--primary-color); text-align: left; line-height: 1.5; }
+        #question-text { font-size: 1.25rem; font-weight: 700; margin: 30px 0; color: #1A202C; min-height: 90px; display: flex; align-items: center; justify-content: center; word-break: keep-all; }
+        .usage-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .btn-usage { padding: 15px; border: 2px solid #EDF2F7; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; background: #fff; color: #4A5568; }
+        .btn-usage.selected { border-color: var(--primary-color); background: #EBF8FF; color: var(--primary-color); }
+        .target-input-area { margin-bottom: 25px; text-align: left; }
+        .target-label { font-size: 0.9rem; font-weight: bold; color: var(--accent-color); margin-bottom: 8px; display: block; }
+        input[type="text"] { width: 100%; padding: 14px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        button.btn-submit { width: 100%; padding: 16px; background: #2D3748; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .progress-bar { width: 100%; height: 6px; background: #EDF2F7; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #E53E3E; text-align: left; font-size: 0.9rem; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="setup-page">
+        <h2>To부정사 실전 Part 6</h2>
+        <div class="guide-box">부정사의 용법을 선택하고, 해당 부정사가 수식하거나 관련 있는 단어(구)를 정확히 입력하세요. (전체 58문항 중 랜덤 출제)</div>
+        <input type="text" id="name" placeholder="성명을 입력하세요">
+        <button class="btn-submit" style="margin-top:20px; background:var(--primary-color)" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div id="question-text"></div>
+        <div class="usage-btns">
+            <button class="btn-usage" id="btn-adj" onclick="selectUsage('형용사')">형용사적 용법</button>
+            <button class="btn-usage" id="btn-adv" onclick="selectUsage('부사')">부사적 용법</button>
+        </div>
+        <div class="target-input-area">
+            <span class="target-label">수식받는 단어(구)를 입력하세요:</span>
+            <input type="text" id="target-input" placeholder="정답 입력 (예: sorry, plan 등)" autocomplete="off">
+        </div>
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary-color); margin-bottom: 20px;"><span id="score-val">0</span> / 10</div>
+        <div id="wrong-list"></div>
+        <button class="btn-submit" style="background:var(--primary-color); margin-top:20px;" onclick="location.reload()">새 문제 풀기</button>
+    </div>
+</div>
+
+<script>
+    const allData = [
+        {"q": "1. I'm sorry to hear that.", "ans_u": "부사", "ans_t": "sorry"},
+        {"q": "2. So we need homework to review the lessons.", "ans_u": "부사", "ans_t": "need"},
+        {"q": "3. Every Sunday I make a plan to spend my money wisely.", "ans_u": "부사", "ans_t": "make"},
+        {"q": "4. I have a special way to learn new words.", "ans_u": "형용사", "ans_t": "a special way"},
+        {"q": "5. I'm glad to see you at last.", "ans_u": "부사", "ans_t": "glad"},
+        {"q": "6. Her family was poor, so she worked in a factory to help her family.", "ans_u": "부사", "ans_t": "worked"},
+        {"q": "7. She went to see a famous Chinese general.", "ans_u": "부사", "ans_t": "went"},
+        {"q": "8. I'm here to collect my gold.", "ans_u": "부사", "ans_t": "am"},
+        {"q": "9. On New Year's Eve, they wear something red to avoid evil spirits.", "ans_u": "부사", "ans_t": "wear"},
+        {"q": "10. In late fall, they go far from the sea to have a baby.", "ans_u": "부사", "ans_t": "go"},
+        {"q": "11. After laying an egg, she goes back to the sea to get food for her baby.", "ans_u": "부사", "ans_t": "goes"},
+        {"q": "12. The father still has to hold the chick on his feet to protect it.", "ans_u": "부사", "ans_t": "has to hold"},
+        {"q": "13. He heads to the sea to find food.", "ans_u": "부사", "ans_t": "heads"},
+        {"q": "14. the chicks are ready to swim and find food by themselves.", "ans_u": "부사", "ans_t": "ready"},
+        {"q": "15. people wave the hand sideways to say 'no'.", "ans_u": "부사", "ans_t": "wave"},
+        {"q": "16. You are sure to get good service.", "ans_u": "부사", "ans_t": "sure"},
+        {"q": "17. Try doing other things to make you feel good.", "ans_u": "형용사", "ans_t": "other things"},
+        {"q": "18. Mix the dark and white chocolate together to make brown chocolate.", "ans_u": "부사", "ans_t": "Mix"},
+        {"q": "19. Russians give others bread to welcome them.", "ans_u": "부사", "ans_t": "give"},
+        {"q": "20. some people bake bread to help sell their houses.", "ans_u": "부사", "ans_t": "bake"},
+        {"q": "21. to walk on busy streets and to cross roads safely, he needs Lucky's help.", "ans_u": "부사", "ans_t": "needs"},
+        {"q": "22. She runs back and forth to inform Mrs. Jang of the sounds.", "ans_u": "부사", "ans_t": "runs"},
+        {"q": "23. Dolphins and whales come to the surface of the water to breathe.", "ans_u": "부사", "ans_t": "come"},
+        {"q": "24. Everyone has the right to be happy.", "ans_u": "형용사", "ans_t": "the right"},
+        {"q": "25. Make a greater effort to fix your bad habit.", "ans_u": "부사", "ans_t": "Make"},
+        {"q": "26. There is a price to pay for bad habits.", "ans_u": "형용사", "ans_t": "a price"},
+        {"q": "27. These may not be the best ways to make up for your failure.", "ans_u": "형용사", "ans_t": "the best ways"},
+        {"q": "28. They take part in the festival to have fun.", "ans_u": "부사", "ans_t": "take part in"},
+        {"q": "29. People wear gorilla costumes to run in the Great Gorilla Run.", "ans_u": "부사", "ans_t": "wear"},
+        {"q": "30. This run raises money to protect the homes of gorillas.", "ans_u": "부사", "ans_t": "raises"},
+        {"q": "31. They can keep the gorilla costumes to wear again later!", "ans_u": "부사", "ans_t": "can keep"},
+        {"q": "32. they found new ways to survive there.", "ans_u": "형용사", "ans_t": "new ways"},
+        {"q": "33. Their legs also got longer to keep their bodies high.", "ans_u": "부사", "ans_t": "got"},
+        {"q": "34. Their ear hair grew longer to keep sand out.", "ans_u": "부사", "ans_t": "grew"},
+        {"q": "35. Plants need this powder to grow fruits and vegetables.", "ans_u": "부사", "ans_t": "need"},
+        {"q": "36. He ran away from his master to be free.", "ans_u": "부사", "ans_t": "ran"},
+        {"q": "37. My coworkers were surprised to know my age.", "ans_u": "부사", "ans_t": "surprised"},
+        {"q": "38. I was very happy to receive your letter.", "ans_u": "부사", "ans_t": "happy"},
+        {"q": "39. I have too much work to handle.", "ans_u": "형용사", "ans_t": "too much work"},
+        {"q": "40. To provide water, it was built.", "ans_u": "부사", "ans_t": "was built"},
+        {"q": "41. I felt sad to leave them.", "ans_u": "부사", "ans_t": "sad"},
+        {"q": "42. She had no one to help her.", "ans_u": "형용사", "ans_t": "no one"},
+        {"q": "43. They raised money to protect natural habitats.", "ans_u": "부사", "ans_t": "raised"},
+        {"q": "44. He was disappointed to fail the exam again.", "ans_u": "부사", "ans_t": "disappointed"},
+        {"q": "45. He was excited to go to the concert.", "ans_u": "부사", "ans_t": "excited"},
+        {"q": "46. There are many places to visit in Korea.", "ans_u": "형용사", "ans_t": "many places"},
+        {"q": "47. Jessica called Mike to apologize to him.", "ans_u": "부사", "ans_t": "called"},
+        {"q": "48. She had to hurry to get there in time.", "ans_u": "부사", "ans_t": "had to hurry"},
+        {"q": "49. I feel happy to help them.", "ans_u": "부사", "ans_t": "happy"},
+        {"q": "50. Sharing ideas became their favorite thing to do.", "ans_u": "형용사", "ans_t": "their favorite thing"},
+        {"q": "51. You should eat less to lose weight.", "ans_u": "부사", "ans_t": "should eat"},
+        {"q": "52. She put on makeup to look better.", "ans_u": "부사", "ans_t": "went / put on"},
+        {"q": "53. I have a plan to save the animals.", "ans_u": "형용사", "ans_t": "a plan"},
+        {"q": "54. I need something to drink.", "ans_u": "형용사", "ans_t": "something"},
+        {"q": "55. This book is not easy to read.", "ans_u": "부사", "ans_t": "easy"},
+        {"q": "56. I got the chance to join the campaign.", "ans_u": "형용사", "ans_t": "the chance"},
+        {"q": "57. Many people participated to share their ideas.", "ans_u": "부사", "ans_t": "participated"},
+        {"q": "58. Yoga is a way to relax your mind.", "ans_u": "형용사", "ans_t": "a way"}
+    ];
+
+    let quizSet = [], currentIdx = 0, score = 0, selectedUsage = '', results = [];
+
+    function prepareQuiz() {
+        if(!document.getElementById('name').value) return alert("성명을 입력하세요.");
+        quizSet = [...allData].sort(() => Math.random() - 0.5).slice(0, 10);
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if(currentIdx >= 10) return finishQuiz();
+        document.getElementById('question-text').innerText = quizSet[currentIdx].q;
+        document.getElementById('target-input').value = '';
+        selectedUsage = '';
+        document.querySelectorAll('.btn-usage').forEach(b => b.classList.remove('selected'));
+        document.getElementById('progress-inner').style.width = (currentIdx / 10 * 100) + "%";
+        document.getElementById('target-input').focus();
+    }
+
+    function selectUsage(val) {
+        selectedUsage = val;
+        document.querySelectorAll('.btn-usage').forEach(b => b.classList.remove('selected'));
+        if(val === '형용사') document.getElementById('btn-adj').classList.add('selected');
+        else document.getElementById('btn-adv').classList.add('selected');
+    }
+
+    function submitAnswer() {
+        const targetVal = document.getElementById('target-input').value.trim().toLowerCase();
+        if(!selectedUsage || !targetVal) return alert("용법과 단어를 모두 입력하세요.");
+        const item = quizSet[currentIdx];
+        
+        // 정답 비교 (소문자 공백 제거 비교로 관대하게 처리)
+        const cleanUser = targetVal.replace(/\s/g, '');
+        const cleanAns = item.ans_t.toLowerCase().replace(/\s/g, '');
+        const isTargetCorrect = cleanUser === cleanAns || item.ans_t.toLowerCase().includes(targetVal);
+        
+        const isAllCorrect = (selectedUsage === item.ans_u) && isTargetCorrect;
+
+        results.push({
+            q: item.q,
+            uU: selectedUsage,
+            uT: targetVal,
+            aU: item.ans_u,
+            aT: item.ans_t,
+            isCorrect: isAllCorrect
+        });
+
+        if(isAllCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    // 엔터키 지원
+    document.getElementById('target-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('score-val').innerText = score;
+        const area = document.getElementById('wrong-list');
+        area.innerHTML = '';
+        results.filter(r => !r.isCorrect).forEach(w => {
+            area.innerHTML += `<div class="wrong-item"><strong>${w.q}</strong><br>내 답: ${w.uU} / ${w.uT}<br>정답: ${w.aU} / ${w.aT}</div>`;
+        });
+    }
+</script>
+</body>
+</html>
