@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10-2. to부정사 Pattern 02</title>
+    <style>
+        :root {
+            --primary-color: #20c997; /* 패턴 2용 포인트 색상 (Teal) */
+            --bg-color: #e6fcf5;
+            --card-bg: #ffffff;
+            --text-main: #2d3436;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--card-bg);
+            padding: 2.5rem 2rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(32, 201, 151, 0.1);
+            text-align: center;
+        }
+
+        .back-btn {
+            display: inline-block;
+            text-decoration: none;
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            transition: color 0.2s;
+        }
+        .back-btn:hover { color: var(--primary-color); }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            margin-bottom: 0.3rem;
+        }
+
+        .sub-title {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 2rem;
+            display: block;
+        }
+
+        .part-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .part-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none;
+            background: #fff;
+            border: 2px solid #f1f3f5;
+            border-radius: 12px;
+            padding: 1.2rem 1.5rem;
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+        }
+
+        .part-item::after {
+            content: '→';
+            font-size: 1.2rem;
+            color: #dee2e6;
+            transition: transform 0.2s;
+        }
+
+        .part-item:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background-color: #f1fffb;
+            transform: scale(1.02);
+        }
+
+        .part-item:hover::after {
+            color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .footer {
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #adb5bd;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <a href="gb110.html" class="back-btn">← Pattern 선택으로</a>
+        
+        <h1>10. to부정사</h1>
+        <span class="sub-title">Pattern 02</span>
+        
+        <div class="part-list">
+            <a href="gb110p2p01.html" class="part-item">Part 02 - 01</a>
+            <a href="gb110p2p02.html" class="part-item">Part 02 - 02</a>
+            <a href="gb110p2p03.html" class="part-item">Part 02 - 03</a>
+            <a href="gb110p2p04.html" class="part-item">Part 02 - 04</a>
+            <a href="gb110p2p05.html" class="part-item">Part 02 - 05</a>
+        </div>
+
+        <div class="footer">
+            실전 감각을 키우며 마지막까지 화이팅!
+        </div>
+    </div>
+
+</body>
+</html>
