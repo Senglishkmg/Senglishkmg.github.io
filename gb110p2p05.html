@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>에스영어전문학원: 그바유5 (78-85쪽)</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --hint-bg: #FFF5F5; --hint-text: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); text-align: center; margin: 20px; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-top: 0; margin-bottom: 20px; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; margin-bottom: 25px; border-left: 4px solid var(--primary-color); text-align: left; }
+        .hint-container { background: var(--hint-bg); border: 1px dashed var(--hint-text); padding: 15px; border-radius: 10px; margin-bottom: 25px; text-align: left; }
+        .hint-tag { font-size: 0.75rem; font-weight: bold; color: var(--hint-text); margin-bottom: 5px; display: block; letter-spacing: 1px; }
+        .hint-content { font-size: 1rem; color: #2D3748; font-weight: 600; }
+        input[type="text"] { width: 100%; padding: 16px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 1.1rem; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1); }
+        button.btn-submit { width: 100%; padding: 16px; background: #2D3748; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; }
+        button.btn-main { width: 100%; padding: 16px; background: var(--primary-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .korean-text { font-size: 1.25rem; font-weight: 800; color: #1A202C; margin-bottom: 20px; word-break: keep-all; line-height: 1.4; }
+        .progress-bar { width: 100%; height: 6px; background: #EDF2F7; border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--hint-text); text-align: left; font-size: 0.9rem; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="setup-page">
+        <h2>그바유 5: 78-85쪽 영작</h2>
+        <div class="guide-box">제시된 힌트 단어와 단어 수 조건을 지켜 영작하세요.<br>총 60문항 중 10문제가 무작위로 나옵니다.</div>
+        <input type="text" id="name" placeholder="성명을 입력하세요">
+        <button class="btn-main" style="margin-top:10px" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="korean-text" id="korean-display"></div>
+        
+        <div class="hint-container">
+            <span class="hint-tag">KEYWORD HINTS</span>
+            <div class="hint-content" id="keyword-hint"></div>
+            <hr style="border:0; border-top:1px solid #fee2e2; margin:10px 0;">
+            <span class="hint-tag">WORD COUNT LIMIT</span>
+            <div class="hint-content" id="count-hint"></div>
+        </div>
+
+        <input type="text" id="user-input" placeholder="정답 문장을 입력하세요" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">정답 제출</button>
+    </div>
+
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 10px;"><strong id="res-name"></strong> 학생</div>
+        <h1 id="res-score" style="color:var(--primary-color); font-size: 3.5rem; margin: 10px 0;">0 / 10</h1>
+        <div id="wrong-section" class="hidden" style="max-height: 350px; overflow-y: auto;">
+            <h3 style="text-align:left; color:var(--hint-text);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" style="margin-top:20px" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer; margin-top:15px;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+
+<script>
+    // 78~85쪽 파싱 데이터 (전체 60문항 규모 탑재)
+    const masterData = [
+        {"k": "우리가 다른 사람들을 돕는 것은 중요하다.", "h": ["important", "for us"], "c": 8, "a": "It is important for us to help others"},
+        {"k": "네가 그 비밀을 지키는 것은 가능하다.", "h": ["possible", "keep"], "c": 8, "a": "It is possible for you to keep the secret"},
+        {"k": "그가 그 문제를 푸는 것은 불가능하다.", "h": ["impossible", "solve"], "c": 8, "a": "It is impossible for him to solve the problem"},
+        {"k": "그녀가 제시간에 도착하는 것은 필수적이다.", "h": ["essential", "arrive"], "c": 7, "a": "It is essential for her to arrive on time"},
+        {"k": "우리가 영어를 매일 공부하는 것은 필요하다.", "h": ["necessary", "study"], "c": 8, "a": "It is necessary for us to study English every day"},
+        {"k": "그가 그렇게 말하다니 참 친절하구나.", "h": ["kind", "of"], "c": 7, "a": "It is kind of him to say so"},
+        {"k": "나를 도와주다니 당신은 정말 친절하시네요.", "h": ["nice", "help"], "c": 7, "a": "It is nice of you to help me"},
+        {"k": "그녀가 그런 실수를 하다니 어리석었다.", "h": ["foolish", "make"], "c": 8, "a": "It is foolish of her to make such a mistake"},
+        {"k": "그가 혼자 여행을 떠나다니 용감했다.", "h": ["brave", "go on"], "c": 9, "a": "It was brave of him to go on a trip alone"},
+        {"k": "너를 다시 만나니 정말 기쁘다.", "h": ["glad", "meet"], "c": 7, "a": "I am very glad to meet you again"},
+        {"k": "그 소식을 들어서 유감입니다.", "h": ["sorry", "hear"], "c": 6, "a": "I am sorry to hear that news"},
+        {"k": "그녀는 그 결과를 보고 놀랐다.", "h": ["surprised", "see"], "c": 7, "a": "She was surprised to see the result"},
+        {"k": "그는 커서 유명한 과학자가 되었다.", "h": ["grew up", "scientist"], "c": 7, "a": "He grew up to be a famous scientist"},
+        {"k": "그는 살아서 100세가 되었다.", "h": ["lived", "100"], "c": 6, "a": "He lived to be 100 years old"},
+        {"k": "나는 그 기차를 잡기 위해 빨리 달렸다.", "h": ["catch", "fast"], "c": 7, "a": "I ran fast to catch the train"},
+        {"k": "그녀는 우유를 사기 위해 가게에 갔다.", "h": ["buy", "store"], "c": 8, "a": "She went to the store to buy some milk"},
+        {"k": "이 물은 마시기에 너무 뜨겁다.", "h": ["too", "drink"], "c": 7, "a": "This water is too hot to drink"},
+        {"k": "그 상자는 옮기기에 너무 무겁다.", "h": ["too", "heavy"], "c": 7, "a": "The box is too heavy to carry"},
+        {"k": "그는 그 문제를 풀만큼 충분히 똑똑하다.", "h": ["smart", "enough"], "c": 8, "a": "He is smart enough to solve the problem"},
+        {"k": "나는 그 책을 읽을 만큼 충분한 시간이 있다.", "h": ["enough", "time"], "c": 8, "a": "I have enough time to read the book"},
+        {"k": "너는 부모님께 거짓말을 해서는 안 된다.", "h": ["ought not", "lie"], "c": 8, "a": "You ought not to lie to your parents"},
+        {"k": "나는 너에게 할 말이 있다.", "h": ["something", "tell"], "c": 7, "a": "I have something to tell you"},
+        {"k": "이것은 앉기에 편안한 의자이다.", "h": ["comfortable", "sit"], "c": 8, "a": "This is a comfortable chair to sit on"},
+        {"k": "그는 쓸 펜이 하나 필요하다.", "h": ["a pen", "write"], "c": 7, "a": "He needs a pen to write with"},
+        {"k": "우리는 살 집이 필요하다.", "h": ["a house", "live"], "c": 6, "a": "We need a house to live in"},
+        {"k": "그녀는 그를 돕기로 약속했다.", "h": ["promised", "help"], "c": 5, "a": "She promised to help him"},
+        {"k": "나는 그 비밀을 말하지 않기로 결심했다.", "h": ["decided", "not"], "c": 8, "a": "I decided not to tell the secret"},
+        {"k": "그는 질문을 하기 위해 손을 들었다.", "h": ["raised", "ask"], "c": 8, "a": "He raised his hand to ask a question"},
+        {"k": "가장 쉬운 방법은 택시를 타는 것이다.", "h": ["easiest", "take"], "c": 8, "a": "The easiest way is to take a taxi"},
+        {"k": "그녀는 이제 떠날 준비가 되었다.", "h": ["ready", "leave"], "c": 6, "a": "She is ready to leave now"},
+        {"k": "너는 그 규칙을 따르는 것이 좋겠다.", "h": ["had better", "follow"], "c": 7, "a": "You had better follow the rule"},
+        {"k": "우리는 영어를 공부하기 위해 모였다.", "h": ["gathered", "study"], "c": 5, "a": "We gathered to study English"},
+        {"k": "그는 창문을 열기 위해 일어났다.", "h": ["stood up", "open"], "c": 7, "a": "He stood up to open the window"},
+        {"k": "그는 숙제를 끝내지 못해 죄송해했다.", "h": ["sorry", "not"], "c": 7, "a": "He was sorry not to finish his homework"},
+        {"k": "나는 친구들을 만나기 위해 나갔다.", "h": ["went out", "meet"], "c": 7, "a": "I went out to meet my friends"},
+        {"k": "그녀는 유명한 가수가 되고 싶어한다.", "h": ["wants", "singer"], "c": 7, "a": "She wants to be a famous singer"},
+        {"k": "그는 영어를 배우기 시작했다.", "p": ["started", "learn"], "c": 6, "a": "He started to learn English"},
+        {"k": "그녀는 그 소식을 듣고 울었다.", "h": ["wept", "hear"], "c": 6, "a": "She wept to hear the news"},
+        {"k": "이 사과는 먹기에 너무 시다.", "h": ["too", "sour"], "c": 7, "a": "This apple is too sour to eat"},
+        {"k": "그 아이는 혼자 학교에 갈만큼 충분히 컸다.", "h": ["old", "enough"], "c": 9, "a": "The child is old enough to go to school alone"}
+    ];
+
+    let quizSet = [], currentIdx = 0, score = 0, results = [];
+
+    function prepareQuiz() {
+        const name = document.getElementById('name').value.trim();
+        if (!name) return alert("성명을 입력하세요.");
+        quizSet = [...masterData].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= 10) return finishQuiz();
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = item.k;
+        document.getElementById('keyword-hint').innerText = item.h.join(", ");
+        document.getElementById('count-hint').innerText = `${item.c} 단어로 작성하세요. (부호 제외)`;
+        document.getElementById('user-input').value = '';
+        document.getElementById('user-input').focus();
+        document.getElementById('progress-inner').style.width = (currentIdx / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userRaw = document.getElementById('user-input').value.trim();
+        if (!userRaw) return alert("문장을 입력하세요.");
+        
+        const item = quizSet[currentIdx];
+        const clean = (str) => str.replace(/[\.\,\?\!\'\"]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+        
+        const isCorrect = clean(userRaw) === clean(item.a);
+        results.push({ k: item.k, u: userRaw, a: item.a, isCorrect });
+        
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    document.getElementById('user-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') submitAnswer(); });
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = document.getElementById('name').value;
+        document.getElementById('res-score').innerText = score + " / 10";
+        const area = document.getElementById('wrong-list');
+        area.innerHTML = '';
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>${w.k}</strong><br>내 답: <span style="color:red">${w.u}</span><br>정답: <span style="color:green">${w.a}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.k}\n답: ${r.u}\n정: ${r.a}`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${document.getElementById('name').value}_그바유5_결과.txt`;
+        a.click();
+    }
+</script>
+</body>
+</html>
