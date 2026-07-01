@@ -1,0 +1,483 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GB101P1P01</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 550px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
+        .hidden { display: none; }
+        .guide-box { background: var(--secondary-bg); padding: 15px; border-radius: 10px; font-size: 0.95rem; margin-bottom: 20px; border-left: 5px solid var(--primary-color); text-align: left; }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #E2E8F0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-bottom: 10px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-option { background-color: #FFFFFF; color: #4A5568; border: 2px solid #EDF2F7; }
+        .btn-option.selected { border-color: var(--primary-color); background-color: #EBF8FF; color: var(--primary-color); }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 10px; }
+        #question-text { font-size: 1.3rem; font-weight: 700; margin: 30px 0; line-height: 1.6; min-height: 80px; display: flex; align-items: center; justify-content: center; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid var(--wrong-color); text-align: left; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>GB101P1P01</h2>
+        <div class="guide-box">학생 정보를 입력한 후 시험을 시작하세요.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 괄호 안에서 알맞은 것을 고르시오. (정답이 여러 개인 경우 모두 선택)</div>
+        <div id="question-text"></div>
+        <div id="options-area"></div>
+        <button class="btn-submit" onclick="submitAnswer()">정답 제출</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="user-display"></strong> 학생</div>
+        <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary-color); margin-bottom: 20px;"><span id="final-score">0</span> / 10</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 노트</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; color:#A0AEC0; border:none; cursor:pointer;" onclick="location.reload()">다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "q": "Today (were / was) the first day of middle school.",
+    "opts": ["were", "was"],
+    "ans": ["was"]
+  },
+  {
+    "q": "I (were / was) excited but also nervous.",
+    "opts": ["were", "was"],
+    "ans": ["was"]
+  },
+  {
+    "q": "The first class (were / was) with my homeroom teacher, Mr. Jang.",
+    "opts": ["were", "was"],
+    "ans": ["was"]
+  },
+  {
+    "q": "He (am / is) a math teacher.",
+    "opts": ["am", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "They (is / are) nice, but I miss my old friends.",
+    "opts": ["is", "are"],
+    "ans": ["are"]
+  },
+  {
+    "q": "Everything (are / is) new to me.",
+    "opts": ["are", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "Her mother, grandmother, Changmin, Mira, and even her uncle (is / are) there.",
+    "opts": ["is", "are"],
+    "ans": ["are"]
+  },
+  {
+    "q": "Yoga (is / are) a great exercise.",
+    "opts": ["is", "are"],
+    "ans": ["is"]
+  },
+  {
+    "q": "They (is / are) suffering from hunger and disease.",
+    "opts": ["is", "are"],
+    "ans": ["are"]
+  },
+  {
+    "q": "Many children (is / are) dying because they don't have enough water, food, or medicine.",
+    "opts": ["is", "are"],
+    "ans": ["are"]
+  },
+  {
+    "q": "I (are / am) late.",
+    "opts": ["are", "am"],
+    "ans": ["am"]
+  },
+  {
+    "q": "She (am / is) so cute.",
+    "opts": ["am", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "(These / This) is Ella Smith.",
+    "opts": ["These", "This"],
+    "ans": ["This"]
+  },
+  {
+    "q": "(She / I) am Ella Smith.",
+    "opts": ["She", "I"],
+    "ans": ["I"]
+  },
+  {
+    "q": "I (is / am) from New York.",
+    "opts": ["is", "am"],
+    "ans": ["am"]
+  },
+  {
+    "q": "(You / I) am very pleased to meet you.",
+    "opts": ["You", "I"],
+    "ans": ["I"]
+  },
+  {
+    "q": "(They / He) is over there.",
+    "opts": ["They", "He"],
+    "ans": ["He"]
+  },
+  {
+    "q": "My father (is / are) a cook.",
+    "opts": ["is", "are"],
+    "ans": ["is"]
+  },
+  {
+    "q": "His name (is / are) Brownie.",
+    "opts": ["is", "are"],
+    "ans": ["is"]
+  },
+  {
+    "q": "Hyanggyo (is / was) a school for boys long ago.",
+    "opts": ["is", "was"],
+    "ans": ["was"]
+  },
+  {
+    "q": "My best friend (is / are) pretty and smart, but I (is / am / are) not.",
+    "opts": ["is", "are", "am"],
+    "ans": ["is", "am"]
+  },
+  {
+    "q": "I (are / am) special.",
+    "opts": ["are", "am"],
+    "ans": ["am"]
+  },
+  {
+    "q": "(Everyone / They) is different.",
+    "opts": ["Everyone", "They"],
+    "ans": ["Everyone"]
+  },
+  {
+    "q": "Everyone (is / am) special.",
+    "opts": ["is", "am"],
+    "ans": ["is"]
+  },
+  {
+    "q": "It (are / is) chocolate ice cream, my favorite dessert.",
+    "opts": ["are", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "(We / It) is open from 8 a.m. to 5 p.m.",
+    "opts": ["We", "It"],
+    "ans": ["It"]
+  },
+  {
+    "q": "Brussels waffles (is / are) famous all around the world.",
+    "opts": ["is", "are"],
+    "ans": ["are"]
+  },
+  {
+    "q": "Anyone (are / is) welcome.",
+    "opts": ["are", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "They (was / were) delicious.",
+    "opts": ["was", "were"],
+    "ans": ["were"]
+  },
+  {
+    "q": "The water (are / was) very clear.",
+    "opts": ["are", "was"],
+    "ans": ["was"]
+  },
+  {
+    "q": "It (are / is / am) usually between 38℃ and 39℃.",
+    "opts": ["are", "is", "am"],
+    "ans": ["is"]
+  },
+  {
+    "q": "Our normal body temperature (are / is) about 36.5℃.",
+    "opts": ["are", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "This year's winner (am / was) Henk Angenent.",
+    "opts": ["am", "was"],
+    "ans": ["was"]
+  },
+  {
+    "q": "It (were / was) the first time in 11 years, since 1986.",
+    "opts": ["were", "was"],
+    "ans": ["was"]
+  },
+  {
+    "q": "Giok (was / is) born in Pyeongyang on January 11, 1901.",
+    "opts": ["was", "is"],
+    "ans": ["was"]
+  },
+  {
+    "q": "She (was / were) the first Korean female pilot.",
+    "opts": ["was", "were"],
+    "ans": ["was"]
+  },
+  {
+    "q": "My name (are / is) Junsu.",
+    "opts": ["are", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "(The radio / The radios) is my teacher!",
+    "opts": ["The radio", "The radios"],
+    "ans": ["The radio"]
+  },
+  {
+    "q": "(We / She) is my lovely pet.",
+    "opts": ["We", "She"],
+    "ans": ["She"]
+  },
+  {
+    "q": "The tail (are / is) like a blanket.",
+    "opts": ["are", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "Tails (is / are) useful in many different ways!",
+    "opts": ["is", "are"],
+    "ans": ["are"]
+  },
+  {
+    "q": "The punctuation marks (is / are) very important.",
+    "opts": ["is", "are"],
+    "ans": ["are"]
+  },
+  {
+    "q": "That (is / are) very stupid.",
+    "opts": ["is", "are"],
+    "ans": ["is"]
+  },
+  {
+    "q": "He (is / be) a really dangerous man.",
+    "opts": ["is", "be"],
+    "ans": ["is"]
+  },
+  {
+    "q": "My host family here in Seoul (is / are) really good to me.",
+    "opts": ["is", "are"],
+    "ans": ["is"]
+  },
+  {
+    "q": "(We're / We’s) in ancient Korea now.",
+    "opts": ["We're", "We’s"],
+    "ans": ["We're"]
+  },
+  {
+    "q": "The village (was / were) amazing.",
+    "opts": ["was", "were"],
+    "ans": ["was"]
+  },
+  {
+    "q": "My feet (is / are) on fire!",
+    "opts": ["is", "are"],
+    "ans": ["are"]
+  },
+  {
+    "q": "This (are / is) my new jacket.",
+    "opts": ["are", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "That boy's uniform (are / is) big.",
+    "opts": ["are", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "They (are / is) my new classmates.",
+    "opts": ["are", "is"],
+    "ans": ["are"]
+  },
+  {
+    "q": "(You / He) is my homeroom teacher.",
+    "opts": ["You", "He"],
+    "ans": ["He"]
+  },
+  {
+    "q": "He (is / are) ready for his part.",
+    "opts": ["is", "are"],
+    "ans": ["is"]
+  },
+  {
+    "q": "All the houses on the street (was / were) the same.",
+    "opts": ["was", "were"],
+    "ans": ["were"]
+  },
+  {
+    "q": "A big splash of orange paint (was / were) on the neat roof.",
+    "opts": ["was", "were"],
+    "ans": ["was"]
+  },
+  {
+    "q": "Her house (was / were) like a rainbow!",
+    "opts": ["was", "were"],
+    "ans": ["was"]
+  },
+  {
+    "q": "Gyeongbokgung (is / are) the first palace of the Joseon Dynasty.",
+    "opts": ["is", "are"],
+    "ans": ["is"]
+  },
+  {
+    "q": "My mom's tom yum goong (is / are) delicious.",
+    "opts": ["is", "are"],
+    "ans": ["is"]
+  },
+  {
+    "q": "My mother (were / is) from Thailand.",
+    "opts": ["were", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "Today (is / are) my first day at a Korean middle school.",
+    "opts": ["is", "are"],
+    "ans": ["is"]
+  },
+  {
+    "q": "(She / We) are in the same class!",
+    "opts": ["She", "We"],
+    "ans": ["We"]
+  },
+  {
+    "q": "Nadria and Seho (is / are) already good friends.",
+    "opts": ["is", "are"],
+    "ans": ["are"]
+  },
+  {
+    "q": "(This is / These are) a picture of me and my twin brother, Stan.",
+    "opts": ["This is", "These are"],
+    "ans": ["This is"]
+  },
+  {
+    "q": "(He's / He’re) a football player, and I'm a cheerleader.",
+    "opts": ["He's", "He’re"],
+    "ans": ["He's"]
+  },
+  {
+    "q": "My favorite thing (are / is) this comic book.",
+    "opts": ["are", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "All the stories (is / are) about two heroes.",
+    "opts": ["is", "are"],
+    "ans": ["are"]
+  },
+  {
+    "q": "Dancing (are / is) a lot of fun.",
+    "opts": ["are", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "We (is / are) here for you!",
+    "opts": ["is", "are"],
+    "ans": ["are"]
+  },
+  {
+    "q": "(Everything / all things) is ready and our guests (is / are) here.",
+    "opts": ["Everything", "all things", "is", "are"],
+    "ans": ["Everything", "are"]
+  },
+  {
+    "q": "(They / It) is famous for kangaroos and koalas.",
+    "opts": ["They", "It"],
+    "ans": ["It"]
+  },
+  {
+    "q": "She (are / is) a basketball player at school.",
+    "opts": ["are", "is"],
+    "ans": ["is"]
+  },
+  {
+    "q": "Lee Taeseok (am / are / is) a good example of a caring person.",
+    "opts": ["am", "are", "is"],
+    "ans": ["is"]
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, selected = [], results = [], userInfo = {};
+    function prepareQuiz() {
+        userInfo = { name: document.getElementById('name').value.trim() };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('question-text').innerText = item.q;
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+        const area = document.getElementById('options-area');
+        area.innerHTML = ''; selected = [];
+        item.opts.forEach(opt => {
+            const b = document.createElement('button');
+            b.className = 'btn-option'; b.innerText = opt;
+            b.onclick = () => {
+                b.classList.toggle('selected');
+                if (selected.includes(opt)) selected = selected.filter(s => s !== opt);
+                else selected.push(opt);
+            };
+            area.appendChild(b);
+        });
+    }
+    function submitAnswer() {
+        if (selected.length === 0) return alert("최소 하나 이상의 정답을 선택하세요.");
+        const item = quizSet[currentIdx];
+        const isCorrect = JSON.stringify([...selected].sort()) === JSON.stringify([...item.ans].sort());
+        results.push({ q: item.q, user: selected.join(", "), ans: item.ans.join(", "), isCorrect });
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('user-display').innerText = userInfo.name;
+        document.getElementById('final-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>Q: ${w.q}</strong><br>내 답: <span style="color:red">${w.user}</span> | 정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+    function downloadResult() {
+        const txt = `[테스트 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q}\n(답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_성적.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

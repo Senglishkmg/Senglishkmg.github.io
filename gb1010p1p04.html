@@ -1,0 +1,445 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GB101P1P04</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 600px; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); text-align: center; }
+        .hidden { display: none; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; margin-bottom: 20px; border-left: 4px solid var(--primary-color); }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #E2E8F0; border-radius: 8px; box-sizing: border-box; }
+        #sentence-display { min-height: 60px; padding: 15px; border: 2px dashed #CBD5E0; border-radius: 12px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; background: #fff; }
+        .word-chip { padding: 10px 16px; background: #EDF2F7; border-radius: 25px; cursor: pointer; font-weight: 600; transition: 0.2s; border: 1px solid #E2E8F0; user-select: none; }
+        .word-chip:hover { background: #E2E8F0; }
+        .word-chip.used { opacity: 0.3; cursor: default; pointer-events: none; }
+        .word-chip.in-sentence { background: var(--primary-color); color: white; border: none; }
+        #chips-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }
+        button.btn-main { width: 100%; padding: 16px; background: var(--primary-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button.btn-reset { background: #A0AEC0; margin-top: 5px; }
+        .korean-text { font-size: 1.1rem; font-weight: bold; color: #1A365D; margin-bottom: 15px; }
+        .progress-bar { width: 100%; height: 6px; background: #EDF2F7; border-radius: 3px; margin-bottom: 20px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>GB101P1P04</h2>
+        <div class="guide-box">순서 배열 테스트를 시작합니다.</div>
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="korean-text" id="korean-display"></div>
+        <div class="guide-box">💡 아래 단어들을 순서대로 클릭하여 문장을 완성하세요.</div>
+        <div id="sentence-display"></div>
+        <div id="chips-container"></div>
+        <button class="btn-main" id="submit-btn" onclick="submitAnswer()">정답 확인</button>
+        <button class="btn-main btn-reset" onclick="resetSentence()">지우기</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <h1 id="res-score" style="color:var(--primary-color);">0 / 10</h1>
+        <div id="wrong-list" style="text-align:left; font-size: 0.9rem; margin-top:20px;"></div>
+        <button class="btn-main" onclick="location.reload()">새 문제 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "korean": "오늘은 중학교 첫날이었다.",
+    "words": ["was", "middle school", "the first day", "today", "of"],
+    "answer": "Today was the first day of middle school"
+  },
+  {
+    "korean": "나는 신이 났지만 또한 긴장되었다.",
+    "words": ["excited", "but", "was", "also nervous", "I"],
+    "answer": "I was excited but also nervous"
+  },
+  {
+    "korean": "첫 시간은 나의 담임선생님인 장 선생님 시간이었다.",
+    "words": ["with", "my homeroom teacher, Mr. Jang", "the first class", "was"],
+    "answer": "The first class was with my homeroom teacher, Mr. Jang"
+  },
+  {
+    "korean": "그는 수학 선생님이시다.",
+    "words": ["math teacher", "is", "a", "he"],
+    "answer": "He is a math teacher"
+  },
+  {
+    "korean": "그들은 좋아, 하지만 나의 옛날 친구들이 보고 싶어.",
+    "words": ["are", "miss", "nice,", "but", "they", "I", "my old friends"],
+    "answer": "They are nice, but I miss my old friends"
+  },
+  {
+    "korean": "그녀의 어머니, 할머니, 창민, 미라, 그리고 심지어 삼촌까지 거기에 있습니다.",
+    "words": ["grandmother,", "even", "Changmin,", "her mother,", "Mira,", "there", "and", "her uncle", "are"],
+    "answer": "Her mother, grandmother, Changmin, Mira, and even her uncle are there"
+  },
+  {
+    "korean": "요가는 훌륭한 운동입니다.",
+    "words": ["is", "a", "exercise", "great", "yoga"],
+    "answer": "Yoga is a great exercise"
+  },
+  {
+    "korean": "그들은 굶주림과 질병으로 고통 받고 있습니다.",
+    "words": ["are", "hunger", "suffering from", "they", "and", "disease"],
+    "answer": "They are suffering from hunger and disease"
+  },
+  {
+    "korean": "많은 아이들이 죽어가고 있습니다.",
+    "words": ["children", "dying", "are", "many"],
+    "answer": "Many children are dying"
+  },
+  {
+    "korean": "나에게는 모든 것이 새롭다.",
+    "words": ["is", "new", "me", "everything", "to"],
+    "answer": "Everything is new to me"
+  },
+  {
+    "korean": "그녀는 매우 귀엽다.",
+    "words": ["cute", "is", "so", "she"],
+    "answer": "She is so cute"
+  },
+  {
+    "korean": "이 사람은 Ella Smith에요.",
+    "words": ["Ella Smith", "this", "is"],
+    "answer": "This is Ella Smith"
+  },
+  {
+    "korean": "나는 뉴욕에서 왔어.",
+    "words": ["New York", "I", "from", "am"],
+    "answer": "I am from New York"
+  },
+  {
+    "korean": "너희들을 만나게 돼서 정말 반가워.",
+    "words": ["you", "I'm", "pleased", "to", "very", "meet"],
+    "answer": "I'm very pleased to meet you"
+  },
+  {
+    "korean": "그는 저쪽에 있단다.",
+    "words": ["is", "over", "there", "he"],
+    "answer": "He is over there"
+  },
+  {
+    "korean": "향교는 옛날에 소년들을 위한 학교였어.",
+    "words": ["was", "long ago", "a school", "for", "hyanggyo", "boys"],
+    "answer": "Hyanggyo was a school for boys long ago"
+  },
+  {
+    "korean": "내 가장 친한 친구는 예쁘고 똑똑한데, 나는 그렇지 않아.",
+    "words": ["smart,", "is", "pretty", "and", "I'm", "my best friend", "but", "not"],
+    "answer": "My best friend is pretty and smart, but I'm not"
+  },
+  {
+    "korean": "모든 사람은 다릅니다.",
+    "words": ["is", "different", "everyone"],
+    "answer": "Everyone is different"
+  },
+  {
+    "korean": "모든 사람은 특별합니다.",
+    "words": ["is", "everyone", "special"],
+    "answer": "Everyone is special"
+  },
+  {
+    "korean": "그것은 내가 가장 좋아하는 후식인 초콜릿 아이스크림이야.",
+    "words": ["dessert", "is", "favorite", "chocolate ice cream,", "it", "my"],
+    "answer": "It is chocolate ice cream, my favorite dessert"
+  },
+  {
+    "korean": "그곳은 아침 8시부터 오후 5시까지 문을 열어.",
+    "words": ["5 p.m", "is", "to", "open", "from", "it", "8 a.m"],
+    "answer": "It is open from 8 a.m to 5 p.m"
+  },
+  {
+    "korean": "브뤼셀 와플은 전 세계적으로 유명하다.",
+    "words": ["are", "the world", "all", "Brussels waffles", "famous", "around"],
+    "answer": "Brussels waffles are famous all around the world"
+  },
+  {
+    "korean": "누구라도 환영합니다.",
+    "words": ["welcome", "anyone", "is"],
+    "answer": "Anyone is welcome"
+  },
+  {
+    "korean": "물이 정말 맑았다.",
+    "words": ["was", "clear", "very", "the water"],
+    "answer": "The water was very clear"
+  },
+  {
+    "korean": "스모어는 맛있었다.",
+    "words": ["s'mores", "delicious", "were"],
+    "answer": "s'mores were delicious"
+  },
+  {
+    "korean": "우리 몸의 정상 체온은 약 36.5℃이다.",
+    "words": ["normal", "about", "body temperature", "our", "is", "36.5°C"],
+    "answer": "Our normal body temperature is about 36.5°C"
+  },
+  {
+    "korean": "그것은 보통 38℃에서 39℃ 사이지.",
+    "words": ["usually", "and", "between", "it's", "38°C", "39°C"],
+    "answer": "It's usually between 38°C and 39°C"
+  },
+  {
+    "korean": "1986년 이후 11년 만에 처음이었다.",
+    "words": ["was", "11 years,", "1986", "the first time", "it", "in", "since"],
+    "answer": "It was the first time in 11 years, since 1986"
+  },
+  {
+    "korean": "올해 우승자는 Henk Angenent였다.",
+    "words": ["Henk Angenent", "winner", "this year's", "was"],
+    "answer": "This year's winner was Henk Angenent"
+  },
+  {
+    "korean": "그녀는 한국 최초의 여성 비행사였다.",
+    "words": ["she", "female pilot", "the", "first", "was", "Korean"],
+    "answer": "She was the first Korean female pilot"
+  },
+  {
+    "korean": "기옥은 1901년 1월 11일에 평양에서 태어났다.",
+    "words": ["was", "on", "born", "in", "January 11, 1901", "Giok", "Pyeongyang"],
+    "answer": "Giok was born in Pyeongyang on January 11, 1901"
+  },
+  {
+    "korean": "내 이름은 준수야.",
+    "words": ["is", "my name", "Junsu"],
+    "answer": "My name is Junsu"
+  },
+  {
+    "korean": "라디오가 나의 선생님이야!",
+    "words": ["my", "the radio", "teacher", "is"],
+    "answer": "The radio is my teacher"
+  },
+  {
+    "korean": "그녀는 나의 사랑스러운 애완견이다!",
+    "words": ["she", "my lovely pet", "is"],
+    "answer": "She is my lovely pet"
+  },
+  {
+    "korean": "그 꼬리는 담요 같다.",
+    "words": ["is", "a blanket", "like", "the tail"],
+    "answer": "The tail is like a blanket"
+  },
+  {
+    "korean": "그것은 매우 어리석은 짓이에요.",
+    "words": ["is", "stupid", "very", "that"],
+    "answer": "That is very stupid"
+  },
+  {
+    "korean": "그는 정말 위험한 남자야.",
+    "words": ["is", "a", "dangerous", "really", "he", "man"],
+    "answer": "He is a really dangerous man"
+  },
+  {
+    "korean": "여기 서울의 민박 주인 가족들이 제게 정말 잘 해줘요.",
+    "words": ["here", "in", "me", "my host family", "good", "is", "really", "Seoul", "to"],
+    "answer": "My host family here in Seoul is really good to me"
+  },
+  {
+    "korean": "우리는 지금 과거의 한국에 있어.",
+    "words": ["in", "we", "are", "now", "ancient Korea"],
+    "answer": "We are now in ancient Korea"
+  },
+  {
+    "korean": "그 마을은 정말 멋졌어요.",
+    "words": ["was", "the village", "amazing"],
+    "answer": "The village was amazing"
+  },
+  {
+    "korean": "이것이 내 새 재킷이다.",
+    "words": ["is", "jacket", "my", "this", "new"],
+    "answer": "This is my new jacket"
+  },
+  {
+    "korean": "저 소년의 교복은 크구나.",
+    "words": ["uniform", "that boy's", "big", "is"],
+    "answer": "That boy's uniform is big"
+  },
+  {
+    "korean": "그들은 나의 새로운 반 친구들이다.",
+    "words": ["are", "classmates", "my", "new", "they"],
+    "answer": "They are my new classmates"
+  },
+  {
+    "korean": "그는 나의 담임선생님이시다.",
+    "words": ["is", "teacher", "my", "he", "homeroom"],
+    "answer": "He is my homeroom teacher"
+  },
+  {
+    "korean": "그는 자신의 파트를 부를 준비가 되었다.",
+    "words": ["ready", "he", "is", "his part", "for"],
+    "answer": "He is ready for his part"
+  },
+  {
+    "korean": "그 거리에 있는 모든 집들은 똑같았다.",
+    "words": ["the houses", "the same", "on the street", "all", "were"],
+    "answer": "All the houses on the street were the same"
+  },
+  {
+    "korean": "커다란 오렌지색 페인트 얼룩이 깔끔한 지붕에 있었다.",
+    "words": ["of", "on", "orange paint", "the neat roof", "a big splash", "was"],
+    "answer": "A big splash of orange paint was on the neat roof"
+  },
+  {
+    "korean": "그녀의 집은 무지개 같았다!",
+    "words": ["was", "house", "like", "her", "a rainbow"],
+    "answer": "Her house was like a rainbow"
+  },
+  {
+    "korean": "경복은 조선왕조의 첫 번째 궁전이에요.",
+    "words": ["is", "the Joseon Dynasty", "Gyeongbokgung", "the first palace", "of"],
+    "answer": "Gyeongbokgung is the first palace of the Joseon Dynasty"
+  },
+  {
+    "korean": "저의 엄마의 똠양꿍은 맛있습니다.",
+    "words": ["tom yum goong", "my mom's", "delicious", "is"],
+    "answer": "My mom's tom yum goong is delicious"
+  },
+  {
+    "korean": "저의 어머니는 태국 출신이십니다.",
+    "words": ["from", "my mother", "Thailand", "is"],
+    "answer": "My mother is from Thailand"
+  },
+  {
+    "korean": "오늘은 한국 중학교에서의 제 첫날입니다.",
+    "words": ["is", "a Korean middle school", "my first day", "today", "at"],
+    "answer": "Today is my first day at a Korean middle school"
+  },
+  {
+    "korean": "저는 매우 걱정이 됩니다.",
+    "words": ["am", "I", "worried", "very"],
+    "answer": "I am very worried"
+  },
+  {
+    "korean": "저는 이 중학교에 새로 들어왔어요.",
+    "words": ["new", "this middle school", "here", "I'm", "in"],
+    "answer": "I'm new here in this middle school"
+  },
+  {
+    "korean": "우리 같은 반이구나!",
+    "words": ["class", "are", "in", "we", "the same"],
+    "answer": "We are in the same class"
+  },
+  {
+    "korean": "Nadira와 세호는 이미 좋은 친구입니다.",
+    "words": ["and", "good friends", "Seho", "are", "already", "Nadria"],
+    "answer": "Nadria and Seho are already good friends"
+  },
+  {
+    "korean": "그것 또한 신나요.",
+    "words": ["too", "is", "it", "exciting,"],
+    "answer": "It is exciting, too"
+  },
+  {
+    "korean": "이것은 저와 제 쌍둥이 오빠 Stan의 사진입니다.",
+    "words": ["and", "is", "a picture", "this", "of", "my twin brother, Stan", "me"],
+    "answer": "This is a picture of my twin brother, Stan and me"
+  },
+  {
+    "korean": "그는 미식축구 선수이고, 저는 치어리더예요.",
+    "words": ["is", "am", "a football player,", "a cheerleader", "he", "and", "I"],
+    "answer": "He is a football player, and I am a cheerleader"
+  },
+  {
+    "korean": "제가 가장 좋아하는 것은 이 만화책이에요.",
+    "words": ["favorite", "comic book", "thing", "is", "my", "this"],
+    "answer": "My favorite thing is this comic book"
+  },
+  {
+    "korean": "모든 이야기들은 두 명의 영웅에 관한 것이에요.",
+    "words": ["the stories", "two heroes", "are", "all", "about"],
+    "answer": "The stories are all about two heroes"
+  },
+  {
+    "korean": "나는 요리를 잘해.",
+    "words": ["I", "cooking", "good", "at", "am"],
+    "answer": "I am good at cooking"
+  },
+  {
+    "korean": "춤추는 것은 매우 재미있어요.",
+    "words": ["fun", "is", "a lot of", "dancing"],
+    "answer": "Dancing is a lot of fun"
+  },
+  {
+    "korean": "우리는 당신을 위해 여기 있습니다!",
+    "words": ["are", "you", "we", "here", "for"],
+    "answer": "We are here for you"
+  },
+  {
+    "korean": "호주는 캥거루와 코알라로 유명합니다.",
+    "words": ["is", "kangaroos and koalas", "famous", "Australia", "for"],
+    "answer": "Australia is famous for kangaroos and koalas"
+  },
+  {
+    "korean": "그녀는 학교의 농구 선수입니다.",
+    "words": ["a basketball player", "she", "at school", "is"],
+    "answer": "She is a basketball player at school"
+  },
+  {
+    "korean": "이태석은 배려하는 사람의 좋은 본보기이다.",
+    "words": ["a caring person", "a good example", "is", "Lee Taeseok", "of"],
+    "answer": "Lee Taeseok is a good example of a caring person"
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, currentWords = [];
+    function prepareQuiz() {
+        const name = document.getElementById('name').value;
+        if (!name) return alert("이름을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+    function loadQuestion() {
+        if (currentIdx >= 10) return finishQuiz();
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = item.korean;
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+        resetSentence();
+    }
+    function resetSentence() {
+        currentWords = [];
+        const container = document.getElementById('chips-container');
+        const display = document.getElementById('sentence-display');
+        container.innerHTML = ''; display.innerHTML = '';
+        const shuffled = [...quizSet[currentIdx].words].sort(() => Math.random() - 0.5);
+        shuffled.forEach(w => {
+            const chip = document.createElement('div');
+            chip.className = 'word-chip'; chip.innerText = w;
+            chip.onclick = () => addWord(chip, w);
+            container.appendChild(chip);
+        });
+    }
+    function addWord(chip, word) {
+        if (chip.classList.contains('used')) return;
+        chip.classList.add('used'); currentWords.push(word);
+        const displayChip = document.createElement('div');
+        displayChip.className = 'word-chip in-sentence';
+        displayChip.innerText = word;
+        document.getElementById('sentence-display').appendChild(displayChip);
+    }
+    function submitAnswer() {
+        const userSentence = currentWords.join(" ").replace(/ ,/g, ",").replace(/ ./g, ".");
+        const correctSentence = quizSet[currentIdx].answer;
+        if (userSentence.toLowerCase() === correctSentence.toLowerCase()) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-score').innerText = score + " / 10";
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GB101P1P02</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 550px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 70% !important; display: inline-block !important; text-align: center; font-size: 1.1rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 10px; }
+        #korean-display { font-size: 1.25rem; font-weight: 800; color: #1A365D; margin-bottom: 15px; word-break: keep-all; line-height: 1.5; }
+        #question-display { font-size: 1.35rem; font-weight: 700; color: #2D3748; margin: 30px 0; line-height: 1.8; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+        .wrong-q { font-weight: bold; margin-bottom: 8px; display: block; }
+        .wrong-compare { font-size: 0.9rem; }
+        .my-ans { color: var(--wrong-color); font-weight: bold; margin-right: 10px; }
+        .correct-ans { color: var(--correct-color); font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>GB101P1P02</h2>
+        <div class="guide-box">한글 해석과 영어 문장을 확인한 후, 빈칸에 들어갈 알맞은 단어를 입력하세요.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 해석에 맞게 빈칸에 알맞은 단어(구)를 입력하시오.</div>
+        <div id="korean-display"></div>
+        <div id="question-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="여기에 정답 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "korean": "오늘은 중학교 첫날이었다.",
+    "question": "Today ______ the first day of middle school.",
+    "answer": ["was"]
+  },
+  {
+    "korean": "나는 신이 났지만 또한 긴장되었다.",
+    "question": "I ______ excited but also nervous.",
+    "answer": ["was"]
+  },
+  {
+    "korean": "첫 시간은 담임선생님인 장 선생님 시간이었다.",
+    "question": "The first class ______ with my homeroom teacher, Mr. Jang.",
+    "answer": ["was"]
+  },
+  {
+    "korean": "그는 수학 선생님이시다.",
+    "question": "He ______ a math teacher.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "그들은 좋아, 하지만 옛날 친구들이 보고 싶어.",
+    "question": "They ______ nice, but I miss my old friends.",
+    "answer": ["are"]
+  },
+  {
+    "korean": "나에게는 모든 것이 새롭다.",
+    "question": "Everything ______ new to me.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "어머니, 할머니, 창민, 미라, 그리고 심지어 삼촌까지 거기에 있습니다.",
+    "question": "Her mother, grandmother, Changmin, Mira, and even her uncle ______ there.",
+    "answer": ["are"]
+  },
+  {
+    "korean": "요가는 훌륭한 운동입니다.",
+    "question": "Yoga ______ a great exercise.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "그들은 굶주림과 질병으로 고통 받고 있습니다.",
+    "question": "They ______ suffering from hunger and disease.",
+    "answer": ["are"]
+  },
+  {
+    "korean": "많은 아이들이 충분한 물, 음식, 또는 약이 없어서 죽어가고 있습니다.",
+    "question": "Many children ______ dying because they don't have enough water, food, or medicine.",
+    "answer": ["are"]
+  },
+  {
+    "korean": "난 늦었어.",
+    "question": "I ______ late.",
+    "answer": ["am", "'m"]
+  },
+  {
+    "korean": "그녀는 참 귀엽다.",
+    "question": "______ so cute.",
+    "answer": ["She is", "She's"]
+  },
+  {
+    "korean": "이 학생은 Ella Smith에요.",
+    "question": "This ______ Ella Smith.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "나는 Ella Smith야.",
+    "question": "______ Ella Smith.",
+    "answer": ["I am", "I'm"]
+  },
+  {
+    "korean": "나는 뉴욕에서 왔어.",
+    "question": "______ from New York.",
+    "answer": ["I am", "I'm"]
+  },
+  {
+    "korean": "그는 저쪽에 있단다.",
+    "question": "______ over there.",
+    "answer": ["He is", "He's"]
+  },
+  {
+    "korean": "아빠는 요리사에요.",
+    "question": "My father ______ a cook.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "그의 이름은 Brownie에요.",
+    "question": "His name ______ Brownie.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "향교는 옛날에 소년들을 위한 학교였어.",
+    "question": "Hyanggyo ______ a school for boys long ago.",
+    "answer": ["was"]
+  },
+  {
+    "korean": "내 친한 친구는 예쁘고 똑똑한데, 나는 그렇지 않아.",
+    "question": "My best friend ______ pretty and smart, but I ______ not.",
+    "answer": ["is", "am"]
+  },
+  {
+    "korean": "모든 사람은 다릅니다.",
+    "question": "Everyone ______ different.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "모든 사람은 특별합니다.",
+    "question": "Everyone ______ special.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "그것은 초콜릿 아이스크림인데 내가 가장 좋아하는 후식이야.",
+    "question": "______ chocolate ice cream, my favorite dessert.",
+    "answer": ["It is", "It's"]
+  },
+  {
+    "korean": "그곳은 아침 8시부터 오후 5시까지 문을 열어.",
+    "question": "______ open from 8 a.m. to 5 p.m.",
+    "answer": ["It is", "It's"]
+  },
+  {
+    "korean": "브뤼셀 와플은 전 세계적으로 유명하다.",
+    "question": "Brussels waffles ______ famous all around the world.",
+    "answer": ["are"]
+  },
+  {
+    "korean": "누구라도 환영합니다.",
+    "question": "Anyone ______ welcome.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "물이 정말 맑았다.",
+    "question": "The water ______ very clear.",
+    "answer": ["was"]
+  },
+  {
+    "korean": "그것들은 맛있었다.",
+    "question": "They ______ delicious.",
+    "answer": ["were"]
+  },
+  {
+    "korean": "우리 몸의 정상 체온은 약 36.5℃이다.",
+    "question": "Our normal body temperature ______ about 36.5℃.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "보통 38℃에서 39℃ 사이지.",
+    "question": "It ______ usually between 38℃ and 39℃.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "1986년 이후 11년 만에 처음이었다.",
+    "question": "It ______ the first time in 11 years, since 1986.",
+    "answer": ["was"]
+  },
+  {
+    "korean": "올해 우승자는 Henk Angenent였다.",
+    "question": "This year's winner ______ Henk Angenent.",
+    "answer": ["was"]
+  },
+  {
+    "korean": "그녀는 한국 최초의 여성 비행사였다.",
+    "question": "She ______ the first Korean female pilot.",
+    "answer": ["was"]
+  },
+  {
+    "korean": "기옥은 1901년 1월 11일에 평양에서 태어났다.",
+    "question": "Giok ______ born in Pyeongyang on January 11, 1901.",
+    "answer": ["was"]
+  },
+  {
+    "korean": "내 이름은 준수야.",
+    "question": "My name ______ Junsu.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "라디오가 나의 선생님이야!",
+    "question": "The radio ______ my teacher!",
+    "answer": ["is"]
+  },
+  {
+    "korean": "그녀는 나의 사랑스러운 애완견이다!",
+    "question": "She ______ my lovely pet!",
+    "answer": ["is"]
+  },
+  {
+    "korean": "그 꼬리는 담요와 같다.",
+    "question": "The tail ______ like a blanket.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "꼬리는 많은 다양한 방식으로 유용하구나!",
+    "question": "Tails ______ useful in many different ways!",
+    "answer": ["are"]
+  },
+  {
+    "korean": "문장 부호들은 매우 중요하단다.",
+    "question": "The punctuation marks ______ very important.",
+    "answer": ["are"]
+  },
+  {
+    "korean": "그것은 매우 어리석은 짓이에요.",
+    "question": "That ______ very stupid.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "그는 정말 위험한 남자야.",
+    "question": "He ______ a really dangerous man.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "여기 서울의 민박 주인 가족들이 제게 정말 잘 해줘요.",
+    "question": "My host family here in Seoul ______ really good to me.",
+    "answer": ["is", "are"]
+  },
+  {
+    "korean": "우리는 지금 과거의 한국에 있어.",
+    "question": "We ______ in ancient Korea now.",
+    "answer": ["are"]
+  },
+  {
+    "korean": "그 마을은 정말 멋졌어요.",
+    "question": "The village ______ amazing.",
+    "answer": ["was"]
+  },
+  {
+    "korean": "이것이 내 새 재킷이다.",
+    "question": "This ______ my new jacket.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "저 남학생의 교복은 크구나.",
+    "question": "That boy's uniform ______ big.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "그들은 나의 새로운 반 친구들이다.",
+    "question": "______ my new classmates.",
+    "answer": ["They are", "They're"]
+  },
+  {
+    "korean": "그는 나의 담임선생님이시다.",
+    "question": "______ my homeroom teacher.",
+    "answer": ["He is", "He's"]
+  },
+  {
+    "korean": "그는 자신의 파트를 부를 준비가 되었다.",
+    "question": "He ______ ready for his part.",
+    "answer": ["was", "is"]
+  },
+  {
+    "korean": "그 거리에 있는 모든 집들은 똑같았다.",
+    "question": "All the houses on the street ______ the same.",
+    "answer": ["were"]
+  },
+  {
+    "korean": "커다란 오렌지색 페인트 얼룩이 깔끔한 지붕에 생겼다.",
+    "question": "A big splash of orange paint ______ on the neat roof.",
+    "answer": ["was", "is"]
+  },
+  {
+    "korean": "그녀의 집은 무지개 같았다!",
+    "question": "Her house ______ like a rainbow!",
+    "answer": ["was"]
+  },
+  {
+    "korean": "경복궁은 조선왕조의 첫 번째 궁전이에요.",
+    "question": "Gyeongbokgung ______ the first palace of the Joseon Dynasty.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "저의 엄마의 똠양꿍은 맛있습니다.",
+    "question": "My mom's tom yum goong ______ delicious.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "저의 어머니는 태국 출신이십니다.",
+    "question": "My mother ______ from Thailand.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "오늘은 한국 중학교에서의 첫날입니다.",
+    "question": "Today ______ my first day at a Korean middle school.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "저는 매우 걱정이 됩니다.",
+    "question": "______ very worried.",
+    "answer": ["I am", "I'm"]
+  },
+  {
+    "korean": "우리 같은 반이구나!",
+    "question": "______ in the same class!",
+    "answer": ["We are", "We're"]
+  },
+  {
+    "korean": "Nadira와 세호는 이미 좋은 친구입니다.",
+    "question": "Nadria and Seho ______ already good friends.",
+    "answer": ["are"]
+  },
+  {
+    "korean": "이것은 저와 제 쌍둥이 오빠 Stan의 사진입니다.",
+    "question": "This ______ a picture of me and my twin brother, Stan.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "그는 미식축구 선수이고, 저는 치어리더예요.",
+    "question": "______ a football player, and I'm a cheerleader.",
+    "answer": ["He is", "He's"]
+  },
+  {
+    "korean": "제가 가장 좋아하는 것은 이 만화책이에요.",
+    "question": "My favorite thing ______ this comic book.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "모든 이야기들은 두 명의 영웅에 관한 것이에요.",
+    "question": "All the stories ______ about two heroes.",
+    "answer": ["are"]
+  },
+  {
+    "korean": "나는 키가 크고 농구를 잘해.",
+    "question": "I ______ tall and I ______ good at basketball.",
+    "answer": ["am", "am"]
+  },
+  {
+    "korean": "나는 요리를 잘해.",
+    "question": "I ______ good at cooking.",
+    "answer": ["am", "'m"]
+  },
+  {
+    "korean": "춤추는 것은 매우 재미있어요.",
+    "question": "Dancing ______ a lot of fun.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "우리는 당신을 위해 여기 있습니다!",
+    "question": "We ______ here for you!",
+    "answer": ["are"]
+  },
+  {
+    "korean": "모든 것이 준비되어 있고 손님들도 여기에 와 계십니다.",
+    "question": "Everything ______ ready and our guests ______ here.",
+    "answer": ["is", "are"]
+  },
+  {
+    "korean": "호주는 캥거루와 코알라로 유명합니다.",
+    "question": "Australia ______ famous for kangaroos and koalas.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "그녀는 학교의 농구 선수입니다.",
+    "question": "She ______ a basketball player at school.",
+    "answer": ["is"]
+  },
+  {
+    "korean": "이태석은 배려하는 사람의 좋은 본보기이다.",
+    "question": "Lee Taeseok ______ a good example of a caring person.",
+    "answer": ["is"]
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = item.korean || '';
+        document.getElementById('question-display').innerText = item.question;
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        const isCorrect = item.answer.some(ans => ans.toLowerCase().replace(/\s+/g, ' ') === userInputVal.toLowerCase().replace(/\s+/g, ' '));
+        results.push({ q: item.question, k: item.korean, user: userInputVal, ans: item.answer.join(" / "), isCorrect });
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>${w.k ? w.k + '<br>' : ''}${w.q}</strong><br>내 답: <span style="color:red">${w.user}</span> | 정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+    function downloadResult() {
+        const txt = `[빈칸쓰기주관식 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.k ? r.k + ' -> ' : ''}${r.q} (답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_빈칸쓰기주관식.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

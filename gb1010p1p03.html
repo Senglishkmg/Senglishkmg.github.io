@@ -1,0 +1,376 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GB101P1P03</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 90% !important; display: inline-block !important; text-align: center; font-size: 1.15rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 20px; }
+        #original-display { font-size: 1.35rem; font-weight: 800; color: #1A365D; margin-bottom: 10px; word-break: keep-all; line-height: 1.5; }
+        #condition-display { font-size: 1.25rem; font-weight: 700; color: #E53E3E; margin: 15px 0 30px 0; line-height: 1.8; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+        .wrong-q { font-weight: bold; margin-bottom: 8px; display: block; }
+        .my-ans { color: var(--wrong-color); font-weight: bold; margin-right: 10px; }
+        .correct-ans { color: var(--correct-color); font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>GB101P1P03</h2>
+        <div class="guide-box">주어진 영어 문장을 지시어 조건에 맞게 알맞은 문장으로 변형하여 입력하세요.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 조건에 맞게 영어 문장을 변형하여 완성하시오.</div>
+        <div id="original-display"></div>
+        <div id="condition-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="여기에 변형된 문장 전체 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "q": "Today was the first day of middle school.",
+    "condition": "(현재형으로)",
+    "ans": "Today is the first day of middle school."
+  },
+  {
+    "q": "I was excited but also nervous.",
+    "condition": "(현재형으로)",
+    "ans": "I am excited but also nervous."
+  },
+  {
+    "q": "The first class was with my homeroom teacher, Mr. Jang.",
+    "condition": "(현재형으로)",
+    "ans": "The first class is with my homeroom teacher, Mr. Jang."
+  },
+  {
+    "q": "He is a math teacher.",
+    "condition": "(주어를 I로)",
+    "ans": "I am a math teacher."
+  },
+  {
+    "q": "They are nice.",
+    "condition": "(과거형으로)",
+    "ans": "They were nice."
+  },
+  {
+    "q": "Everything is new to me.",
+    "condition": "(과거형으로)",
+    "ans": "Everything was new to me."
+  },
+  {
+    "q": "Her mother, grandmother, Changmin, Mira, and even her uncle are there.",
+    "condition": "(과거형으로)",
+    "ans": "Her mother, grandmother, Changmin, Mira, and even her uncle were there."
+  },
+  {
+    "q": "Yoga is a great exercise.",
+    "condition": "(주어를 It으로)",
+    "ans": "It is a great exercise."
+  },
+  {
+    "q": "They are suffering from hunger and disease.",
+    "condition": "(과거형으로)",
+    "ans": "They were suffering from hunger and disease."
+  },
+  {
+    "q": "He was not happy for most of his life.",
+    "condition": "(주어를 She로)",
+    "ans": "She was not happy for most of her life."
+  },
+  {
+    "q": "I’m late.",
+    "condition": "(과거형으로)",
+    "ans": "I was late."
+  },
+  {
+    "q": "She's so cute.",
+    "condition": "(주어를 They로, 과거형으로)",
+    "ans": "They were so cute."
+  },
+  {
+    "q": "I'm Ella Smith.",
+    "condition": "(주어를 You로)",
+    "ans": "You're Ella Smith."
+  },
+  {
+    "q": "I'm from New York.",
+    "condition": "(주어를 We로)",
+    "ans": "We're from New York."
+  },
+  {
+    "q": "He's over there.",
+    "condition": "(주어를 They로)",
+    "ans": "They're over there."
+  },
+  {
+    "q": "My father is a cook.",
+    "condition": "(주어를 My mother로)",
+    "ans": "My mother is a cook."
+  },
+  {
+    "q": "His name is Brownie.",
+    "condition": "(His를 Her로)",
+    "ans": "Her name is Brownie."
+  },
+  {
+    "q": "I am special.",
+    "condition": "(주어를 It으로)",
+    "ans": "It is special."
+  },
+  {
+    "q": "Everyone is different.",
+    "condition": "(과거형으로)",
+    "ans": "Everyone was different."
+  },
+  {
+    "q": "It’s open from 8 a.m. to 5 p.m.",
+    "condition": "(주어를 We로)",
+    "ans": "We're open from 8 a.m. to 5 p.m."
+  },
+  {
+    "q": "Anyone is welcome.",
+    "condition": "(주어를 You로)",
+    "ans": "You are welcome."
+  },
+  {
+    "q": "The water was very clear.",
+    "condition": "(현재형으로)",
+    "ans": "The water is very clear."
+  },
+  {
+    "q": "They were delicious.",
+    "condition": "(주어를 Each dish로)",
+    "ans": "Each dish was delicious."
+  },
+  {
+    "q": "Our normal body temperature is about 36.5℃.",
+    "condition": "(과거형으로)",
+    "ans": "Our normal body temperature was about 36.5℃."
+  },
+  {
+    "q": "It's usually between 38℃ and 39℃.",
+    "condition": "(주어를 They로)",
+    "ans": "They're usually between 38℃ and 39℃."
+  },
+  {
+    "q": "She was the first Korean female pilot.",
+    "condition": "(주어를 I로)",
+    "ans": "I was the first Korean female pilot."
+  },
+  {
+    "q": "Giok was born in Pyeongyang on January 11, 1901.",
+    "condition": "(주어를 I로)",
+    "ans": "I was born in Pyeongyang on January 11, 1901."
+  },
+  {
+    "q": "She is my lovely pet.",
+    "condition": "(주어를 It으로)",
+    "ans": "It is my lovely pet."
+  },
+  {
+    "q": "That's very stupid.",
+    "condition": "(과거형으로)",
+    "ans": "That was very stupid."
+  },
+  {
+    "q": "He is a really dangerous man.",
+    "condition": "(주어를 The boy로)",
+    "ans": "The boy is a really dangerous man."
+  },
+  {
+    "q": "My host family here in Seoul is really good to me.",
+    "condition": "(과거형으로)",
+    "ans": "My host family here in Seoul was really good to me."
+  },
+  {
+    "q": "We're in ancient Korea now.",
+    "condition": "(주어를 I로)",
+    "ans": "I'm in ancient Korea now."
+  },
+  {
+    "q": "The village was amazing.",
+    "condition": "(주어를 The villages로)",
+    "ans": "The villages were amazing."
+  },
+  {
+    "q": "He's my homeroom teacher.",
+    "condition": "(과거형으로)",
+    "ans": "He was my homeroom teacher."
+  },
+  {
+    "q": "He is ready for his part.",
+    "condition": "(과거형으로)",
+    "ans": "He was ready for his part."
+  },
+  {
+    "q": "All the houses on the street were the same.",
+    "condition": "(주어를 The house로)",
+    "ans": "The house on the street was the same."
+  },
+  {
+    "q": "A big splash of orange paint was on the neat roof.",
+    "condition": "(현재형으로)",
+    "ans": "A big splash of orange paint is on the neat roof."
+  },
+  {
+    "q": "Her house was like a rainbow!",
+    "condition": "(현재형으로)",
+    "ans": "Her house is like a rainbow!"
+  },
+  {
+    "q": "Today is my first day at a Korean middle school.",
+    "condition": "(과거형으로)",
+    "ans": "Today was my first day at a Korean middle school."
+  },
+  {
+    "q": "I'm very worried.",
+    "condition": "(주어를 They로, 과거형으로)",
+    "ans": "They were very worried."
+  },
+  {
+    "q": "I'm new here in this middle school.",
+    "condition": "(주어를 She로)",
+    "ans": "She's new here in this middle school."
+  },
+  {
+    "q": "We're in the same class!",
+    "condition": "(과거형으로)",
+    "ans": "We were in the same class!"
+  },
+  {
+    "q": "I am tall and I am good at basketball.",
+    "condition": "(주어를 My sister로)",
+    "ans": "My sister is tall and she is good at basketball."
+  },
+  {
+    "q": "I am good at cooking.",
+    "condition": "(주어를 They로)",
+    "ans": "They are good at cooking."
+  },
+  {
+    "q": "We are here for you!",
+    "condition": "(주어를 I로)",
+    "ans": "I am here for you!"
+  },
+  {
+    "q": "I’m fourteen years old.",
+    "condition": "(주어를 She로)",
+    "ans": "She's fourteen years old."
+  },
+  {
+    "q": "It is famous for kangaroos and koalas.",
+    "condition": "(주어를 We로)",
+    "ans": "We are famous for kangaroos and koalas."
+  },
+  {
+    "q": "She is a basketball player at school.",
+    "condition": "(주어를 He로, 과거형으로)",
+    "ans": "He was a basketball player at school."
+  },
+  {
+    "q": "Lee Taeseok is a good example of a caring person.",
+    "condition": "(과거형으로)",
+    "ans": "Lee Taeseok was a good example of a caring person."
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    
+    function normalize(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/[.,?!~']/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('original-display').innerText = item.q || '';
+        document.getElementById('condition-display').innerText = item.condition || '';
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        const isCorrect = normalize(item.ans) === normalize(userInputVal);
+        results.push({ q: item.q, cond: item.condition, user: userInputVal, ans: item.ans, isCorrect });
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>${w.q} ${w.cond}</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+    function downloadResult() {
+        const txt = `[조건부 문장변형 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q} ${r.cond} -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_조건부_문장변형.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>
