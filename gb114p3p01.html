@@ -1,0 +1,468 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gb114p3p01</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 550px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
+        .hidden { display: none; }
+        .guide-box { background: var(--secondary-bg); padding: 15px; border-radius: 10px; font-size: 0.95rem; margin-bottom: 20px; border-left: 5px solid var(--primary-color); text-align: left; }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #E2E8F0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-bottom: 10px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-option { background-color: #FFFFFF; color: #4A5568; border: 2px solid #EDF2F7; }
+        .btn-option.selected { border-color: var(--primary-color); background-color: #EBF8FF; color: var(--primary-color); }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 10px; }
+        #question-text { font-size: 1.3rem; font-weight: 700; margin: 30px 0; line-height: 1.6; min-height: 80px; display: flex; align-items: center; justify-content: center; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid var(--wrong-color); text-align: left; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>gb114p3p01</h2>
+        <div class="guide-box">학생 정보를 입력한 후 시험을 시작하세요.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 괄호 안에서 알맞은 것을 고르시오. (정답이 여러 개인 경우 모두 선택)</div>
+        <div id="question-text"></div>
+        <div id="options-area"></div>
+        <button class="btn-submit" onclick="submitAnswer()">정답 제출</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="user-display"></strong> 학생</div>
+        <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary-color); margin-bottom: 20px;"><span id="final-score">0</span> / 10</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 노트</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; color:#A0AEC0; border:none; cursor:pointer;" onclick="location.reload()">다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "q": "I didn't think (it / that) Rachel would like gimchi.",
+    "opts": ["it", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "I didn't know (that / because) my legs were so short.",
+    "opts": ["that", "because"],
+    "ans": ["that"]
+  },
+  {
+    "q": "The paper cup doesn't catch on fire (that / because) the heat moves quickly from the cup to the water.",
+    "opts": ["that", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "So people didn't know (that / if) he was the king.",
+    "opts": ["that", "if"],
+    "ans": ["that"]
+  },
+  {
+    "q": "Homework is helpful (because / that) I don't have to study much for exams.",
+    "opts": ["because", "that"],
+    "ans": ["because"]
+  },
+  {
+    "q": "So I like homework (that / because) I can take my time.",
+    "opts": ["that", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "Homework gives me too much stress (that / because) the teacher grades my homework.",
+    "opts": ["that", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "We thought (because / that) it was a bear.",
+    "opts": ["because", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "(If / Because) they have to finish before midnight, the race usually starts very early in the morning.",
+    "opts": ["If", "Because"],
+    "ans": ["Because"]
+  },
+  {
+    "q": "The race does not take place every year (if / because) the ice must be at least 15 centimeters thick.",
+    "opts": ["if", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "Only one percent of the skaters finished the race (if / because) it was very cold and windy.",
+    "opts": ["if", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "I want to fly (if / because) I want to fight for my country.",
+    "opts": ["if", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "Mr. Nikumbh, the art teacher, learns from Rajan (if / that) Ishaan has a reading problem.",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "Always remember (it / that) you are special.",
+    "opts": ["it", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "Russians believe (if / that) it will bring bad luck.",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "The cook will think (that / because) you don't like the food.",
+    "opts": ["that", "because"],
+    "ans": ["that"]
+  },
+  {
+    "q": "The host will think (it / that) you are still hungry.",
+    "opts": ["it", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "Many children are dying (that / because) they don't have enough water, food, or medicine.",
+    "opts": ["that", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "The orange sinks (that / because) the orange is now denser than the water.",
+    "opts": ["that", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "British people believe (if / that) the first visitor on New Year's Day will determine the luck of the year.",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "They believe (if / that) anything in the shape of a ring will bring good luck (if / because) it symbolizes the completion of a year.",
+    "opts": ["if", "that", "because"],
+    "ans": ["that", "because"]
+  },
+  {
+    "q": "Chinese people think (if / that) red brings fortune and happiness.",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "The father penguin has to go without eating for two months (that / because) there is no food on the ice.",
+    "opts": ["that", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "It's softer than a baguette (that / because) it has a lot of thin layers.",
+    "opts": ["that", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "Its pocket occurs (that / because) the baking temperature is very high.",
+    "opts": ["that", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "It is chewier than other bread (that / because) the bakers put it into boiling water before baking.",
+    "opts": ["that", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "Most brown hens are bigger than white ones (if / because) they eat more.",
+    "opts": ["if", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "(That / Because) the other half doesn't sleep, they can go up to the surface to breathe.",
+    "opts": ["That", "Because"],
+    "ans": ["Because"]
+  },
+  {
+    "q": "Polar bears' black skin keeps them warm (if / because) it takes in the warm light of the sun.",
+    "opts": ["if", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "But we can't see polar bears' black skin (if / because) they have so much white fur.",
+    "opts": ["if", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "I hope (that / if) you can help me, Santa.",
+    "opts": ["that", "if"],
+    "ans": ["that"]
+  },
+  {
+    "q": "I hope (that / if) no one feels sad or lonely.",
+    "opts": ["that", "if"],
+    "ans": ["that"]
+  },
+  {
+    "q": "Many students laugh at me (if / because) I can't walk or speak well.",
+    "opts": ["if", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "(That / If) you did, that's good for you.",
+    "opts": ["That", "If"],
+    "ans": ["If"]
+  },
+  {
+    "q": "If you (finish / will finish) one, you will feel confident and proud of yourself.",
+    "opts": ["finish", "will finish"],
+    "ans": ["finish"]
+  },
+  {
+    "q": "The sea water is dirty (that / because) people throw away too much trash.",
+    "opts": ["that", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "I think (if / that) this is the best movie ever!",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "So, people thought (what / that) Jamaicans couldn't take part in the bobsled race.",
+    "opts": ["what", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "Did you know (because / that) Manhattan is a large island in New York?",
+    "opts": ["because", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "Make sure (because / that) you don't take photos with flash inside the museum.",
+    "opts": ["because", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "With this tradition, people believe (if / that) they can fall in love.",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "They think (if / that) the buyers feel happy with the fresh bread smell in the house.",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "I think (because / that) it is more interesting than the Snowboard Cross race.",
+    "opts": ["because", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "People don't make clothes with paper (if / because) it is not strong.",
+    "opts": ["if", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "Hanji is strong (if / because) we make it from the tough bark of the dak tree.",
+    "opts": ["if", "because"],
+    "ans": ["because"]
+  },
+  {
+    "q": "I think (if / that) my house fell out of the sky.",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "He says (it / that) there may be no solar energy.",
+    "opts": ["it", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "A worker says (if / that) I should wait for three hours.",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "This shows (because / that) I have a blind eye.",
+    "opts": ["because", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "If it got wet, it (will / would) be rainy.",
+    "opts": ["will", "would"],
+    "ans": ["would"]
+  },
+  {
+    "q": "(That / If) the animals got noisier, bad weather was on the way.",
+    "opts": ["That", "If"],
+    "ans": ["If"]
+  },
+  {
+    "q": "(That / If) you cannot relax, just work hard!",
+    "opts": ["That", "If"],
+    "ans": ["If"]
+  },
+  {
+    "q": "Inho thinks (if / that) Lee Taeseok is a good example of a caring person.",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "Sumin thinks (if / that) her grandfather is great.",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "We all know (because / that) we must save money, but it's not easy.",
+    "opts": ["because", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "I always think (it / that) it is too little.",
+    "opts": ["it", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "One day, I told my dad (because / that) I wanted more money.",
+    "opts": ["because", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "The spending diary showed (it / that) I spent too much on snacks.",
+    "opts": ["it", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "I learned (if / that) I should be more careful.",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "I know (because / that) I must use my spending diary every day.",
+    "opts": ["because", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "I heard (it / that) Pyeongchang is famous for snow sports.",
+    "opts": ["it", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "I think (because / that) Pyeongchang will have really good Olympic events.",
+    "opts": ["because", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "I think (because / that) Nunavut is one of the best places for snow sports.",
+    "opts": ["because", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "I think (if / that) there is a lion in this forest.",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "I hope (if / that) it doesn't find me.",
+    "opts": ["if", "that"],
+    "ans": ["that"]
+  },
+  {
+    "q": "Get some rest (because / if) you want.",
+    "opts": ["because", "if"],
+    "ans": ["if"]
+  },
+  {
+    "q": "(Because / If) you meet Matilda, you will like her.",
+    "opts": ["Because", "If"],
+    "ans": ["If"]
+  },
+  {
+    "q": "He’ll come to see me (that / if) he isn’t too busy.",
+    "opts": ["that", "if"],
+    "ans": ["if"]
+  },
+  {
+    "q": "(Because / If) you go to Paris, you should visit the Louvre.",
+    "opts": ["Because", "If"],
+    "ans": ["If"]
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, selected = [], results = [], userInfo = {};
+    function prepareQuiz() {
+        userInfo = { name: document.getElementById('name').value.trim() };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('question-text').innerText = item.q;
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+        const area = document.getElementById('options-area');
+        area.innerHTML = ''; selected = [];
+        item.opts.forEach(opt => {
+            const b = document.createElement('button');
+            b.className = 'btn-option'; b.innerText = opt;
+            b.onclick = () => {
+                b.classList.toggle('selected');
+                if (selected.includes(opt)) selected = selected.filter(s => s !== opt);
+                else selected.push(opt);
+            };
+            area.appendChild(b);
+        });
+    }
+    function submitAnswer() {
+        if (selected.length === 0) return alert("최소 하나 이상의 정답을 선택하세요.");
+        const item = quizSet[currentIdx];
+        const isCorrect = JSON.stringify([...selected].sort()) === JSON.stringify([...item.ans].sort());
+        results.push({ q: item.q, user: selected.join(", "), ans: item.ans.join(", "), isCorrect });
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('user-display').innerText = userInfo.name;
+        document.getElementById('final-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>Q: ${w.q}</strong><br>내 답: <span style="color:red">${w.user}</span> | 정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+    function downloadResult() {
+        const txt = `[테스트 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q}\n(답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_성적.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>
