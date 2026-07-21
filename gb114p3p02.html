@@ -1,0 +1,533 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gb114p3p02</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 90% !important; display: inline-block !important; text-align: center; font-size: 1.15rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 20px; }
+        .sentence-box { background: #F8FAFC; border: 1px dashed #CBD5E1; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: left; }
+        .sentence-item { font-size: 1.15rem; font-weight: 600; color: #334155; margin-bottom: 8px; }
+        .conjunction-badge { display: inline-block; background: #EEF2F6; color: #4F46E5; font-weight: 800; font-size: 1.1rem; padding: 4px 12px; border-radius: 6px; border: 1px solid #E2E8F0; margin-top: 10px; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+        .my-ans { color: var(--wrong-color); font-weight: bold; margin-right: 10px; }
+        .correct-ans { color: var(--correct-color); font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>gb114p3p02</h2>
+        <div class="guide-box">주어진 두 문장을 괄호 안의 접속사를 사용하여 한 문장으로 올바르게 연결하여 쓰시오.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 제시된 두 문장을 괄호 안의 접속사로 한 문장으로 연결하시오.</div>
+        <div class="sentence-box">
+            <div class="sentence-item" id="s1-display"></div>
+            <div class="sentence-item" id="s2-display"></div>
+        </div>
+        <div>
+            사용할 접속사: <span class="conjunction-badge" id="conjunction-display"></span>
+        </div>
+        <input type="text" id="user-input" class="answer-input" placeholder="연결된 전체 문장 입력" autocomplete="off" style="margin-top:25px;">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "s1": "I didn't think.",
+    "s2": "Rachel would like gimchi.",
+    "conjunction": "(that)",
+    "ans": "I didn't think that Rachel would like gimchi."
+  },
+  {
+    "s1": "I didn't know.",
+    "s2": "My legs were so short.",
+    "conjunction": "(that)",
+    "ans": "I didn't know that my legs were so short."
+  },
+  {
+    "s1": "The paper cup doesn't catch on fire.",
+    "s2": "The heat moves quickly from the cup to the water.",
+    "conjunction": "(because)",
+    "ans": "The paper cup doesn't catch on fire because the heat moves quickly from the cup to the water."
+  },
+  {
+    "s1": "So people didn't know.",
+    "s2": "He was the king.",
+    "conjunction": "(that)",
+    "ans": "So people didn't know that he was the king."
+  },
+  {
+    "s1": "Homework is helpful.",
+    "s2": "I don't have to study much for exams.",
+    "conjunction": "(because)",
+    "ans": "Homework is helpful because I don't have to study much for exams."
+  },
+  {
+    "s1": "So I like homework.",
+    "s2": "I can take my time.",
+    "conjunction": "(because)",
+    "ans": "So I like homework because I can take my time."
+  },
+  {
+    "s1": "Homework gives me too much stress.",
+    "s2": "The teacher grades my homework.",
+    "conjunction": "(because)",
+    "ans": "Homework gives me too much stress because the teacher grades my homework."
+  },
+  {
+    "s1": "We thought.",
+    "s2": "It was a bear.",
+    "conjunction": "(that)",
+    "ans": "We thought that it was a bear."
+  },
+  {
+    "s1": "They have to finish before midnight.",
+    "s2": "The race usually starts very early in the morning.",
+    "conjunction": "(because)",
+    "ans": "They have to finish before midnight because the race usually starts very early in the morning."
+  },
+  {
+    "s1": "The race does not take place every year.",
+    "s2": "The ice must be at least 15 centimeters thick.",
+    "conjunction": "(because)",
+    "ans": "The race does not take place every year because the ice must be at least 15 centimeters thick."
+  },
+  {
+    "s1": "Only one percent of the skaters finished the race.",
+    "s2": "It was very cold and windy.",
+    "conjunction": "(because)",
+    "ans": "Only one percent of the skaters finished the race because it was very cold and windy."
+  },
+  {
+    "s1": "I want to fly.",
+    "s2": "I want to fight for my country.",
+    "conjunction": "(because)",
+    "ans": "I want to fly because I want to fight for my country."
+  },
+  {
+    "s1": "Mr. Nikumbh, the art teacher, learns from Rajan.",
+    "s2": "Ishaan has a reading problem.",
+    "conjunction": "(that)",
+    "ans": "Mr. Nikumbh, the art teacher, learns from Rajan that Ishaan has a reading problem."
+  },
+  {
+    "s1": "Always remember.",
+    "s2": "You are special.",
+    "conjunction": "(that)",
+    "ans": "Always remember that you are special."
+  },
+  {
+    "s1": "Russians believe.",
+    "s2": "It will bring bad luck.",
+    "conjunction": "(that)",
+    "ans": "Russians believe that it will bring bad luck."
+  },
+  {
+    "s1": "The cook will think.",
+    "s2": "You don't like the food.",
+    "conjunction": "(that)",
+    "ans": "The cook will think that you don't like the food."
+  },
+  {
+    "s1": "The host will think.",
+    "s2": "You are still hungry.",
+    "conjunction": "(that)",
+    "ans": "The host will think that you are still hungry."
+  },
+  {
+    "s1": "Many children are dying.",
+    "s2": "They don't have enough water, food, or medicine.",
+    "conjunction": "(because)",
+    "ans": "Many children are dying because they don't have enough water, food, or medicine."
+  },
+  {
+    "s1": "The orange sinks.",
+    "s2": "The orange is now denser than the water.",
+    "conjunction": "(because)",
+    "ans": "The orange sinks because the orange is now denser than the water."
+  },
+  {
+    "s1": "British people believe.",
+    "s2": "The first visitor on New Year's Day will determine the luck of the year.",
+    "conjunction": "(that)",
+    "ans": "British people believe that the first visitor on New Year's Day will determine the luck of the year."
+  },
+  {
+    "s1": "They believe.",
+    "s2": "Anything in the shape of a ring will bring good luck because it symbolizes the completion of a year.",
+    "conjunction": "(that)",
+    "ans": "They believe that anything in the shape of a ring will bring good luck because it symbolizes the completion of a year."
+  },
+  {
+    "s1": "Chinese people think.",
+    "s2": "Red brings fortune and happiness.",
+    "conjunction": "(that)",
+    "ans": "Chinese people think that red brings fortune and happiness."
+  },
+  {
+    "s1": "The father penguin has to go without eating for two months.",
+    "s2": "There is no food on the ice.",
+    "conjunction": "(because)",
+    "ans": "The father penguin has to go without eating for two months because there is no food on the ice."
+  },
+  {
+    "s1": "It's softer than a baguette.",
+    "s2": "It has a lot of thin layers.",
+    "conjunction": "(because)",
+    "ans": "It's softer than a baguette because it has a lot of thin layers."
+  },
+  {
+    "s1": "Some people call it pocket bread.",
+    "s2": "It opens up into a pocket.",
+    "conjunction": "(because)",
+    "ans": "Some people call it pocket bread because it opens up into a pocket."
+  },
+  {
+    "s1": "Its pocket occurs.",
+    "s2": "The baking temperature is very high.",
+    "conjunction": "(because)",
+    "ans": "Its pocket occurs because the baking temperature is very high."
+  },
+  {
+    "s1": "It is chewier than other bread.",
+    "s2": "The bakers put it into boiling water before baking.",
+    "conjunction": "(because)",
+    "ans": "It is chewier than other bread because the bakers put it into boiling water before baking."
+  },
+  {
+    "s1": "Most brown hens are bigger than white ones.",
+    "s2": "They eat more.",
+    "conjunction": "(because)",
+    "ans": "Most brown hens are bigger than white ones because they eat more."
+  },
+  {
+    "s1": "The other half doesn't sleep.",
+    "s2": "They can go up to the surface to breathe.",
+    "conjunction": "(because)",
+    "ans": "The other half doesn't sleep because they can go up to the surface to breathe."
+  },
+  {
+    "s1": "Polar bears' black skin keeps them warm.",
+    "s2": "It takes in the warm light of the sun.",
+    "conjunction": "(because)",
+    "ans": "Polar bears' black skin keeps them warm because it takes in the warm light of the sun."
+  },
+  {
+    "s1": "But we can't see polar bears' black skin.",
+    "s2": "They have so much white fur.",
+    "conjunction": "(because)",
+    "ans": "But we can't see polar bears' black skin because they have so much white fur."
+  },
+  {
+    "s1": "I hope.",
+    "s2": "You can help me, Santa.",
+    "conjunction": "(that)",
+    "ans": "I hope that you can help me, Santa."
+  },
+  {
+    "s1": "Many students laugh at me.",
+    "s2": "I can't walk or speak well.",
+    "conjunction": "(because)",
+    "ans": "Many students laugh at me because I can't walk or speak well."
+  },
+  {
+    "s1": "You finish one.",
+    "s2": "You will feel confident and proud of yourself.",
+    "conjunction": "(if)",
+    "ans": "If you finish one, you will feel confident and proud of yourself."
+  },
+  {
+    "s1": "The sea water is dirty.",
+    "s2": "People throw away too much trash.",
+    "conjunction": "(because)",
+    "ans": "The sea water is dirty because people throw away too much trash."
+  },
+  {
+    "s1": "I think.",
+    "s2": "This is the best movie ever!",
+    "conjunction": "(that)",
+    "ans": "I think that this is the best movie ever!"
+  },
+  {
+    "s1": "So, people thought.",
+    "s2": "Jamaicans couldn't take part in the bobsled race.",
+    "conjunction": "(that)",
+    "ans": "So, people thought that Jamaicans couldn't take part in the bobsled race."
+  },
+  {
+    "s1": "Did you know?",
+    "s2": "Manhattan is a large island in New York.",
+    "conjunction": "(that)",
+    "ans": "Did you know that Manhattan is a large island in New York?"
+  },
+  {
+    "s1": "Make sure.",
+    "s2": "You don't take photos with flash inside the museum.",
+    "conjunction": "(that)",
+    "ans": "Make sure that you don't take photos with flash inside the museum."
+  },
+  {
+    "s1": "Also, we all love coming to English class.",
+    "s2": "We want to read about something good about ourselves.",
+    "conjunction": "(because)",
+    "ans": "Also, we all love coming to English class because we want to read about something good about ourselves."
+  },
+  {
+    "s1": "With this tradition, people believe.",
+    "s2": "They can fall in love.",
+    "conjunction": "(that)",
+    "ans": "With this tradition, people believe that they can fall in love."
+  },
+  {
+    "s1": "They think.",
+    "s2": "The buyers feel happy with the fresh bread smell in the house.",
+    "conjunction": "(that)",
+    "ans": "They think that the buyers feel happy with the fresh bread smell in the house."
+  },
+  {
+    "s1": "I think.",
+    "s2": "It is more interesting than the Snowboard Cross race.",
+    "conjunction": "(that)",
+    "ans": "I think that it is more interesting than the Snowboard Cross race."
+  },
+  {
+    "s1": "People don't make clothes with paper.",
+    "s2": "It is not strong.",
+    "conjunction": "(because)",
+    "ans": "People don't make clothes with paper because it is not strong."
+  },
+  {
+    "s1": "Hanji is strong.",
+    "s2": "We make it from the tough bark of the dak tree.",
+    "conjunction": "(because)",
+    "ans": "Hanji is strong because we make it from the tough bark of the dak tree."
+  },
+  {
+    "s1": "I think.",
+    "s2": "My house fell out of the sky.",
+    "conjunction": "(that)",
+    "ans": "I think that my house fell out of the sky."
+  },
+  {
+    "s1": "He says.",
+    "s2": "There may be no solar energy.",
+    "conjunction": "(that)",
+    "ans": "He says that there may be no solar energy."
+  },
+  {
+    "s1": "A worker says.",
+    "s2": "I should wait for three hours.",
+    "conjunction": "(that)",
+    "ans": "A worker says that I should wait for three hours."
+  },
+  {
+    "s1": "This shows.",
+    "s2": "I have a blind eye.",
+    "conjunction": "(that)",
+    "ans": "This shows that I have a blind eye."
+  },
+  {
+    "s1": "The animals got noisier.",
+    "s2": "Bad weather was on the way.",
+    "conjunction": "(if)",
+    "ans": "The animals got noisier if bad weather was on the way."
+  },
+  {
+    "s1": "You cannot relax.",
+    "s2": "Just work hard!",
+    "conjunction": "(if)",
+    "ans": "If you cannot relax, just work hard!"
+  },
+  {
+    "s1": "Inho thinks.",
+    "s2": "Lee Taeseok is a good example of a caring person.",
+    "conjunction": "(that)",
+    "ans": "Inho thinks that Lee Taeseok is a good example of a caring person."
+  },
+  {
+    "s1": "Sumin thinks.",
+    "s2": "Her grandfather is great.",
+    "conjunction": "(that)",
+    "ans": "Sumin thinks that her grandfather is great."
+  },
+  {
+    "s1": "We all know.",
+    "s2": "We must save money, but it's not easy.",
+    "conjunction": "(that)",
+    "ans": "We all know that we must save money, but it's not easy."
+  },
+  {
+    "s1": "I always think.",
+    "s2": "It is too little.",
+    "conjunction": "(that)",
+    "ans": "I always think that it is too little."
+  },
+  {
+    "s1": "One day, I told my dad.",
+    "s2": "I wanted more money.",
+    "conjunction": "(that)",
+    "ans": "One day, I told my dad that I wanted more money."
+  },
+  {
+    "s1": "The spending diary showed.",
+    "s2": "I spent too much on snacks.",
+    "conjunction": "(that)",
+    "ans": "The spending diary showed that I spent too much on snacks."
+  },
+  {
+    "s1": "I learned.",
+    "s2": "I should be more careful.",
+    "conjunction": "(that)",
+    "ans": "I learned that I should be more careful."
+  },
+  {
+    "s1": "I know.",
+    "s2": "I must use my spending diary every day.",
+    "conjunction": "(that)",
+    "ans": "I know that I must use my spending diary every day."
+  },
+  {
+    "s1": "I heard.",
+    "s2": "Pyeongchang is famous for snow sports.",
+    "conjunction": "(that)",
+    "ans": "I heard that Pyeongchang is famous for snow sports."
+  },
+  {
+    "s1": "I think.",
+    "s2": "Pyeongchang will have really good Olympic events.",
+    "conjunction": "(that)",
+    "ans": "I think that Pyeongchang will have really good Olympic events."
+  },
+  {
+    "s1": "I hope.",
+    "s2": "It doesn't find me.",
+    "conjunction": "(that)",
+    "ans": "I hope that it doesn't find me."
+  },
+  {
+    "s1": "Get some rest.",
+    "s2": "You want.",
+    "conjunction": "(if)",
+    "ans": "Get some rest if you want."
+  },
+  {
+    "s1": "You meet Matilda.",
+    "s2": "You will like her.",
+    "conjunction": "(if)",
+    "ans": "If you meet Matilda, you will like her."
+  },
+  {
+    "s1": "He'll come to see me.",
+    "s2": "He isn't too busy.",
+    "conjunction": "(if)",
+    "ans": "He'll come to see me if he isn't too busy."
+  },
+  {
+    "s1": "You go to Paris.",
+    "s2": "You should visit the Louvre.",
+    "conjunction": "(if)",
+    "ans": "If you go to Paris, you should visit the Louvre."
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    
+    function normalize(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/[.,?!~']/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('s1-display').innerText = "1. " + (item.s1 || '');
+        document.getElementById('s2-display').innerText = "2. " + (item.s2 || '');
+        document.getElementById('conjunction-display').innerText = item.conjunction || '';
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        const isCorrect = normalize(item.ans) === normalize(userInputVal);
+        results.push({ s1: item.s1, s2: item.s2, conj: item.conjunction, user: userInputVal, ans: item.ans, isCorrect });
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>1. ${w.s1}<br>2. ${w.s2}<br>사용 접속사: ${w.conj}</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+    function downloadResult() {
+        const txt = `[두 문장 연결하기 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} 1. ${r.s1} / 2. ${r.s2} (&nbsp;${r.conj}) -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_두_문장_연결하기.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

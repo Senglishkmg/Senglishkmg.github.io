@@ -1,0 +1,465 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gb114p3p03</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 600px; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); text-align: center; }
+        .hidden { display: none; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; margin-bottom: 20px; border-left: 4px solid var(--primary-color); }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #E2E8F0; border-radius: 8px; box-sizing: border-box; }
+        #sentence-display { min-height: 60px; padding: 15px; border: 2px dashed #CBD5E0; border-radius: 12px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; background: #fff; }
+        .word-chip { padding: 10px 16px; background: #EDF2F7; border-radius: 25px; cursor: pointer; font-weight: 600; transition: 0.2s; border: 1px solid #E2E8F0; user-select: none; }
+        .word-chip:hover { background: #E2E8F0; }
+        .word-chip.used { opacity: 0.3; cursor: default; pointer-events: none; }
+        .word-chip.in-sentence { background: var(--primary-color); color: white; border: none; }
+        #chips-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }
+        button.btn-main { width: 100%; padding: 16px; background: var(--primary-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button.btn-reset { background: #A0AEC0; margin-top: 5px; }
+        .korean-text { font-size: 1.1rem; font-weight: bold; color: #1A365D; margin-bottom: 15px; }
+        .progress-bar { width: 100%; height: 6px; background: #EDF2F7; border-radius: 3px; margin-bottom: 20px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>gb114p3p03</h2>
+        <div class="guide-box">순서 배열 테스트를 시작합니다.</div>
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="korean-text" id="korean-display"></div>
+        <div class="guide-box">💡 아래 단어들을 순서대로 클릭하여 문장을 완성하세요.</div>
+        <div id="sentence-display"></div>
+        <div id="chips-container"></div>
+        <button class="btn-main" id="submit-btn" onclick="submitAnswer()">정답 확인</button>
+        <button class="btn-main btn-reset" onclick="resetSentence()">지우기</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <h1 id="res-score" style="color:var(--primary-color);">0 / 10</h1>
+        <div id="wrong-list" style="text-align:left; font-size: 0.9rem; margin-top:20px;"></div>
+        <button class="btn-main" onclick="location.reload()">새 문제 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "korean": "나는 Rachel이 김치를 좋아하지 않을 것이라고 생각했다.",
+    "words": ["I", "Rachel", "think", "that", "would", "like", "didn't", "gimchi"],
+    "answer": "I didn't think that Rachel would like gimchi"
+  },
+  {
+    "korean": "나는 내 다리가 그렇게 짧은 줄 몰랐어.",
+    "words": ["I", "my legs", "didn't", "that", "were", "so", "know", "short"],
+    "answer": "I didn't know that my legs were so short"
+  },
+  {
+    "korean": "그것은 그것이 매우 작고 가볍기 때문입니다.",
+    "words": ["because", "light", "it", "is", "and", "that's", "so", "small"],
+    "answer": "that's because it is so small and light"
+  },
+  {
+    "korean": "열이 컵에서 물로 재빨리 이동하기 때문에 종이컵에 불이 붙지는 않습니다.",
+    "words": ["the water", "catch on", "fire", "because", "quickly", "doesn't", "the cup", "the heat", "moves", "from", "to"],
+    "answer": "The paper cup doesn't catch on fire because the heat moves quickly from the cup to the water"
+  },
+  {
+    "korean": "나는 그것이 너의 특별한 재능이라고 생각해.",
+    "words": ["I", "talent", "that's", "your", "think", "special"],
+    "answer": "I think that's your special talent"
+  },
+  {
+    "korean": "그래서 사람들은 그가 왕인지 몰랐습니다.",
+    "words": ["didn't", "the king", "know", "people", "he", "was"],
+    "answer": "So people didn't know he was the king"
+  },
+  {
+    "korean": "숙제는 도움이 된다. 왜냐하면 시험에 대비해서 공부를 많이 하지 않아도 되기 때문이다.",
+    "words": ["is", "because", "to", "homework", "I", "don't", "helpful", "have", "exams", "study", "much", "for"],
+    "answer": "homework is helpful because I don't have to study much for exams"
+  },
+  {
+    "korean": "그래서 천천히 할 수 있기 때문에 숙제를 좋아한다.",
+    "words": ["my time", "homework", "can", "because", "like", "I", "take"],
+    "answer": "So I like homework because I can take my time"
+  },
+  {
+    "korean": "숙제는 나에게 너무 많은 스트레스를 준다. 왜냐하면 선생님께서 숙제에 점수를 매기기 때문이다.",
+    "words": ["me", "much", "my homework", "stress", "gives", "the teacher", "too", "grades", "because"],
+    "answer": "Homework gives me too much stress because the teacher grades my homework"
+  },
+  {
+    "korean": "우리는 그것이 곰이라고 생각했다.",
+    "words": ["thought", "a bear", "that", "we", "it", "was"],
+    "answer": "we thought that it was a bear"
+  },
+  {
+    "korean": "그들이 자정이 되기 전에 완주해야 하기 때문에 경주는 보통 매우 이른 아침에 시작된다.",
+    "words": ["have", "very early", "finish", "they", "before", "to", "the race", "usually", "midnight,", "starts", "in the morning"],
+    "answer": "Because they have to finish before midnight, the race usually starts very early in the morning"
+  },
+  {
+    "korean": "얼음이 적어도 15센티미터 두께로 얼어야 하기 때문에 경주가 매년 개최되지는 않는다.",
+    "words": ["not", "thick", "take place", "at least", "does", "every year", "the ice", "must", "because", "be", "15 centimeters"],
+    "answer": "The race does not take place every year because the ice must be at least 15 centimeters thick"
+  },
+  {
+    "korean": "날씨가 매우 춥고 바람이 불어서 스케이트 선수들의 겨우 1퍼센트만이 완주했다.",
+    "words": ["the race", "and", "finished", "very", "because", "it", "was", "cold", "windy"],
+    "answer": "Only one percent of the skaters finished the race because it was very cold and windy"
+  },
+  {
+    "korean": "저는 비행하고 싶습니다. 제 조국을 위해 싸우고 싶기 때문입니다.",
+    "words": ["want", "fly", "my country", "because", "I", "to", "want", "I", "to", "fight", "for"],
+    "answer": "I want to fly because I want to fight for my country"
+  },
+  {
+    "korean": "미술 선생님인 Nikumbh 선생님은 Rajan으로부터 Ishaan이 읽는 데 장애가 있음을 알게 된다.",
+    "words": ["a reading problem", "learns", "has", "from", "Rajan", "Mr. Nikumbh, the art teacher,", "that", "Ishaan"],
+    "answer": "Mr. Nikumbh, the art teacher, learns from Rajan that Ishaan has a reading problem"
+  },
+  {
+    "korean": "네가 특별하다는 것을 항상 기억하렴.",
+    "words": ["remember", "that", "special", "always", "you", "are"],
+    "answer": "always remember that you are special"
+  },
+  {
+    "korean": "러시아 사람들은 그것이 불운을 가져온다고 믿는다.",
+    "words": ["believe", "it", "bad", "luck", "will", "Russians", "bring"],
+    "answer": "Russians believe it will bring bad luck"
+  },
+  {
+    "korean": "요리사는 당신이 그 음식을 좋아하지 않는다고 생각할 것이다.",
+    "words": ["will", "the food", "you", "like", "think", "the cook", "don't"],
+    "answer": "the cook will think you don't like the food"
+  },
+  {
+    "korean": "주인은 당신이 여전히 배가 고프다고 생각할 것이다.",
+    "words": ["will", "think", "hungry", "you", "the host", "are", "still"],
+    "answer": "the host will think you are still hungry"
+  },
+  {
+    "korean": "많은 아이들이 충분한 물, 음식, 또는 약이 없어서 죽어가고 있습니다.",
+    "words": ["children", "enough", "are", "medicine", "dying", "many", "because", "they", "don't", "have", "water,", "food,", "or"],
+    "answer": "many children are dying because they don't have water, food, or medicine"
+  },
+  {
+    "korean": "그것은 오렌지 껍질 속에 많은 공기 주머니가 있기 때문이야.",
+    "words": ["because", "air pockets", "there", "the orange peel", "are", "it's", "many", "in"],
+    "answer": "it's because there are many air pockets in the orange peel"
+  },
+  {
+    "korean": "오렌지는 물보다 밀도가 더 높아져서 가라앉게 되는 거야.",
+    "words": ["sinks", "because", "than", "the orange", "the orange", "is", "the water", "now", "denser"],
+    "answer": "the orange sinks because the orange is now denser than the water"
+  },
+  {
+    "korean": "영국인들은 새해 첫날의 첫 방문객이 그 해의 운을 결정할 것이라고 믿습니다.",
+    "words": ["people", "New Year's Day", "believe", "that", "the year", "British", "the first visitor", "the luck", "on", "will", "determine", "of"],
+    "answer": "British people believe that the first visitor on New Year's Day will determine the luck of the year"
+  },
+  {
+    "korean": "그들은 반지 모양이 한 해의 완성을 상징하기 때문에 반지 모양을 한 것은 무엇이든지 행운을 가져온다고 믿습니다.",
+    "words": ["believe", "that", "anything", "the shape", "the completion", "a ring", "they", "in", "of", "bring", "good", "luck", "will", "because", "it", "symbolizes", "of", "a year"],
+    "answer": "they believe that anything in the shape of a ring will bring good luck because it symbolizes the completion of a year"
+  },
+  {
+    "korean": "중국 사람들은 빨간색이 행운[부]과 행복을 가져온다고 생각합니다.",
+    "words": ["people", "happiness", "that", "Chinese", "red", "think", "brings", "fortune", "and"],
+    "answer": "Chinese people think that red brings fortune and happiness"
+  },
+  {
+    "korean": "얼음 위에는 먹을 것이 아무것도 없기 때문에 아빠 펭귄은 두 달 동안 아무것도 먹지 않고 지내야만 합니다.",
+    "words": ["has", "go", "the ice", "without", "the father penguin", "eating", "for", "two", "because", "there", "is", "no", "to", "food", "on", "months"],
+    "answer": "the father penguin has to go without eating for two months because there is no food on the ice"
+  },
+  {
+    "korean": "그것은 얇은 층이 여러 개 있기 때문에 바게트보다 더 부드럽습니다.",
+    "words": ["softer", "layers", "than", "it's", "a baguette", "it", "of", "has", "a", "because", "lot", "thin"],
+    "answer": "it's softer than a baguette because it has a lot of thin layers"
+  },
+  {
+    "korean": "어떤 사람들은 그것이 주머니처럼 열리기 때문에 주머니 빵이라고 부릅니다.",
+    "words": ["people", "call", "it", "pocket bread", "into", "some", "because", "it", "opens", "up", "a pocket"],
+    "answer": "some people call it pocket bread because it opens up into a pocket"
+  },
+  {
+    "korean": "그 주머니는 굽는 온도가 매우 높기 때문에 생깁니다.",
+    "words": ["occurs", "because", "high", "is", "its pocket", "the baking temperature", "very"],
+    "answer": "its pocket occurs because the baking temperature is very high"
+  },
+  {
+    "korean": "그것은 제빵사가 굽기 전에 끓는 물에 넣기 때문에 다른 빵보다 더 쫄깃쫄깃합니다.",
+    "words": ["is", "into", "than", "other", "it", "bread", "the bakers", "put", "Super", "it", "boiling", "water", "before", "chewier", "baking"],
+    "answer": "it is chewier than other bread because the bakers put it into boiling water before baking"
+  },
+  {
+    "korean": "대부분의 갈색 암탉은 흰색 암탉보다 더 많이 먹기 때문에 몸집이 더 크다.",
+    "words": ["brown", "more", "are", "most", "bigger", "hens", "than", "ones", "because", "white", "they", "eat"],
+    "answer": "most brown hens are bigger than white ones because they eat more"
+  },
+  {
+    "korean": "다른 반쪽은 잠들어 있지 않기 때문에, 그들은 숨을 쉬기 위해 수면 위로 올라갈 수 있다.",
+    "words": ["the", "breathe", "the surface", "other", "doesn't", "sleep,", "they", "half", "can", "go", "because", "up", "to", "to"],
+    "answer": "because the other half doesn't sleep, they can go up to the surface to breathe"
+  },
+  {
+    "korean": "북극곰의 검은 피부가 그들을 따뜻하게 유지시켜 주는데, 이것은 검은 피부가 태양의 따뜻한 빛을 흡수하기 때문이다.",
+    "words": ["black", "the sun", "skin", "keeps", "takes", "polar bears'", "warm", "them", "it", "in", "because", "the", "warm light", "of"],
+    "answer": "polar bears' black skin keeps them warm because it takes in the warm light of the sun"
+  },
+  {
+    "korean": "하지만 북극곰은 흰 털이 많이 나있어서 우리는 북극곰의 검은 피부를 볼 수는 없다.",
+    "words": ["see", "polar bears'", "we", "can't", "black", "skin", "they", "have", "so", "because", "much", "white", "fur"],
+    "answer": "But we can't see polar bears' black skin because they have so much white fur"
+  },
+  {
+    "korean": "산타 할아버지가 저를 도와주실 수 있으면 좋겠어요.",
+    "words": ["hope", "help", "you", "I", "can", "me"],
+    "answer": "I hope you can help me, Santa"
+  },
+  {
+    "korean": "제가 잘 걷지도 말하지도 못한다고 여러 학생들이 저를 비웃어요.",
+    "words": ["students", "laugh", "many", "speak", "at", "me", "because", "I", "walk", "or", "can't", "well"],
+    "answer": "many students laugh at me because I can't walk or speak well"
+  },
+  {
+    "korean": "만약 그랬다면, 당신한테 좋은 일이군요.",
+    "words": ["you", "for", "did,", "that's", "if", "good", "you"],
+    "answer": "if you did, that's good for you"
+  },
+  {
+    "korean": "만약에 당신이 책 한 권을 다 읽는다면, 당신은 자신감과 스스로에 대한 자랑스러움을 느끼게 될 것입니다.",
+    "words": ["you", "a book,", "if", "yourself", "you", "will", "confident", "finish", "and", "feel", "proud", "of"],
+    "answer": "if you finish a book, you will feel confident and proud of yourself"
+  },
+  {
+    "korean": "사람들이 너무 많은 쓰레기를 버려서 바닷물이 더러워졌어.",
+    "words": ["is", "dirty", "because", "the sea water", "throw", "much", "away", "too", "people", "trash"],
+    "answer": "the sea water is dirty because people throw too much trash away"
+  },
+  {
+    "korean": "나는 이 영화가 역대 최고의 영화라고 생각합니다!",
+    "words": ["think", "the best", "that", "this", "I", "ever", "is", "movie"],
+    "answer": "I think that this is the best movie ever"
+  },
+  {
+    "korean": "그래서 사람들은 자메이카 사람들이 봅슬레이 경기에 참가하지 못할 것이라고 생각했다.",
+    "words": ["that", "the bobsled race", "Jamaicans", "thought", "people", "take", "part", "in", "couldn't"],
+    "answer": "So, people thought that Jamaicans couldn't take part in the bobsled race"
+  },
+  {
+    "korean": "맨해튼이 뉴욕에 있는 큰 섬이라는 것을 알고 계셨나요?",
+    "words": ["did", "New York", "a large island", "you", "Manhattan", "is", "know", "in"],
+    "answer": "did you know Manhattan is a large island in New York"
+  },
+  {
+    "korean": "미술관 안에서 플래시를 터뜨려 사진을 찍지 않도록 하세요.",
+    "words": ["sure", "you", "flash", "don't", "make", "the museum", "take photos", "with", "inside"],
+    "answer": "make sure you don't take photos with flash inside the museum"
+  },
+  {
+    "korean": "또한, 우리 자신에 대한 장점을 읽고 싶어 하기 때문에 우리 모두는 영어 수업에 오는 것을 아주 좋아해요.",
+    "words": ["love", "to", "about", "English class", "we all", "we", "want", "ourselves", "to", "good", "because", "read", "something", "coming", "about"],
+    "answer": "Also, we all love coming to English class because we want to read about something good about ourselves"
+  },
+  {
+    "korean": "이런 전통으로 사람들은 그들이 사랑에 빠질 수 있다고 믿습니다.",
+    "words": ["believe", "they", "love", "people", "can", "fall", "in"],
+    "answer": "With this tradition, people believe they can fall in love"
+  },
+  {
+    "korean": "그들은 사려고 하는 사람들이 집안의 신선한 빵 냄새를 맡고 행복해 한다고 생각합니다.",
+    "words": ["think", "they", "fresh", "feel", "smell", "happy", "with", "the", "bread", "in", "the buyers", "the house"],
+    "answer": "they think the buyers feel happy with the fresh bread smell in the house"
+  },
+  {
+    "korean": "저는 그것이 스노보드 크로스 경주보다 더 흥미롭다고 생각합니다.",
+    "words": ["race", "think", "it", "interesting", "is", "more", "I", "than", "the Snowboard Cross"],
+    "answer": "I think it is more interesting than the Snowboard Cross race"
+  },
+  {
+    "korean": "종이는 튼튼하지 않기 때문에 사람들은 종이로 옷을 만들지 않는다.",
+    "words": ["clothes", "don't", "strong", "make", "people", "with", "because", "it", "is", "paper", "not"],
+    "answer": "people don't make clothes with paper because it is not strong"
+  },
+  {
+    "korean": "한지는 닥나무의 질긴 나무껍질로 만들기 때문에 튼튼하다.",
+    "words": ["is", "from", "because", "we", "Hanji", "of", "make", "it", "the", "tough", "bark", "strong", "the dak tree"],
+    "answer": "Hanji is strong because we make it from the tough bark of the dak tree"
+  },
+  {
+    "korean": "나는 우리 집이 하늘에서 떨어졌다고 생각한다.",
+    "words": ["think", "out of", "that", "my", "I", "fell", "the sky", "house"],
+    "answer": "I think that my house fell out of the sky"
+  },
+  {
+    "korean": "그는 태양 에너지가 없을지도 모른다고 말씀하신다.",
+    "words": ["says", "no", "that", "there", "he", "energy", "may", "be", "solar"],
+    "answer": "he says that there may be no solar energy"
+  },
+  {
+    "korean": "한 직원분이 3시간을 기다려야 한다고 말씀하신다.",
+    "words": ["says", "worker", "three", "that", "a", "hours", "I", "should", "wait", "for"],
+    "answer": "a worker says that I should wait for three hours"
+  },
+  {
+    "korean": "이것은 내가 한쪽 눈이 멀었다는 것을 보여준다.",
+    "words": ["shows", "blind", "that", "this", "I", "eye", "have", "a"],
+    "answer": "this shows that I have a blind eye"
+  },
+  {
+    "korean": "만약 긴장을 풀 수 없다면, 열심히 일하라!",
+    "words": ["you", "hard", "cannot", "work", "if", "relax,", "just"],
+    "answer": "if you cannot relax, just work hard"
+  },
+  {
+    "korean": "인호는 이태석이 배려하는 사람의 좋은 본보기라고 생각합니다.",
+    "words": ["thinks", "caring person", "Lee Taeseok", "of", "Inho", "is", "a", "that", "good example", "a"],
+    "answer": "Inho thinks that Lee Taeseok is a good example of a caring person"
+  },
+  {
+    "korean": "수민이는 자신의 할아버지가 멋지다고 생각합니다.",
+    "words": ["thinks", "her", "great", "Sumin", "grandfather", "is"],
+    "answer": "Sumin thinks her grandfather is great"
+  },
+  {
+    "korean": "우리 모두가 돈을 저축해야만 한다는 것을 알고 있지만 그것은 쉽지 않습니다.",
+    "words": ["know", "we", "easy", "must", "we all", "save", "but", "it's", "money,", "not"],
+    "answer": "we all know we must save money, but it's not easy"
+  },
+  {
+    "korean": "저는 항상 그것이 너무 작다고 생각합니다.",
+    "words": ["always", "little", "think", "I", "it", "is", "too"],
+    "answer": "I always think it is too little"
+  },
+  {
+    "korean": "어느 날, 저는 아빠에게 돈이 더 필요하다고 말씀 드렸습니다.",
+    "words": ["dad", "my", "money", "that", "told", "I", "I", "wanted", "more"],
+    "answer": "One day, I told my dad that I wanted more money"
+  },
+  {
+    "korean": "용돈 기입장은 제가 간식에 너무 많은 돈을 쓰고 있다는 것을 보여 주었습니다.",
+    "words": ["showed", "I", "on", "spent", "the spending diary", "too", "much", "that", "snacks"],
+    "answer": "the spending diary showed that I spent too much on snacks"
+  },
+  {
+    "korean": "저는 더 주의해야 한다는 것을 배웠습니다.",
+    "words": ["learned", "I", "careful", "should", "I", "be", "more"],
+    "answer": "I learned I should be more careful"
+  },
+  {
+    "korean": "저는 용돈 기입장을 매일 사용해야만 한다는 것을 알았습니다.",
+    "words": ["I", "must", "every day", "use", "know", "my spending diary", "I"],
+    "answer": "I know I must use my spending diary every day"
+  },
+  {
+    "korean": "평창이 겨울 스포츠로 유명한 것은 들었어.",
+    "words": ["heard", "for", "Pyeongchang", "is", "sports", "I", "famous", "snow"],
+    "answer": "I heard Pyeongchang is famous for snow sports"
+  },
+  {
+    "korean": "나는 평창이 올림픽 행사를 훌륭하게 치를 것이라고 생각해.",
+    "words": ["think", "Pyeongchang", "Olympic events", "I", "really", "will", "have", "good"],
+    "answer": "I think Pyeongchang will really have good Olympic events"
+  },
+  {
+    "korean": "나는 누나부트가 겨울 스포츠를 위한 최고의 장소 중 하나라고 생각해.",
+    "words": ["I", "Nunavut", "places", "is", "one", "think", "snow sports", "of", "the", "best", "for"],
+    "answer": "I think Nunavut is one of the best places for snow sports"
+  },
+  {
+    "korean": "이 숲 속에 사자가 있는 것 같아.",
+    "words": ["a lion", "I", "this forest", "there", "is", "think", "in"],
+    "answer": "I think there is a lion in this forest"
+  },
+  {
+    "korean": "그것이 나를 발견하지 못하면 좋겠어.",
+    "words": ["hope", "it", "me", "doesn't", "I", "find"],
+    "answer": "I hope it doesn't find me"
+  },
+  {
+    "korean": "당신이 원한다면 좀 쉬세요.",
+    "words": ["some", "rest", "want", "get", "if", "you"],
+    "answer": "get some rest if you want"
+  },
+  {
+    "korean": "네가 Matilda를 만난다면 넌 그녀를 좋아할 거야.",
+    "words": ["you", "will", "meet", "if", "her", "Matilda,", "you", "like"],
+    "answer": "if you meet Matilda, you will like her"
+  },
+  {
+    "korean": "그가 너무 바쁘지 않다면 그는 나를 보러 올 거야.",
+    "words": ["come", "busy", "to", "he’ll", "me", "if", "he", "isn’t", "see", "too"],
+    "answer": "he'll come to see me if he isn't too busy"
+  },
+  {
+    "korean": "네가 파리에 간다면 루브르를 가보는 게 좋아.",
+    "words": ["the Louvre", "you", "go", "should", "to", "if", "Paris,", "you", "visit"],
+    "answer": "if you go to Paris, you should visit the Louvre"
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, currentWords = [];
+    function prepareQuiz() {
+        const name = document.getElementById('name').value;
+        if (!name) return alert("이름을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+    function loadQuestion() {
+        if (currentIdx >= 10) return finishQuiz();
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = item.korean;
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+        resetSentence();
+    }
+    function resetSentence() {
+        currentWords = [];
+        const container = document.getElementById('chips-container');
+        const display = document.getElementById('sentence-display');
+        container.innerHTML = ''; display.innerHTML = '';
+        const shuffled = [...quizSet[currentIdx].words].sort(() => Math.random() - 0.5);
+        shuffled.forEach(w => {
+            const chip = document.createElement('div');
+            chip.className = 'word-chip'; chip.innerText = w;
+            chip.onclick = () => addWord(chip, w);
+            container.appendChild(chip);
+        });
+    }
+    function addWord(chip, word) {
+        if (chip.classList.contains('used')) return;
+        chip.classList.add('used'); currentWords.push(word);
+        const displayChip = document.createElement('div');
+        displayChip.className = 'word-chip in-sentence';
+        displayChip.innerText = word;
+        document.getElementById('sentence-display').appendChild(displayChip);
+    }
+    function submitAnswer() {
+        const userSentence = currentWords.join(" ").replace(/ ,/g, ",").replace(/ ./g, ".");
+        const correctSentence = quizSet[currentIdx].answer;
+        if (userSentence.toLowerCase() === correctSentence.toLowerCase()) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-score').innerText = score + " / 10";
+    }
+</script>
+</body>
+</html>
