@@ -1,0 +1,752 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gb115p1p02</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 90% !important; display: inline-block !important; text-align: center; font-size: 1.15rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 20px; }
+        .bogi-box { background: #F8FAFC; border: 2px dashed #94A3B8; padding: 16px; border-radius: 12px; margin-bottom: 22px; text-align: center; }
+        .bogi-header { font-weight: bold; color: #1E293B; margin-bottom: 10px; font-size: 1.05rem; }
+        .bogi-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .chip { background: white; border: 1px solid #CBD5E1; color: #334155; font-weight: 600; font-size: 1rem; padding: 6px 14px; border-radius: 20px; cursor: pointer; user-select: none; transition: all 0.2s; }
+        .chip:hover { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .question-text { font-size: 1.25rem; font-weight: 700; color: #1E293B; margin-bottom: 20px; line-height: 1.6; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+        .my-ans { color: var(--wrong-color); font-weight: bold; margin-right: 10px; }
+        .correct-ans { color: var(--correct-color); font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>gb115p1p02</h2>
+        <div class="guide-box">다음 빈칸에 &lt;보기&gt;에서 알맞은 단어를 골라 쓰시오.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 &lt;보기&gt;의 단어를 클릭하거나 직접 입력하여 빈칸을 완성하세요.</div>
+        <div class="bogi-box">
+            <div class="bogi-header">&lt;보 기&gt;</div>
+            <div class="bogi-chips" id="bogi-chips"></div>
+        </div>
+        <div class="question-text" id="question-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="정답 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "q": "Come ______ my house and try it!",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "I go ______ the farm on weekends with my family.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "I sometimes fight bad people ______ my dreams.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "Every day I walk with her ______ the park.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "Sleeping Beauty woke up ______ a deep sleep.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "from"
+  },
+  {
+    "q": "Beautiful birds sang ______ the fresh air.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "They picked up the trash around the river and ______ the streets.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "Finally, there are many wonderful places ______ Turkey.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "There are hot springs ______ Pamukkale.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "Nari is chatting ______ the Internet.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "That movie is now playing ______ theaters.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "They illegally download the movie ______ the Internet.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "from"
+  },
+  {
+    "q": "Today, Rachel and I joined some programs ______ the Korean Culture Center.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "at"
+  },
+  {
+    "q": "The heat moves quickly ______ the cup to the water.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "from"
+  },
+  {
+    "q": "The students ______ Sangmin's class had a project.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "A long time ago, there was a king ______ a small country.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "Are you ______ this class?",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "He puts his bag ______ the floor.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "Then he hangs his school uniform ______ the chair.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "Everyone has a good time ______ the festival.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "at"
+  },
+  {
+    "q": "All the houses ______ the street were the same.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "One day, a bird flew ______ Ms. Rainbow's house with a can of paint.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "over"
+  },
+  {
+    "q": "Ms. Park bought two benches and put them ______ the garden.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "There is a building ______ the middle of the pond.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "They rode boats ______ the pond.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "We can see many different stone animals ______ Angkor Wat, too.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "at"
+  },
+  {
+    "q": "What is the heaviest animal ______ Earth?",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "This way, the blue whale eats tons of krill ______ seawater every day.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "from"
+  },
+  {
+    "q": "It holds energy ______ its legs.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "Duri and Semi bring the food ______ the table.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "But they live everywhere ______ the air, in the ground, in water, and even inside your body.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "Once there lived an old woman ______ Bangalore, India.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "So, the doctor took her ______ the judge.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "I'm ______ Islamabad, Pakistan.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "from"
+  },
+  {
+    "q": "Today is my first day ______ a Korean middle school.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "at"
+  },
+  {
+    "q": "What season is it ______ your country?",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "You can choose expressions ______ a movie.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "from"
+  },
+  {
+    "q": "I live ______ an apartment.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "I can't hold them ______ my arms.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "I want to sleep ______ his legs, too.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "Then we put the notes ______ the board.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "We learn enough ______ school, so we don't need homework.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "at"
+  },
+  {
+    "q": "Read the advice ______ money smart teenagers.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "from"
+  },
+  {
+    "q": "I will also send 1 dollar ______ hungry children ______ Africa.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": ["to", "in"]
+  },
+  {
+    "q": "I collect coupons and go ______ stores with them.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "______ Canada and Norway, people ride bicycles and don't use their cars.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "In"
+  },
+  {
+    "q": "______ the US, people dress like plants and animals and dance in Times Square, New York.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "In"
+  },
+  {
+    "q": "One day she found a message ______ the sand.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "The trucks take the plastics ______ the recycling center.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "Then bring it ______ Room 302.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "It moves fast ______ the water, but it walks slow ______ the ground.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": ["in", "on"]
+  },
+  {
+    "q": "Sonya lives with her father, mother, and her little sister Olga ______ Moscow.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "On weekends, they get out of the city and spend time ______ nature.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "Let's find out about street food ______ different countries.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "There is fast food ______ almost every street corner.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "______ Ottawa, a beaver tail is a big, flat bread.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "In"
+  },
+  {
+    "q": "Tears came ______ his right eye.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "from"
+  },
+  {
+    "q": "Turtles like to swim ______ the water, but they can't stay in the water very long.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "It takes place on the frozen canals, rivers, and lakes across eleven cities ______ the Netherlands.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "When she got out of prison, she went ______ China.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "Ishaan's parents are worried about Ishaan, so they send him ______ a boarding school.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "I walk ______ school.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "I go ______ school by school bus.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "I take my lunch box ______ school.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "I live ______ the desert.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "I go ______ school by camel.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "I learn ______ home.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "at"
+  },
+  {
+    "q": "A fish moves its tail ______ side ______ side.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": ["from", "to"]
+  },
+  {
+    "q": "A kangaroo sits ______ its tail.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "A woman is tasting it next ______ me.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "Brian invited Yena ______ a party at his home.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "Yena said hello to Brian's parents ______ the door.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "at"
+  },
+  {
+    "q": "She put some salt ______ her steak.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "______ Egypt, you shouldn't add salt to your food.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "In"
+  },
+  {
+    "q": "______ Russia, people don't usually say hello or exchange gifts ______ the door.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": ["In", "at"]
+  },
+  {
+    "q": "My host family here ______ Seoul is really good to me.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "When we arrived ______ the village, I said, 'Wow! Did we take a time machine?'",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "at"
+  },
+  {
+    "q": "There are three coins ______ the table.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "There isn't enough clean water ______ the world.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "I didn't know anyone ______ my class, but I talked to some of my classmates.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "You can get energy ______ yoga.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "from"
+  },
+  {
+    "q": "The king pointed at the five dragon heads ______ the wall.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "On New Year's Day ______ Holland, thousands of people jump into the freezing cold sea for good luck.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "People tied the truck ______ the fire truck.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "Emperor penguins live ______ the sea ______ Antarctica.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": ["on", "in"]
+  },
+  {
+    "q": "In late fall, they go far ______ the sea to have a baby.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "from"
+  },
+  {
+    "q": "He gives the baby 'penguin milk' ______ his throat.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "from"
+  },
+  {
+    "q": "Remember to put your cans ______ the green bin.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "My family stayed ______ a hanok guesthouse last night.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "at"
+  },
+  {
+    "q": "I slept ______ ondol instead of a bed.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "A seahorse dad carries the baby eggs ______ his pouch.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "The members are students ______ different countries.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "from"
+  },
+  {
+    "q": "Sarah added a lot of fun to my trip ______ Gyeongju.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "We are standing ______ front of Seokguram.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "I'll put it ______ a pretty plate.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "When a spider walks around its web, it only puts its feet ______ the non-sticky lines.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "on"
+  },
+  {
+    "q": "Browny was still sick, and so I took him ______ a vet.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "Central Park is ______ the center of Manhattan.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "Large ferries carry many tourists ______ Liberty Island.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "Pita bread is popular ______ the Middle East.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "We are ______ the Music Angels Club.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "His dogs deliver many things ______ people's houses.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "to"
+  },
+  {
+    "q": "Katu guides them ______ house ______ house.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": ["from", "to"]
+  },
+  {
+    "q": "I held her carefully ______ my arms and gave her milk slowly.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "in"
+  },
+  {
+    "q": "It gently lifted off ______ the ground.",
+    "options": ["in", "on", "at", "over", "from", "to"],
+    "ans": "from"
+  },
+  {
+    "q": "She got ______ bed.",
+    "options": ["out of", "around", "into", "inside", "through"],
+    "ans": "out of"
+  },
+  {
+    "q": "The choir goes ______ the hall.",
+    "options": ["out of", "around", "into", "inside", "through"],
+    "ans": "into"
+  },
+  {
+    "q": "Some good bacteria live ______ your body.",
+    "options": ["out of", "around", "into", "inside", "through"],
+    "ans": "inside"
+  },
+  {
+    "q": "On sunny days, Sonya, Olga, and their dacha friend Anton go ______ the forest.",
+    "options": ["out of", "around", "into", "inside", "through"],
+    "ans": "into"
+  },
+  {
+    "q": "Hippo dived ______ the river.",
+    "options": ["out of", "around", "into", "inside", "through"],
+    "ans": "into"
+  },
+  {
+    "q": "We walked ______ Yosemite Valley.",
+    "options": ["out of", "around", "into", "inside", "through"],
+    "ans": "through"
+  },
+  {
+    "q": "We sat ______ the fire and sang a camp song.",
+    "options": ["out of", "around", "into", "inside", "through"],
+    "ans": "around"
+  },
+  {
+    "q": "At first, I had to step ______ the room.",
+    "options": ["out of", "around", "into", "inside", "through"],
+    "ans": "into"
+  },
+  {
+    "q": "So, light and air pass ______ them easily.",
+    "options": ["out of", "around", "into", "inside", "through"],
+    "ans": "through"
+  },
+  {
+    "q": "People got ______ their cars and helped the driver.",
+    "options": ["out of", "around", "into", "inside", "through"],
+    "ans": "out of"
+  },
+  {
+    "q": "Finally, in late winter, a baby penguin comes ______ the egg.",
+    "options": ["out of", "around", "into", "inside", "through"],
+    "ans": "out of"
+  },
+  {
+    "q": "But nothing grew ______ Ling's pot.",
+    "options": ["out of", "around", "into", "inside", "through"],
+    "ans": "inside"
+  }
+]
+;
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    
+    function normalize(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/[.,?!~']/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('question-display').innerText = (currentIdx + 1) + ". " + (item.q || '');
+        
+        const chipsArea = document.getElementById('bogi-chips');
+        chipsArea.innerHTML = '';
+        const optionsList = Array.isArray(item.options) ? item.options : (item.options ? item.options.split(',').map(s => s.trim()) : []);
+        optionsList.forEach(opt => {
+            const btn = document.createElement('span');
+            btn.className = 'chip';
+            btn.innerText = opt;
+            btn.onclick = () => {
+                document.getElementById('user-input').value = opt;
+            };
+            chipsArea.appendChild(btn);
+        });
+
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        
+        const expectedAnswers = Array.isArray(item.ans) ? item.ans : [item.ans];
+        const isCorrect = expectedAnswers.some(ans => normalize(ans) === normalize(userInputVal));
+        
+        results.push({ 
+            q: item.q, 
+            options: item.options, 
+            user: userInputVal, 
+            ans: expectedAnswers.join(' / '), 
+            isCorrect 
+        });
+        
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                const optStr = Array.isArray(w.options) ? w.options.join(', ') : w.options;
+                area.innerHTML += `<div class="wrong-item"><strong>${w.q}</strong><br>&lt;보기&gt; ${optStr}<br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[보기에서 골라 써넣기 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q} -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_보기에서_골라_써넣기.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

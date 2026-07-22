@@ -1,0 +1,379 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gb115p1p03</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 90% !important; display: inline-block !important; text-align: center; font-size: 1.15rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 20px; }
+        .bogi-box { background: #F8FAFC; border: 2px dashed #94A3B8; padding: 16px; border-radius: 12px; margin-bottom: 22px; text-align: center; }
+        .bogi-header { font-weight: bold; color: #1E293B; margin-bottom: 10px; font-size: 1.05rem; }
+        .bogi-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .chip { background: white; border: 1px solid #CBD5E1; color: #334155; font-weight: 600; font-size: 0.95rem; padding: 6px 14px; border-radius: 20px; cursor: pointer; user-select: none; transition: all 0.2s; }
+        .chip:hover { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .korean-box { font-size: 1.15rem; font-weight: 700; color: #2B6CB0; margin-bottom: 12px; word-break: keep-all; line-height: 1.5; background: #EBF8FF; padding: 12px 16px; border-radius: 10px; display: inline-block; width: 100%; box-sizing: border-box; }
+        .question-text { font-size: 1.25rem; font-weight: 700; color: #1E293B; margin-bottom: 20px; line-height: 1.6; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>gb115p1p03</h2>
+        <div class="guide-box">다음 우리말과 같은 뜻이 되도록 &lt;보기&gt;에서 알맞은 말을 골라 빈칸을 완성하시오.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 우리말 해석을 참고하여 &lt;보기&gt;에서 알맞은 단어/표현을 골라 쓰세요.</div>
+        <div class="bogi-box">
+            <div class="bogi-header">&lt;보 기&gt;</div>
+            <div class="bogi-chips" id="bogi-chips"></div>
+        </div>
+        <div class="korean-box" id="korean-display"></div>
+        <div class="question-text" id="question-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="정답 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "korean": "깨끗한 강과 우거진 푸른 나무들이 여기 주변에 있었어.",
+    "q": "A clean river and many green trees were ______ here.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "around"
+  },
+  {
+    "korean": "그들은 강 주변과 거리에서 쓰레기를 주웠다.",
+    "q": "They picked up the trash ______ the river and on the streets.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "around"
+  },
+  {
+    "korean": "둘째, 피사체[대상]를 사진의 중심으로부터 이동시켜라.",
+    "q": "Second, move the subject ______ the center of your picture.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "from"
+  },
+  {
+    "korean": "그는 양말을 벗어 침대 위에 던진다.",
+    "q": "He takes off his socks and throws them ______ the bed.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "onto"
+  },
+  {
+    "korean": "3일 후, 아람이 가족은 한 목조 건물 앞에 서 있다.",
+    "q": "Three days later, Aram's family are standing ______ a wooden building.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "in front of"
+  },
+  {
+    "korean": "잠시 뒤에 유나는 정원에 있는 큰 나무 아래에 상을 차린다.",
+    "q": "Later, Yuna sets the table ______ the big tree in the garden.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "under"
+  },
+  {
+    "korean": "그것은 건강한 지구로 향하는 첫걸음이 될 수 있다.",
+    "q": "It can be the first step ______ a healthy earth.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "toward"
+  },
+  {
+    "korean": "Sally는 바닷가를 따라 산책하기를 좋아했다.",
+    "q": "Sally liked to walk ______ the beach.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "along"
+  },
+  {
+    "korean": "그것은 두 바위를 가리키고 있었다.",
+    "q": "It pointed ______ the two rocks.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "toward"
+  },
+  {
+    "korean": "바위들 사이에서 Sally는 종이 쪽지 하나를 발견했다.",
+    "q": "______ the rocks, Sally found a piece of paper.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "between"
+  },
+  {
+    "korean": "Sally는 바위 뒤에서 한 소녀를 발견했다.",
+    "q": "______ the rock, Sally found a girl.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "behind"
+  },
+  {
+    "korean": "소녀가 Derek의 뒤에 서 있다.",
+    "q": "She stands ______ Derek.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "behind"
+  },
+  {
+    "korean": "내 뒤에서 걷지 마.",
+    "q": "Don't walk ______ me.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "behind"
+  },
+  {
+    "korean": "나보다 앞서 가지 마.",
+    "q": "Don't walk ______ me.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "before"
+  },
+  {
+    "korean": "그냥 내 옆에서 걸으며 내 친구가 되어 줘.",
+    "q": "Just walk ______ me and be my friend.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "next to"
+  },
+  {
+    "korean": "그것은 네덜란드의 11개 도시에 걸쳐 있는 얼어붙은 운하와 강, 그리고 호수 위에서 개최된다.",
+    "q": "It takes place on the frozen canals, rivers, and lakes ______ eleven cities in the Netherlands.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "across"
+  },
+  {
+    "korean": "한 여자분께서 제 옆에서 김치를 맛보고 계시네요.",
+    "q": "A woman is tasting gimchi ______ me.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "next to"
+  },
+  {
+    "korean": "저는 그들 사이에서 노래를 부르고 있어요.",
+    "q": "I am singing ______ them.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "between"
+  },
+  {
+    "korean": "왜 티셔츠, 청바지, 달걀과 빵 옆에 물방울들이 있는 걸까?",
+    "q": "Why are there water drops ______ the T-shirt, jeans, eggs and bread?",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "next to"
+  },
+  {
+    "korean": "팔을 머리 위로 들어 올리세요.",
+    "q": "Raise your arms ______ your head.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "above"
+  },
+  {
+    "korean": "트럭은 다리 밑에 멈추어 섰습니다.",
+    "q": "The truck stopped ______ the bridge.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "under"
+  },
+  {
+    "korean": "아빠와 나는 텐트 앞에 앉아서 내 학교생활에 관해 이야기했다.",
+    "q": "My father and I sat ______ the tent and talked about my school life.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "in front of"
+  },
+  {
+    "korean": "점심 식사 후에, 그는 집 주변에서 그의 부모님을 돕는다.",
+    "q": "After lunch, he helps his parents ______ the house.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "around"
+  },
+  {
+    "korean": "다음 팀이 무대 뒤에서 기다리고 있네요.",
+    "q": "The next team is waiting ______ the stage.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "behind"
+  },
+  {
+    "korean": "우린 석굴암 앞에 서 있어.",
+    "q": "We are standing ______ Seokguram.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "in front of"
+  },
+  {
+    "korean": "우리는 그 안에 있는 유명한 돌 부처상을 보았어.",
+    "q": "We saw the famous stone Buddha ______ it.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "inside"
+  },
+  {
+    "korean": "거미가 줄 주위를 돌아다닐 때, 거미는 끈끈하지 않은 줄 위에만 발을 올려놓는다.",
+    "q": "When a spider walks ______ its web, it only puts it feet on the non-sticky lines.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "around"
+  },
+  {
+    "korean": "사실, 그 흰 털 아래에 북극곰들은 검은 피부를 가지고 있다.",
+    "q": "In fact, ______ all that white fur, polar bears have black skin.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "under"
+  },
+  {
+    "korean": "북극곰은 북극 근처에 산다.",
+    "q": "Polar bears live ______ the North Pole.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "around"
+  },
+  {
+    "korean": "그가 자신의 화분을 다른 젊은이들의 식물 옆에 놓았을 때, 그들은 그를 비웃었다.",
+    "q": "When he put the pot ______ the other young people's plants, they laughed at him.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "next to"
+  },
+  {
+    "korean": "그들은 코스를 따라 내리막길을 경주합니다.",
+    "q": "They race downhill ______ the course.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "along"
+  },
+  {
+    "korean": "여러분은 바닷속의 사랑을 느낄 수 있나요?",
+    "q": "Can you fell the love ______ the sea?",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "under"
+  },
+  {
+    "korean": "선두 개는 다른 개들 앞에서 달립니다.",
+    "q": "The lead dog runs ______ the other dogs.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "before"
+  },
+  {
+    "korean": "또한, 빛과 소리는 그 구멍을 통과할 수 있다.",
+    "q": "Also, light and sound can pass ______ the holes.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "through"
+  },
+  {
+    "korean": "그것은 땅에서 부드럽게 이륙했다.",
+    "q": "It gently lifted off ______ the ground.",
+    "options": ["in front of", "between", "above", "inside", "through", "before", "under", "toward", "behind", "around", "along", "next to", "from", "onto", "across"],
+    "ans": "from"
+  }
+]
+;
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    
+    function normalize(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/[.,?!~']/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = (item.korean || '');
+        document.getElementById('question-display').innerText = (currentIdx + 1) + ". " + (item.q || '');
+        
+        const chipsArea = document.getElementById('bogi-chips');
+        chipsArea.innerHTML = '';
+        const optionsList = Array.isArray(item.options) ? item.options : (item.options ? item.options.split(',').map(s => s.trim()) : []);
+        optionsList.forEach(opt => {
+            const btn = document.createElement('span');
+            btn.className = 'chip';
+            btn.innerText = opt;
+            btn.onclick = () => {
+                document.getElementById('user-input').value = opt;
+            };
+            chipsArea.appendChild(btn);
+        });
+
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        
+        const expectedAnswers = Array.isArray(item.ans) ? item.ans : [item.ans];
+        const isCorrect = expectedAnswers.some(ans => normalize(ans) === normalize(userInputVal));
+        
+        results.push({ 
+            korean: item.korean,
+            q: item.q, 
+            options: item.options, 
+            user: userInputVal, 
+            ans: expectedAnswers.join(' / '), 
+            isCorrect 
+        });
+        
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                const optStr = Array.isArray(w.options) ? w.options.join(', ') : w.options;
+                area.innerHTML += `<div class="wrong-item"><strong>[${w.korean}]<br>${w.q}</strong><br>&lt;보기&gt; ${optStr}<br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[보기에서 골라 해석에 맞게 써넣기 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} [${r.korean}] ${r.q} -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_보기에서_골라_해석에_맞게_써넣기.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

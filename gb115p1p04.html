@@ -1,0 +1,915 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gb115p1p04</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 600px; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); text-align: center; }
+        .hidden { display: none; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; margin-bottom: 20px; border-left: 4px solid var(--primary-color); }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #E2E8F0; border-radius: 8px; box-sizing: border-box; }
+        #sentence-display { min-height: 60px; padding: 15px; border: 2px dashed #CBD5E0; border-radius: 12px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; background: #fff; }
+        .word-chip { padding: 10px 16px; background: #EDF2F7; border-radius: 25px; cursor: pointer; font-weight: 600; transition: 0.2s; border: 1px solid #E2E8F0; user-select: none; }
+        .word-chip:hover { background: #E2E8F0; }
+        .word-chip.used { opacity: 0.3; cursor: default; pointer-events: none; }
+        .word-chip.in-sentence { background: var(--primary-color); color: white; border: none; }
+        #chips-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }
+        button.btn-main { width: 100%; padding: 16px; background: var(--primary-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button.btn-reset { background: #A0AEC0; margin-top: 5px; }
+        .korean-text { font-size: 1.1rem; font-weight: bold; color: #1A365D; margin-bottom: 15px; }
+        .progress-bar { width: 100%; height: 6px; background: #EDF2F7; border-radius: 3px; margin-bottom: 20px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>gb115p1p04</h2>
+        <div class="guide-box">순서 배열 테스트를 시작합니다.</div>
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="korean-text" id="korean-display"></div>
+        <div class="guide-box">💡 아래 단어들을 순서대로 클릭하여 문장을 완성하세요.</div>
+        <div id="sentence-display"></div>
+        <div id="chips-container"></div>
+        <button class="btn-main" id="submit-btn" onclick="submitAnswer()">정답 확인</button>
+        <button class="btn-main btn-reset" onclick="resetSentence()">지우기</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <h1 id="res-score" style="color:var(--primary-color);">0 / 10</h1>
+        <div id="wrong-list" style="text-align:left; font-size: 0.9rem; margin-top:20px;"></div>
+        <button class="btn-main" onclick="location.reload()">새 문제 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "korean": "저의 집에 와서 한번 먹어 보세요!",
+    "words": ["come", "to", "my house", "and", "try", "it"],
+    "answer": "Come to my house and try it"
+  },
+  {
+    "korean": "나는 주말마다 가족과 함께 농장에 가.",
+    "words": ["I", "go", "to", "the farm", "with my family", "on", "weekends"],
+    "answer": "I go to the farm with my family on weekends"
+  },
+  {
+    "korean": "나는 가끔 꿈에서 나쁜 사람들과 싸워.",
+    "words": ["I", "sometimes", "fight", "bad", "people", "in", "my", "dreams"],
+    "answer": "I sometimes fight bad people in my dreams"
+  },
+  {
+    "korean": "매일 저는 그녀와 함께 공원에서 산책을 합니다.",
+    "words": ["Every day", "I", "walk", "with", "her", "in", "the park"],
+    "answer": "Every day I walk with her in the park"
+  },
+  {
+    "korean": "많은 사람들이 그녀에게 인사를 합니다.",
+    "words": ["many", "people", "say", "hello", "to", "her"],
+    "answer": "Many people say hello to her"
+  },
+  {
+    "korean": "잠자는 미녀가 깊은 잠에서 깨어났다.",
+    "words": ["Sleeping Beauty", "woke", "up", "from", "a", "deep", "sleep"],
+    "answer": "Sleeping Beauty woke up from a deep sleep"
+  },
+  {
+    "korean": "그녀는 침대에서 나왔다.",
+    "words": ["she", "got", "out", "of", "bed"],
+    "answer": "She got out of bed"
+  },
+  {
+    "korean": "깨끗한 강과 우거진 푸른 나무들이 여기 주변에 있었어.",
+    "words": ["a clean river", "and", "many", "green trees", "were", "around", "here"],
+    "answer": "A clean river and many green trees were around here"
+  },
+  {
+    "korean": "아름다운 새들은 깨끗한 공기 속에서 노래했지.",
+    "words": ["beautiful", "birds", "sang", "in", "the", "fresh", "air"],
+    "answer": "Beautiful birds sang in the fresh air"
+  },
+  {
+    "korean": "그들은 강 주변과 거리에서 쓰레기를 주웠다.",
+    "words": ["they", "picked up", "the trash", "around", "the river", "and", "on", "the streets"],
+    "answer": "They picked up the trash around the river and on the streets"
+  },
+  {
+    "korean": "마지막으로, 터키에는 많은 멋진 곳들이 있습니다.",
+    "words": ["Finally", "there", "are", "many", "wonderful", "places", "in", "Turkey"],
+    "answer": "Finally there are many wonderful places in Turkey"
+  },
+  {
+    "korean": "파묵칼레에는 온천이 있습니다.",
+    "words": ["there", "are", "hot", "springs", "in", "Pamukkale"],
+    "answer": "There are hot springs in Pamukkale"
+  },
+  {
+    "korean": "세진이는 유리에게 그가 찍은 사진들을 보여주었다.",
+    "words": ["Sejin", "showed", "his", "pictures", "to", "Yuri"],
+    "answer": "Sejin showed his pictures to Yuri"
+  },
+  {
+    "korean": "둘째, 피사체[대상]를 사진의 중심으로부터 이동시켜라.",
+    "words": ["Second", "move", "the subject", "of", "your picture", "from", "the center"],
+    "answer": "Second move the subject of your picture from the center"
+  },
+  {
+    "korean": "나리는 인터넷에서 채팅을 하고 있다.",
+    "words": ["Nari", "is", "chatting", "on", "the Internet"],
+    "answer": "Nari is chatting on the Internet"
+  },
+  {
+    "korean": "그 영화는 지금 극장에서 상영 중이야.",
+    "words": ["that", "movie", "is", "now playing", "in", "theaters"],
+    "answer": "That movie is now playing in theaters"
+  },
+  {
+    "korean": "그들은 인터넷에서 불법적으로 그 영화를 내려받지.",
+    "words": ["they", "illegally download", "the movie", "from", "the Internet"],
+    "answer": "They illegally download the movie from the Internet"
+  },
+  {
+    "korean": "오늘 Rachel과 나는 한국 문화센터의 몇몇 프로그램에 참여했다.",
+    "words": ["Today", "Rachel", "and", "I", "joined", "some", "programs", "at", "the Korean Culture Center"],
+    "answer": "Today Rachel and I joined some programs at the Korean Culture Center"
+  },
+  {
+    "korean": "여러분은 그 컵을 불 위에 놓습니다.",
+    "words": ["you", "put", "the cup", "on", "a fire"],
+    "answer": "You put the cup on a fire"
+  },
+  {
+    "korean": "열이 컵에서 물로 재빨리 이동한다.",
+    "words": ["the heat", "moves", "quickly", "from", "the cup", "to", "the water"],
+    "answer": "The heat moves quickly from the cup to the water"
+  },
+  {
+    "korean": "상민이 반의 학생들은 숙제가 하나 있었다.",
+    "words": ["the students", "in", "Sangmin's class", "had", "a project"],
+    "answer": "The students in Sangmin's class had a project"
+  },
+  {
+    "korean": "반 친구들에게 그것에 대해서 얘기 해.",
+    "words": ["talk", "to", "the class", "about", "that"],
+    "answer": "Talk to the class about that"
+  },
+  {
+    "korean": "아주 먼 옛날, 어느 작은 나라에 왕이 있었습니다.",
+    "words": ["A long time ago", "there", "was", "a king", "in", "a", "small", "country"],
+    "answer": "A long time ago there was a king in a small country"
+  },
+  {
+    "korean": "너 이 반이니?",
+    "words": ["are", "you", "in", "this", "class"],
+    "answer": "Are you in this class"
+  },
+  {
+    "korean": "그는 방바닥에 가방을 내려놓는다.",
+    "words": ["he", "puts", "his bag", "on", "the floor"],
+    "answer": "He puts his bag on the floor"
+  },
+  {
+    "korean": "그런 다음에 의자에 교복을 건다.",
+    "words": ["Then", "he", "hangs", "his", "school uniform", "on", "the chair"],
+    "answer": "Then he hangs his school uniform on the chair"
+  },
+  {
+    "korean": "그는 양말을 벗어 침대 위에 던진다.",
+    "words": ["he", "takes", "off", "his socks", "and", "throws", "them", "onto", "the bed"],
+    "answer": "He takes off his socks and throws them onto the bed"
+  },
+  {
+    "korean": "모두가 축제에서 즐거운 시간을 보낸다.",
+    "words": ["everyone", "has", "a", "good", "time", "at", "the festival"],
+    "answer": "Everyone has a good time at the festival"
+  },
+  {
+    "korean": "합창단은 강당으로 들어간다.",
+    "words": ["the choir", "goes", "into", "the hall"],
+    "answer": "The choir goes into the hall"
+  },
+  {
+    "korean": "그 거리에 있는 모든 집들은 똑같았다.",
+    "words": ["all", "the houses", "on", "the street", "were", "the same"],
+    "answer": "All the houses on the street were the same"
+  },
+  {
+    "korean": "어느 날, 새 한 마리가 페인트 한 통을 가지고 Rainbow 씨의 집 위로 날아가고 있었다.",
+    "words": ["One day", "a", "bird", "flew", "over", "Ms. Rainbow's", "house", "with a can of paint"],
+    "answer": "One day a bird flew over Ms. Rainbow's house with a can of paint"
+  },
+  {
+    "korean": "Park 씨는 벤치를 두 개 사서 그것들을 정원에 두었다.",
+    "words": ["Ms. Park", "bought", "two", "benches", "and", "put", "them", "in", "the garden"],
+    "answer": "Ms. Park bought two benches and put them in the garden"
+  },
+  {
+    "korean": "3일 후, 아람이 가족은 한 목조 건물 앞에 서 있다.",
+    "words": ["Three days later", "Aram's", "family", "are", "standing", "in", "front", "of", "a", "wooden", "building"],
+    "answer": "Three days later Aram's family are standing in front of a wooden building"
+  },
+  {
+    "korean": "그들은 연못 주위를 걷고 있다.",
+    "words": ["they", "are", "walking", "around", "the pond"],
+    "answer": "They are walking around the pond"
+  },
+  {
+    "korean": "연못 한가운데에 건물이 하나 있어.",
+    "words": ["there", "is", "a building", "in", "the middle", "of", "the pond"],
+    "answer": "There is a building in the middle of the pond"
+  },
+  {
+    "korean": "그들은 연못에서 배를 탔대요.",
+    "words": ["they", "rode", "boats", "on", "the pond"],
+    "answer": "They rode boats on the pond"
+  },
+  {
+    "korean": "우리는 앙코르와트에서도 여러 가지 많은 동물 석상들을 볼 수 있단다.",
+    "words": ["we", "can", "see", "many", "different", "stone", "animals", "in", "Angkor Wat,", "too"],
+    "answer": "We can see many different stone animals in Angkor Wat, too"
+  },
+  {
+    "korean": "지구상에서 가장 무거운 동물은 무엇일까?",
+    "words": ["what", "is", "the", "heaviest", "animal", "on", "Earth"],
+    "answer": "What is the heaviest animal on Earth"
+  },
+  {
+    "korean": "이런 식으로, 흰긴수염고래는 매일 바닷물 속에 있는 엄청난 양의 크릴새우를 먹는다.",
+    "words": ["This way", "the blue whale", "eats", "tons", "of", "krill", "in", "seawater", "every day"],
+    "answer": "This way the blue whale eats tons of krill in seawater every day"
+  },
+  {
+    "korean": "그것은 다리에 힘을 모아둔다.",
+    "words": ["it", "holds", "energy", "in", "its legs"],
+    "answer": "It holds energy in its legs"
+  },
+  {
+    "korean": "잠시 뒤에 유나는 정원에 있는 큰 나무 아래에 상을 차린다.",
+    "words": ["Later", "Yuna", "sets", "the table", "under", "the", "big tree", "in", "the garden"],
+    "answer": "Later Yuna sets the table under the big tree in the garden"
+  },
+  {
+    "korean": "두리와 세미는 식탁으로 음식을 가져 온다.",
+    "words": ["Duri", "and", "Semi", "bring", "the food", "to", "the table"],
+    "answer": "Duri and Semi bring the food to the table"
+  },
+  {
+    "korean": "그러나 그것들은 어느 곳에서나 삽니다. 공기 중에, 땅속에, 물속에, 그리고 심지어 여러분 몸속에도. 몇몇 박테리아는 질병을 일으킵니다.",
+    "words": ["But they live everywhere -", "in", "the air,", "in", "the ground,", "in", "water,", "and", "even", "inside", "your body"],
+    "answer": "But they live everywhere - in the air, in the ground, in water, and even inside your body"
+  },
+  {
+    "korean": "몇몇 유익한 박테리아는 여러분의 몸속에 삽니다.",
+    "words": ["some", "good", "bacteria", "live", "inside", "your body"],
+    "answer": "Some good bacteria live inside your body"
+  },
+  {
+    "korean": "옛날, 인도 방갈로르 지역에 한 노부인이 살고 있었다.",
+    "words": ["Once", "an", "old", "woman", "lived", "there", "in", "Bangalore, India"],
+    "answer": "Once an old woman lived there in Bangalore, India"
+  },
+  {
+    "korean": "그래서, 의사는 그녀를 판사에게 데려갔다.",
+    "words": ["So", "the doctor", "took", "her", "to", "the judge"],
+    "answer": "So the doctor took her to the judge"
+  },
+  {
+    "korean": "저는 파키스탄의 이슬라마바드에서 왔어요.",
+    "words": ["I'm", "from", "Islamabad, Pakistan"],
+    "answer": "I'm from Islamabad, Pakistan"
+  },
+  {
+    "korean": "오늘은 한국 중학교에서의 첫날입니다.",
+    "words": ["Today", "is", "my", "first", "day", "at", "a", "Korean", "middle school"],
+    "answer": "Today is my first day at a Korean middle school"
+  },
+  {
+    "korean": "여러분의 나라는 무슨 계절인가요?",
+    "words": ["what", "season", "is", "it", "in", "your country"],
+    "answer": "What season is it in your country"
+  },
+  {
+    "korean": "나뭇잎들은 옅은 초록색이야.",
+    "words": ["the leaves", "on", "the trees", "are", "light", "green"],
+    "answer": "The leaves on the trees are light green"
+  },
+  {
+    "korean": "영화에서 나온 표현들을 고를 수 있어.",
+    "words": ["you", "can", "choose", "expressions", "from", "a movie"],
+    "answer": "You can choose expressions from a movie"
+  },
+  {
+    "korean": "나는 아파트에 살고 있어.",
+    "words": ["I", "live", "in", "an", "apartment"],
+    "answer": "I live in an apartment"
+  },
+  {
+    "korean": "나의 품 안에 그들을 안을 수가 없어.",
+    "words": ["I", "can't", "hold", "them", "in", "my arms"],
+    "answer": "I can't hold them in my arms"
+  },
+  {
+    "korean": "나는 그의 무릎위에서도 자고 싶어요.",
+    "words": ["I", "want", "to", "sleep", "on", "his", "legs,", "too"],
+    "answer": "I want to sleep on his legs, too"
+  },
+  {
+    "korean": "그리고 우리는 게시판에 메모를 붙였다.",
+    "words": ["Then", "we", "put", "the notes", "on", "the board"],
+    "answer": "Then we put the notes on the board"
+  },
+  {
+    "korean": "우리는 학교에서 충분히 배운다. 그래서 숙제는 할 필요가 없다.",
+    "words": ["We", "learn", "enough", "at", "school", "so", "we", "don't", "need", "homework"],
+    "answer": "We learn enough at school, so we don't need homework"
+  },
+  {
+    "korean": "돈을 현명하게 관리하는 십 대 청소년들이 보낸 충고를 읽어 보라.",
+    "words": ["read", "the advice", "from", "money smart", "teenagers"],
+    "answer": "Read the advice from money smart teenagers"
+  },
+  {
+    "korean": "나는 또한 아프리카에 있는 굶주린 아이들에게 1달러를 보낼 것이다.",
+    "words": ["I", "will", "also", "send", "1 dollar", "to", "hungry", "children", "in", "Africa"],
+    "answer": "I will also send 1 dollar to hungry children in Africa"
+  },
+  {
+    "korean": "그것은 건강한 지구로 향하는 첫걸음이 될 수 있다.",
+    "words": ["it", "can", "be", "a", "first", "step", "toward", "the", "healthy", "earth"],
+    "answer": "It can be a first step toward the healthy earth"
+  },
+  {
+    "korean": "캐나다와 노르웨이에서 사람들은 자전거를 타며 그들의 차를 사용하지 않는다.",
+    "words": ["in", "Canada", "and", "Norway,", "people", "ride", "bicycles", "and", "don't", "use", "their", "cars"],
+    "answer": "In Canada and Norway, people ride bicycles and don't use their cars"
+  },
+  {
+    "korean": "Sally는 바닷가를 따라 산책하기를 좋아했다.",
+    "words": ["Sally", "liked", "to", "walk", "along", "the beach"],
+    "answer": "Sally liked to walk along the beach"
+  },
+  {
+    "korean": "어느 날 Sally는 모래 위에서 메시지를 발견했다.",
+    "words": ["One day", "she", "found", "a", "message", "on", "the sand"],
+    "answer": "One day she found a message on the sand"
+  },
+  {
+    "korean": "그것은 두 바위를 가리키고 있었다.",
+    "words": ["it", "pointed", "toward", "the", "two", "rocks"],
+    "answer": "It pointed toward the two rocks"
+  },
+  {
+    "korean": "바위들 사이에서 Sally는 종이 쪽지 하나를 발견했다.",
+    "words": ["between", "the", "rocks,", "Sally", "found", "a", "piece", "of", "paper"],
+    "answer": "Between the rocks, Sally found a piece of paper"
+  },
+  {
+    "korean": "Sally는 바위 뒤에서 한 소녀를 발견했다.",
+    "words": ["Sally", "found", "a girl", "behind", "the", "rock"],
+    "answer": "Sally found a girl behind the rock"
+  },
+  {
+    "korean": "그녀가 Derek의 뒤에 서 있다.",
+    "words": ["she", "stands", "behind", "Derek"],
+    "answer": "She stands behind Derek"
+  },
+  {
+    "korean": "트럭은 그 플라스틱을 재활용 센터로 가져갑니다.",
+    "words": ["the trucks", "take", "the plastics", "to", "the", "recycling center"],
+    "answer": "The trucks take the plastics to the recycling center"
+  },
+  {
+    "korean": "그러면 그것을 302호로 가져오세요.",
+    "words": ["then", "bring", "it", "to", "Room 302"],
+    "answer": "Then bring it to Room 302"
+  },
+  {
+    "korean": "내 뒤에서 걷지 마.",
+    "words": ["don't", "walk", "behind", "me"],
+    "answer": "Don't walk behind me"
+  },
+  {
+    "korean": "나보다 앞서 가지 마.",
+    "words": ["don't", "walk", "before", "me"],
+    "answer": "Don't walk before me"
+  },
+  {
+    "korean": "그냥 내 옆에서 걸으며 내 친구가 되어 줘.",
+    "words": ["Just", "walk", "next", "to", "me", "and", "be", "my", "friend"],
+    "answer": "Just walk next to me and be my friend"
+  },
+  {
+    "korean": "그것은 물에서는 빠르게 움직이지만, 땅에서는 느리게 걷는다.",
+    "words": ["it", "moves", "fast", "in", "the water", "but", "it", "walks", "slow", "on", "the ground"],
+    "answer": "It moves fast in the water but it walks slow on the ground"
+  },
+  {
+    "korean": "주말마다 그들은 도시를 벗어나 자연 속에서 시간을 보낸다.",
+    "words": ["On weekends,", "they", "spend", "time", "out", "of", "the city", "and", "in", "nature"],
+    "answer": "On weekends, they spend time out of the city and in nature"
+  },
+  {
+    "korean": "그녀는 채소에게 말을 하고 노래를 불러준다!",
+    "words": ["she", "talks", "and", "sings", "to", "the vegetables"],
+    "answer": "She talks and sings to the vegetables"
+  },
+  {
+    "korean": "맑은 날이면 Sonya와 Olga, 그리고 그들의 dacha 친구인 Anton은 숲 속으로 간다.",
+    "words": ["On sunny days,", "Olga,", "Sonya,", "and", "their dacha friend Anton", "go", "into", "the forest"],
+    "answer": "On sunny days, Olga, Sonya, and their dacha friend Anton go into the forest"
+  },
+  {
+    "korean": "여러 나라들에서 온 길거리 음식에 대해서 알아봐자.",
+    "words": ["let's", "find", "out", "about", "street food", "from", "different", "countries"],
+    "answer": "Let's find out about street food from different countries"
+  },
+  {
+    "korean": "거의 모든 거리의 모퉁이에는 패스트푸드가 있다.",
+    "words": ["there", "is", "fast food", "on", "almost", "every", "street corner"],
+    "answer": "There is fast food on almost every street corner"
+  },
+  {
+    "korean": "하마는 강으로 뛰어들었다.",
+    "words": ["Hippo", "dived", "into", "the river"],
+    "answer": "Hippo dived into the river"
+  },
+  {
+    "korean": "그의 오른쪽 눈에서 눈물이 흘러나왔다.",
+    "words": ["tears", "came", "from", "his", "right", "eye"],
+    "answer": "Tears came from his right eye"
+  },
+  {
+    "korean": "우리는 Yosemite 계곡을 둘러보았다.",
+    "words": ["we", "walked", "around", "Yosemite Valley"],
+    "answer": "We walked around Yosemite Valley"
+  },
+  {
+    "korean": "우리는 모닥불에 둘러앉아 캠프 송을 불렀다.",
+    "words": ["we", "sat", "around", "the fire", "and", "sang", "a", "camp song"],
+    "answer": "We sat around the fire and sang a camp song"
+  },
+  {
+    "korean": "거북이들은 물속에서 헤엄치는 것을 좋아하지만, 물속에 아주 오래 있을 수는 없단다.",
+    "words": ["turtles", "like", "to", "swim", "in", "the water", "but", "they", "can't", "stay", "in", "the water", "very", "long"],
+    "answer": "Turtles like to swim in the water but they can't stay in the water very long"
+  },
+  {
+    "korean": "그것은 네덜란드의 11개 도시에 걸쳐 있는 얼어붙은 운하와 강, 그리고 호수 위에서 개최된다.",
+    "words": ["it", "takes", "place", "on", "the frozen canals,", "rivers,", "and", "lakes", "across", "eleven", "cities", "in", "the Netherlands"],
+    "answer": "It takes place on the frozen canals, rivers, and lakes across eleven cities in the Netherlands"
+  },
+  {
+    "korean": "그녀는 감옥에서 나오자, 중국으로 갔다.",
+    "words": ["when", "she", "got", "out", "of", "prison,", "she", "went", "to", "China"],
+    "answer": "When she got out of prison, she went to China"
+  },
+  {
+    "korean": "Ishaan의 부모님은 Ishaan이 걱정스러워서 그를 기숙학교에 보낸다.",
+    "words": ["Ishaan's parents are worried about Ishaan, so", "they", "send", "him", "to", "a", "boarding school"],
+    "answer": "Ishaan's parents are worried about Ishaan, so they send him to a boarding school"
+  },
+  {
+    "korean": "나는 학교에 걸어가.",
+    "words": ["I", "walk", "to", "school"],
+    "answer": "I walk to school"
+  },
+  {
+    "korean": "나는 통학 버스를 타고 학교에 가.",
+    "words": ["I", "go", "to", "school", "by", "school bus"],
+    "answer": "I go to school by school bus"
+  },
+  {
+    "korean": "나는 나의 점심 도시락을 학교에 가지고 가.",
+    "words": ["I", "take", "my", "lunch box", "to", "school"],
+    "answer": "I take my lunch box to school"
+  },
+  {
+    "korean": "나는 사막에서 살아.",
+    "words": ["I", "live", "in", "the desert"],
+    "answer": "I live in the desert"
+  },
+  {
+    "korean": "나는 낙타를 타고 학교에 가.",
+    "words": ["I", "go", "to", "school", "by", "camel"],
+    "answer": "I go to school by camel"
+  },
+  {
+    "korean": "나는 집에서 배워.",
+    "words": ["I", "learn", "at", "home"],
+    "answer": "I learn at home"
+  },
+  {
+    "korean": "물고기는 꼬리를 좌우로 움직인다.",
+    "words": ["a fish", "moves", "its tail", "from", "side", "to", "side"],
+    "answer": "A fish moves its tail from side to side"
+  },
+  {
+    "korean": "캥거루는 자신의 꼬리에 앉는다.",
+    "words": ["a", "kangaroo", "sits", "on", "its", "tail"],
+    "answer": "A kangaroo sits on its tail"
+  },
+  {
+    "korean": "한 여자분께서 제 옆에서 김치를 맛보고 계시네요.",
+    "words": ["a", "woman", "is", "tasting", "gimchi", "next", "to", "me"],
+    "answer": "A woman is tasting gimchi next to me"
+  },
+  {
+    "korean": "저는 그들 사이에서 노래를 부르고 있어요.",
+    "words": ["I", "am", "singing", "between", "them"],
+    "answer": "I am singing between them"
+  },
+  {
+    "korean": "Brian은 예나를 그의 집에서 여는 파티에 초대했다.",
+    "words": ["Brian", "invited", "Yena", "to", "a party", "at", "his home"],
+    "answer": "Brian invited Yena to a party at his home"
+  },
+  {
+    "korean": "예나는 현관에서 Brian의 부모님께 인사를 드렸다.",
+    "words": ["Yena", "said", "hello", "to", "Brian's", "parents", "at", "the door"],
+    "answer": "Yena said hello to Brian's parents at the door"
+  },
+  {
+    "korean": "그녀는 스테이크에 소금을 조금 뿌렸다.",
+    "words": ["she", "put", "some", "salt", "on", "her", "steak"],
+    "answer": "She put some salt on her steak"
+  },
+  {
+    "korean": "이집트에서, 당신은 음식에 소금을 뿌리면 안된다.",
+    "words": ["in", "Egypt,", "you", "shouldn't", "add", "salt", "to", "your food"],
+    "answer": "In Egypt, you shouldn't add salt to your food"
+  },
+  {
+    "korean": "러시아에서는 사람들은 현관에서 안부 인사를 하거나, 선물을 교환하지 않는다.",
+    "words": ["in", "Russia,", "people", "don't", "usually", "say", "hello", "or", "exchange", "gifts", "at", "the door"],
+    "answer": "In Russia, people don't usually say hello or exchange gifts at the door"
+  },
+  {
+    "korean": "여기 서울의 민박 주인 가족들이 제게 정말 잘 해줘요.",
+    "words": ["my", "host family", "here", "in", "Seoul", "is", "really good", "to", "me"],
+    "answer": "My host family here in Seoul is really good to me"
+  },
+  {
+    "korean": "우리가 그 마을에 도착했을 때, 저는 “와! 우리가 타임머신을 탔어?”라고 말했어요.",
+    "words": ["when", "we", "arrived", "at", "the village,", "I said, \"Wow! Did we take a time machine?\""],
+    "answer": "When we arrived at the village, I said, \"Wow! Did we take a time machine?\""
+  },
+  {
+    "korean": "처음에 저는 방에서 뛰쳐나와야 했어요.",
+    "words": ["At first,", "I", "had", "to", "step", "out", "of", "the room"],
+    "answer": "At first, I had to step out of the room"
+  },
+  {
+    "korean": "그래서 빛과 공기가 쉽게 그것들을 통과해.",
+    "words": ["So,", "light", "and", "air", "easily", "pass", "through", "them"],
+    "answer": "So, light and air pass through them easily"
+  },
+  {
+    "korean": "탁자 위에 세 개의 동전이 있다.",
+    "words": ["there", "are", "three", "coins", "on", "the table"],
+    "answer": "There are three coins on the table"
+  },
+  {
+    "korean": "왜 티셔츠, 청바지, 달걀과 빵 옆에 물방울들이 있는 걸까?",
+    "words": ["why", "are", "there", "water drops", "next", "to", "the T-shirt,", "jeans,", "eggs", "and", "bread"],
+    "answer": "Why are there water drops next to the T-shirt, jeans, eggs and bread"
+  },
+  {
+    "korean": "세상에는 깨끗한 물이 충분하지 않다.",
+    "words": ["there", "isn't", "enough", "clean", "water", "in", "the world"],
+    "answer": "There isn't enough clean water in the world"
+  },
+  {
+    "korean": "나는 우리 반에 아는 사람이 아무도 없었지만 몇몇 학급 친구들과 이야기를 나눴다.",
+    "words": ["I", "didn't", "know", "anyone", "in", "my class,", "but", "I", "talked", "to", "some", "of", "my", "classmates"],
+    "answer": "I didn't know anyone in my class, but I talked to some of my classmates"
+  },
+  {
+    "korean": "여러분은 요가를 함으로써 에너지를 얻을 수 있습니다.",
+    "words": ["you", "can", "get", "energy", "from", "yoga"],
+    "answer": "You can get energy from yoga"
+  },
+  {
+    "korean": "여러분의 팔을 머리 위로 들어 올리세요.",
+    "words": ["raise", "your", "arms", "above", "your", "head"],
+    "answer": "Raise your arms above your head"
+  },
+  {
+    "korean": "왕은 벽에 걸린 다섯 개의 용 머리들을 가리켰습니다.",
+    "words": ["the king", "pointed", "at", "the", "five", "dragon", "heads", "on", "the wall"],
+    "answer": "The king pointed at the five dragon heads on the wall"
+  },
+  {
+    "korean": "네덜란드에서는 새해에 수천 명의 사람들이 행운을 위해서 차가운 바닷물에 뛰어듭니다.",
+    "words": ["On New Year's Day in Holland,", "thousands", "of", "people", "jump", "into", "the", "freezing cold", "sea", "for", "good", "luck"],
+    "answer": "On New Year's Day in Holland, thousands of people jump into the freezing cold sea for good luck"
+  },
+  {
+    "korean": "트럭은 다리 밑에 멈추어 섰습니다.",
+    "words": ["the truck", "stopped", "under", "the bridge"],
+    "answer": "The truck stopped under the bridge"
+  },
+  {
+    "korean": "사람들이 자신들의 차에서 내려 기사를 도와주었습니다.",
+    "words": ["people", "got", "out", "of", "their cars", "and", "helped", "the driver"],
+    "answer": "People got out of their cars and helped the driver"
+  },
+  {
+    "korean": "사람들은 트럭을 소방차와 연결시켰습니다.",
+    "words": ["people", "tied", "the truck", "to", "the fire truck"],
+    "answer": "People tied the truck to the fire truck"
+  },
+  {
+    "korean": "황제 펭귄은 남극해에 살고 있습니다.",
+    "words": ["emperor penguins", "live", "in", "the sea", "in", "Antarctica"],
+    "answer": "Emperor penguins live in the sea in Antarctica"
+  },
+  {
+    "korean": "늦은 가을이면, 그들은 새끼를 낳기 위해 바다에서 먼 곳으로 떠나옵니다.",
+    "words": ["In late fall,", "they", "go", "far", "from", "the sea", "to", "have", "a baby"],
+    "answer": "In late fall, they go far from the sea to have a baby"
+  },
+  {
+    "korean": "마침내 늦겨울이 되면, 아기 펭귄은 알에서 나옵니다.",
+    "words": ["Finally, in late winter,", "a baby penguin", "comes", "out", "of", "the egg"],
+    "answer": "Finally, in late winter, a baby penguin comes out of the egg"
+  },
+  {
+    "korean": "그는 자신의 목에서 ‘펭귄 우유’를 꺼내서 새끼에게 먹입니다.",
+    "words": ["he", "gives", "the baby", "\"penguin milk\"", "from", "his throat"],
+    "answer": "He gives the baby \"penguin milk\" from his throat"
+  },
+  {
+    "korean": "마침내 엄마 펭귄은 바다에서 돌아옵니다.",
+    "words": ["At last,", "the mother penguin", "comes", "back", "from", "the sea"],
+    "answer": "At last, the mother penguin comes back from the sea"
+  },
+  {
+    "korean": "지수 옆에 앉겠니?",
+    "words": ["could", "you", "sit", "next", "to", "Jisu"],
+    "answer": "Could you sit next to Jisu"
+  },
+  {
+    "korean": "깡통들은 초록색 통에 넣는 것을 기억하세요.",
+    "words": ["remember", "to", "put", "your cans", "in", "the", "green bin"],
+    "answer": "Remember to put your cans in the green bin"
+  },
+  {
+    "korean": "우리 가족은 지난밤에 한옥 게스트하우스에 머물렀어.",
+    "words": ["my family", "stayed", "at", "a", "hanok guesthouse", "last night"],
+    "answer": "My family stayed at a hanok guesthouse last night"
+  },
+  {
+    "korean": "나는 침대 대신에 온돌에서 잤어.",
+    "words": ["I", "slept", "on", "ondol", "instead of", "a bed"],
+    "answer": "I slept on ondol instead of a bed"
+  },
+  {
+    "korean": "아빠 해마는 그의 주머니에 알을 가지고 다닙니다.",
+    "words": ["a seahorse dad", "carries", "the baby eggs", "in", "his", "pouch"],
+    "answer": "A seahorse dad carries the baby eggs in his pouch"
+  },
+  {
+    "korean": "엄마는 그녀의 날개 밑에 아기를 품고 있습니다.",
+    "words": ["the mom", "is", "keeping", "the baby", "under", "her", "wing"],
+    "answer": "The mom is keeping the baby under her wing"
+  },
+  {
+    "korean": "아빠와 나는 텐트 앞에 앉아서 내 학교생활에 관해 이야기했다.",
+    "words": ["my father", "and", "I", "sat", "in", "front", "of", "the tent", "and talked about my school life"],
+    "answer": "My father and I sat in front of the tent and talked about my school life"
+  },
+  {
+    "korean": "점심 식사 후에, 그는 집 주변에서 그의 부모님을 돕는다.",
+    "words": ["After lunch,", "he", "helps", "his", "parents", "around", "the house"],
+    "answer": "After lunch, he helps his parents around the house"
+  },
+  {
+    "korean": "다음 팀이 무대 뒤에서 기다리고 있네요.",
+    "words": ["the", "next", "team", "is", "waiting", "behind", "the stage"],
+    "answer": "The next team is waiting behind the stage"
+  },
+  {
+    "korean": "그 팀원들은 다른 나라에서 온 학생들입니다.",
+    "words": ["the members", "are", "students", "from", "different", "countries"],
+    "answer": "The members are students from different countries"
+  },
+  {
+    "korean": "Sarah가 나의 경주 여행에 큰 즐거움을 더해 주었어.",
+    "words": ["Sarah", "added", "a", "lot", "of", "fun", "to", "my", "trip", "to", "Gyeongju"],
+    "answer": "Sarah added a lot of fun to my trip to Gyeongju"
+  },
+  {
+    "korean": "우린 석굴암 앞에 서 있어.",
+    "words": ["we", "are", "standing", "in", "front", "of", "Seokguram"],
+    "answer": "We are standing in front of Seokguram"
+  },
+  {
+    "korean": "우리는 그 안에 있는 유명한 돌 부처상을 보았어.",
+    "words": ["we", "saw", "the", "famous", "stone Buddha", "inside", "it"],
+    "answer": "We saw the famous stone Buddha inside it"
+  },
+  {
+    "korean": "저는 그것을 예쁜 접시에 담을 거예요.",
+    "words": ["I'll", "put", "it", "on", "a", "pretty", "plate"],
+    "answer": "I'll put it on a pretty plate"
+  },
+  {
+    "korean": "Mini는 예원이를 매우 잘 이해하고 항상 그녀 옆에 있다.",
+    "words": ["Mini", "understands", "Yewon", "very", "well", "and", "always", "stays", "beside", "her"],
+    "answer": "Mini understands Yewon very well and always stays beside her"
+  },
+  {
+    "korean": "거미가 줄을 돌아다닐 때, 거미는 끈끈하지 않은 줄 위에만 발을 올려놓는다.",
+    "words": ["when", "a spider", "walks", "around", "its web,", "it", "puts", "its feet", "only", "on", "the non-sticky", "lines"],
+    "answer": "When a spider walks around its web, it puts its feet only on the non-sticky lines"
+  },
+  {
+    "korean": "사실, 그 모든 흰 털 속에 북극곰들은 검은 피부를 가지고 있다.",
+    "words": ["in fact,", "under", "all", "that", "white fur,", "polar bears", "have", "black", "skin"],
+    "answer": "In fact, under all that white fur, polar bears have black skin"
+  },
+  {
+    "korean": "북극곰은 북극 근처에 산다.",
+    "words": ["polar bears", "live", "around", "the North Pole"],
+    "answer": "Polar bears live around the North Pole"
+  },
+  {
+    "korean": "하지만 Ling의 화분에선 아무것도 자라지 않았다.",
+    "words": ["but", "nothing", "grew", "out", "of", "Ling's", "pot"],
+    "answer": "But nothing grew out of Ling's pot"
+  },
+  {
+    "korean": "그가 자신의 화분을 다른 젊은이들의 식물 옆에 놓았을 때, 그들은 그를 비웃었다.",
+    "words": ["when", "he", "put", "his pot", "beside", "the other young people's", "plants,", "they laughed at him"],
+    "answer": "When he put his pot beside the other young people's plants, they laughed at him"
+  },
+  {
+    "korean": "그녀는 하루 종일 Browny 옆에 있었다.",
+    "words": ["she", "stayed", "by", "Browny", "all day long"],
+    "answer": "She stayed by Browny all day long"
+  },
+  {
+    "korean": "Browny가 여전히 아파서 나는 그를 수의사에게 데려갔다.",
+    "words": ["Browny", "was", "still", "sick,", "so", "I", "took", "him", "to", "a vet"],
+    "answer": "Browny was still sick, so I took him to a vet"
+  },
+  {
+    "korean": "Spikey가 문 앞에서 우리를 기다리고 있다가 우리에게 뛰어왔다.",
+    "words": ["Spikey", "waited", "for", "us", "by", "the door", "and", "ran", "to", "us"],
+    "answer": "Spikey waited for us by the door and ran to us"
+  },
+  {
+    "korean": "한 네덜란드인이 맨해튼을 아메리칸 인디언들에게서 24달러에 샀어요.",
+    "words": ["a Dutchman", "bought", "Manhattan", "from", "the American Indians", "for", "$24"],
+    "answer": "A Dutchman bought Manhattan from the American Indians for $24"
+  },
+  {
+    "korean": "센트럴 파크는 맨해튼의 중심부에 있어요.",
+    "words": ["Central Park", "is", "in", "the", "center", "of", "Manhattan"],
+    "answer": "Central Park is in the center of Manhattan"
+  },
+  {
+    "korean": "큰 연락선들이 수많은 관광객들을 Liberty 섬으로 실어 나릅니다.",
+    "words": ["large", "ferries", "carry", "many", "tourists", "to", "Liberty Island"],
+    "answer": "Large ferries carry many tourists to Liberty Island"
+  },
+  {
+    "korean": "그 위에 파라핀 종이를 올려 둬.",
+    "words": ["put", "wax paper", "over", "it"],
+    "answer": "Put wax paper over it"
+  },
+  {
+    "korean": "어떤 사람들은 크루아상 안에 햄과 치즈를 넣습니다.",
+    "words": ["some", "people", "put", "ham", "and", "cheese", "inside", "a croissant"],
+    "answer": "Some people put ham and cheese inside a croissant"
+  },
+  {
+    "korean": "피타 빵은 중동에서 인기가 많습니다.",
+    "words": ["pita bread", "is", "popular", "in", "the Middle East"],
+    "answer": "Pita bread is popular in the Middle East"
+  },
+  {
+    "korean": "그들은 코스를 따라 내리막길을 경주합니다.",
+    "words": ["they", "race", "downhill", "along", "the course"],
+    "answer": "They race downhill along the course"
+  },
+  {
+    "korean": "우리는 ‘음악 천사들’이라는 동아리에 속해 있어.",
+    "words": ["we", "are", "in", "the Music Angels Club"],
+    "answer": "We are in the Music Angels Club"
+  },
+  {
+    "korean": "여러분은 바닷속의 사랑을 느낄 수 있나요?",
+    "words": ["can", "you", "feel", "the", "love", "under", "the sea"],
+    "answer": "Can you feel the love under the sea"
+  },
+  {
+    "korean": "그의 개들은 많은 것들을 사람들의 집으로 배달합니다.",
+    "words": ["his", "dogs", "deliver", "many", "things", "to", "people's", "houses"],
+    "answer": "His dogs deliver many things to people's houses"
+  },
+  {
+    "korean": "Katu는 집집마다 그들을 안내합니다.",
+    "words": ["Katu", "guides", "them", "from", "house", "to", "house"],
+    "answer": "Katu guides them from house to house"
+  },
+  {
+    "korean": "선두 개는 다른 개들 앞에서 달립니다.",
+    "words": ["the lead dog", "runs", "in", "front", "of", "the other dogs"],
+    "answer": "The lead dog runs in front of the other dogs"
+  },
+  {
+    "korean": "한지는 신선한 공기를 방 안으로 들여오고 나쁜 공기를 방 밖으로 내보낸다.",
+    "words": ["hanji", "brings", "fresh", "air", "into", "the", "rooms", "and", "takes", "bad", "air", "out", "of", "them"],
+    "answer": "Hanji brings fresh air into the rooms and takes bad air out of them"
+  },
+  {
+    "korean": "또한, 빛과 소리는 그 구멍을 통과할 수 있다.",
+    "words": ["Also,", "sound", "and", "light", "can", "pass", "through", "the holes"],
+    "answer": "Also, sound and light can pass through the holes"
+  },
+  {
+    "korean": "나는 그녀를 조심스럽게 내 팔에 안고 그녀에게 천천히 우유를 주었다.",
+    "words": ["I", "held", "her", "carefully", "in", "my", "arms", "and", "slowly", "gave", "her", "milk"],
+    "answer": "I held her carefully in my arms and slowly gave her milk"
+  },
+  {
+    "korean": "그것은 땅에서 부드럽게 이륙했다.",
+    "words": ["it", "gently", "lifted", "off", "from", "the ground"],
+    "answer": "It gently lifted off from the ground"
+  },
+  {
+    "korean": "내가 침대에서 천천히 빠져나올 때, RX2가 내게 아침 식사용 알약 세 개를 가져온다.",
+    "words": ["When", "I", "slowly", "get", "out", "of", "bed,", "RX2", "brings", "me", "three", "pills", "for", "breakfast"],
+    "answer": "When I slowly get out of bed, RX2 brings me three pills for breakfast"
+  },
+  {
+    "korean": "RX2가 창문을 가리킨다.",
+    "words": ["RX2", "points", "at", "the window"],
+    "answer": "RX2 points at the window"
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, currentWords = [];
+    function prepareQuiz() {
+        const name = document.getElementById('name').value;
+        if (!name) return alert("이름을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+    function loadQuestion() {
+        if (currentIdx >= 10) return finishQuiz();
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = item.korean;
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+        resetSentence();
+    }
+    function resetSentence() {
+        currentWords = [];
+        const container = document.getElementById('chips-container');
+        const display = document.getElementById('sentence-display');
+        container.innerHTML = ''; display.innerHTML = '';
+        const shuffled = [...quizSet[currentIdx].words].sort(() => Math.random() - 0.5);
+        shuffled.forEach(w => {
+            const chip = document.createElement('div');
+            chip.className = 'word-chip'; chip.innerText = w;
+            chip.onclick = () => addWord(chip, w);
+            container.appendChild(chip);
+        });
+    }
+    function addWord(chip, word) {
+        if (chip.classList.contains('used')) return;
+        chip.classList.add('used'); currentWords.push(word);
+        const displayChip = document.createElement('div');
+        displayChip.className = 'word-chip in-sentence';
+        displayChip.innerText = word;
+        document.getElementById('sentence-display').appendChild(displayChip);
+    }
+    function submitAnswer() {
+        const userSentence = currentWords.join(" ").replace(/ ,/g, ",").replace(/ ./g, ".");
+        const correctSentence = quizSet[currentIdx].answer;
+        if (userSentence.toLowerCase() === correctSentence.toLowerCase()) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-score').innerText = score + " / 10";
+    }
+</script>
+</body>
+</html>
