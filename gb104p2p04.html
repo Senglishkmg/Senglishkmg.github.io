@@ -1,0 +1,425 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gb104p2p03</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 600px; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); text-align: center; }
+        .hidden { display: none; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; margin-bottom: 20px; border-left: 4px solid var(--primary-color); }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #E2E8F0; border-radius: 8px; box-sizing: border-box; }
+        #sentence-display { min-height: 60px; padding: 15px; border: 2px dashed #CBD5E0; border-radius: 12px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; background: #fff; }
+        .word-chip { padding: 10px 16px; background: #EDF2F7; border-radius: 25px; cursor: pointer; font-weight: 600; transition: 0.2s; border: 1px solid #E2E8F0; user-select: none; }
+        .word-chip:hover { background: #E2E8F0; }
+        .word-chip.used { opacity: 0.3; cursor: default; pointer-events: none; }
+        .word-chip.in-sentence { background: var(--primary-color); color: white; border: none; }
+        #chips-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }
+        button.btn-main { width: 100%; padding: 16px; background: var(--primary-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button.btn-reset { background: #A0AEC0; margin-top: 5px; }
+        .korean-text { font-size: 1.1rem; font-weight: bold; color: #1A365D; margin-bottom: 15px; }
+        .progress-bar { width: 100%; height: 6px; background: #EDF2F7; border-radius: 3px; margin-bottom: 20px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>gb104p2p03</h2>
+        <div class="guide-box">순서 배열 테스트를 시작합니다.</div>
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="korean-text" id="korean-display"></div>
+        <div class="guide-box">💡 아래 단어들을 순서대로 클릭하여 문장을 완성하세요.</div>
+        <div id="sentence-display"></div>
+        <div id="chips-container"></div>
+        <button class="btn-main" id="submit-btn" onclick="submitAnswer()">정답 확인</button>
+        <button class="btn-main btn-reset" onclick="resetSentence()">지우기</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <h1 id="res-score" style="color:var(--primary-color);">0 / 10</h1>
+        <div id="wrong-list" style="text-align:left; font-size: 0.9rem; margin-top:20px;"></div>
+        <button class="btn-main" onclick="location.reload()">새 문제 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "korean": "물은 뜨거워져서 곧 끓게 됩니다.",
+    "words": ["becomes", "boils soon", "hot", "the water", "and"],
+    "answer": "The water becomes hot and boils soon"
+  },
+  {
+    "korean": "그것은 독일에서 만들어진 것이고 아름다운 소리가 난다.",
+    "words": ["from", "sounds", "it's", "and", "it", "beautiful", "Germany,"],
+    "answer": "It's from Germany, and it sounds beautiful"
+  },
+  {
+    "korean": "난 좀 나른하고 피곤해.",
+    "words": ["tired", "I", "a little", "lazy", "feel", "and"],
+    "answer": "I feel a little lazy and tired"
+  },
+  {
+    "korean": "난 화창한 날에 기분이 좋아.",
+    "words": ["feel", "sunny days", "happy", "on", "I"],
+    "answer": "I feel happy on sunny days"
+  },
+  {
+    "korean": "날마다 추워지고 있어.",
+    "words": ["is", "day by day", "getting", "it", "colder"],
+    "answer": "It is getting colder day by day"
+  },
+  {
+    "korean": "나뭇잎들은 노란색, 빨간색과 갈색으로 변하고 있어.",
+    "words": ["are", "red", "turning", "brown", "the leaves", "yellow,", "and"],
+    "answer": "The leaves are turning yellow, red and brown"
+  },
+  {
+    "korean": "기분이 안 좋아 보인다.",
+    "words": ["look", "you", "unhappy"],
+    "answer": "You look unhappy"
+  },
+  {
+    "korean": "아파트에 살기에는 너무 크게 자라게 될 거야.",
+    "words": ["too", "will", "your apartment", "grow", "it", "big", "for"],
+    "answer": "It will grow too big for your apartment"
+  },
+  {
+    "korean": "그는 친절해 보이네요.",
+    "words": ["looks", "he", "nice"],
+    "answer": "He looks nice"
+  },
+  {
+    "korean": "그 방들은 작아 보였다.",
+    "words": ["looked", "small", "the rooms"],
+    "answer": "The rooms looked small"
+  },
+  {
+    "korean": "Jesi는 화가 나서 나가 버린다.",
+    "words": ["gets", "walks out", "upset", "Jesi", "and"],
+    "answer": "Jesi gets upset and walks out"
+  },
+  {
+    "korean": "Sally의 반려동물은 차갑고 건조한 느낌이 난다.",
+    "words": ["feels", "dry", "cool", "Sally's pet", "and"],
+    "answer": "Sally's pet feels cool and dry"
+  },
+  {
+    "korean": "저는 너무 빨리 피곤해져요.",
+    "words": ["get", "soon", "tired", "I", "too"],
+    "answer": "I get tired too soon"
+  },
+  {
+    "korean": "여러분은 기분이 좋아질 것입니다.",
+    "words": ["will", "great", "feel", "you"],
+    "answer": "You will feel great"
+  },
+  {
+    "korean": "그것은 그것 뒤에 있는 산과 정말 잘 어울려.",
+    "words": ["looks", "the mountains behind it", "it", "with", "great"],
+    "answer": "It looks great with the mountains behind it"
+  },
+  {
+    "korean": "그것들은 모두 다르게 생겼어요.",
+    "words": ["look", "they all", "different"],
+    "answer": "They all look different"
+  },
+  {
+    "korean": "그녀는 갑자기 시력을 잃게 되었다.",
+    "words": ["blind", "she", "suddenly", "became"],
+    "answer": "She suddenly became blind"
+  },
+  {
+    "korean": "길거리 음식은 먹음직스러워 보이는데다가 맛있다.",
+    "words": ["tastes", "looks", "street food", "and", "delicious", "good"],
+    "answer": "Street food looks good and tastes delicious"
+  },
+  {
+    "korean": "강은 흙탕물이 되었다.",
+    "words": ["muddy", "became", "very", "the river"],
+    "answer": "The river became very muddy"
+  },
+  {
+    "korean": "잠시 뒤에, 강물이 다시 맑아졌다.",
+    "words": ["the river", "clear", "became", "after a while,", "again"],
+    "answer": "After a while, the river became clear again"
+  },
+  {
+    "korean": "그는 지쳤고, 바닥 파는 것을 멈추었다.",
+    "words": ["got", "stopped", "tired", "he", "and", "digging"],
+    "answer": "He got tired and stopped digging"
+  },
+  {
+    "korean": "하지만 그녀는 아파 보이지는 않아요.",
+    "words": ["doesn't", "but", "sick", "she", "look"],
+    "answer": "But she doesn't look sick"
+  },
+  {
+    "korean": "지난 주말에 바다의 껍질이 아주 건조해 보였어요.",
+    "words": ["Last weekend,", "dry", "looked", "Bada's shell", "very"],
+    "answer": "Last weekend, Bada's shell looked very dry"
+  },
+  {
+    "korean": "그것들은 약해지게 되지.",
+    "words": ["will", "weak", "become", "they"],
+    "answer": "They will become weak"
+  },
+  {
+    "korean": "그 아이는 늘 너무 슬퍼 보여.",
+    "words": ["always", "sad", "looks", "he", "so"],
+    "answer": "He always looks so sad"
+  },
+  {
+    "korean": "그녀는 정말 배가 불렀다.",
+    "words": ["really", "full", "she", "felt"],
+    "answer": "She felt really full"
+  },
+  {
+    "korean": "예나는 예의 바르게 보인다.",
+    "words": ["looks", "Yena", "polite"],
+    "answer": "Yena looks polite"
+  },
+  {
+    "korean": "이 사과 맛있어 보인다!",
+    "words": ["looks", "this", "delicious", "apple"],
+    "answer": "This apple looks delicious"
+  },
+  {
+    "korean": "그들이 수상해 보였어요.",
+    "words": ["looked", "suspicious", "they"],
+    "answer": "They looked suspicious"
+  },
+  {
+    "korean": "모든 집이 비슷해 보였지만 각각 달랐어요.",
+    "words": ["looked", "every", "similar", "house", "but each one was different"],
+    "answer": "Every house looked similar, but each one was different"
+  },
+  {
+    "korean": "나는 늙고 병들어가는구나.",
+    "words": ["I", "getting", "ill", "old", "am", "and"],
+    "answer": "I am getting old and ill"
+  },
+  {
+    "korean": "그가 좋아 보이지 않네요.",
+    "words": ["good", "doesn't", "look", "he"],
+    "answer": "He doesn't look good"
+  },
+  {
+    "korean": "요즘 당신이 흐릿하게 보여요.",
+    "words": ["blurry", "you", "these days", "look"],
+    "answer": "You look blurry these days"
+  },
+  {
+    "korean": "그녀의 손은 참 따뜻하게 느껴져요.",
+    "words": ["feel", "her hands", "warm", "so"],
+    "answer": "Her hands feel so warm"
+  },
+  {
+    "korean": "왕이 당황한 듯 보였다.",
+    "words": ["puzzled", "the king", "looked"],
+    "answer": "The king looked puzzled"
+  },
+  {
+    "korean": "저는 여러분과 다르게 생겼습니다.",
+    "words": ["look", "from", "different", "I", "you"],
+    "answer": "I look different from you"
+  },
+  {
+    "korean": "그것은 우리 학교 같진 않았어.",
+    "words": ["didn't", "my school", "look", "like", "it"],
+    "answer": "It didn't look like my school"
+  },
+  {
+    "korean": "우리는 서로를 더 가깝게 느꼈다.",
+    "words": ["felt", "closer", "each other", "to", "we"],
+    "answer": "We felt closer to each other"
+  },
+  {
+    "korean": "내 스스로가 나쁘게 느껴져.",
+    "words": ["feel", "I", "myself", "bad", "about"],
+    "answer": "I feel bad about myself"
+  },
+  {
+    "korean": "모두 정말 냄새가 좋군요.",
+    "words": ["good", "smells", "it all", "really"],
+    "answer": "It all smells really good"
+  },
+  {
+    "korean": "그것은 정말 맛있는 냄새가 나요.",
+    "words": ["it", "really", "delicious", "smells"],
+    "answer": "It smells really delicious"
+  },
+  {
+    "korean": "그곳은 매우 춥기 때문에 그들은 따뜻한 상태를 유지해야 한다.",
+    "words": ["It is very cold there, so", "stay", "should", "they", "warm"],
+    "answer": "It is very cold there, so they should stay warm"
+  },
+  {
+    "korean": "Amy는 매우 슬프고 외로웠다.",
+    "words": ["sad", "felt", "very", "lonely", "Amy", "and"],
+    "answer": "Amy felt very sad and lonely"
+  },
+  {
+    "korean": "그 후로 Amy는 더 이상 외롭지 않았다.",
+    "words": ["After that,", "lonely", "didn't", "feel", "Amy", "any more"],
+    "answer": "After that, Amy didn't feel lonely any more"
+  },
+  {
+    "korean": "마지막에, 우리는 뿌듯했다.",
+    "words": ["At the end of the day,", "we", "proud", "felt"],
+    "answer": "At the end of the day, we felt proud"
+  },
+  {
+    "korean": "그것은 4주가 되었고 작은 공처럼 생겼다.",
+    "words": ["old", "four", "weeks", "a small ball", "and", "looks", "it's", "like"],
+    "answer": "It's four weeks old and looks like a small ball"
+  },
+  {
+    "korean": "나는 무척 걱정이 되었고, Spikey도 걱정하는 것처럼 보였다.",
+    "words": ["was", "so", "Spikey", "worried,", "I", "worried", "and", "looked", "too"],
+    "answer": "I was so worried, and Spikey looked worried too"
+  },
+  {
+    "korean": "매우 흥미진진하군요.",
+    "words": ["sounds", "exciting", "very", "it"],
+    "answer": "It sounds very exciting"
+  },
+  {
+    "korean": "사자들은 겁이 나서 도망갔다.",
+    "words": ["got", "ran away", "scared", "the lions", "and"],
+    "answer": "The lions got scared and ran away"
+  },
+  {
+    "korean": "그 즙은 혈액처럼 보입니다.",
+    "words": ["looks", "blood", "like", "the juice"],
+    "answer": "The juice looks like blood"
+  },
+  {
+    "korean": "그것은 코끼리의 다리처럼 생겼습니다.",
+    "words": ["looks", "it", "an elephant's leg", "like"],
+    "answer": "It looks like an elephant's leg"
+  },
+  {
+    "korean": "그들은 매우 행복해 보여.",
+    "words": ["happy", "look", "they", "so"],
+    "answer": "They look so happy"
+  },
+  {
+    "korean": "오, 이 과일은 키위 새처럼 생겼어.",
+    "words": ["Oh,", "looks", "a Kiwi bird", "like", "this fruit"],
+    "answer": "Oh, this fruit looks like a Kiwi bird"
+  },
+  {
+    "korean": "술탄은 화가 났다.",
+    "words": ["got", "angry", "the sultan"],
+    "answer": "The sultan got angry"
+  },
+  {
+    "korean": "밤에 붉은 하늘은, 선원들은 행복하다.",
+    "words": ["When the sky is red at night,", "happy", "sailors", "get"],
+    "answer": "When the sky is red at night, sailors get happy"
+  },
+  {
+    "korean": "낙타의 집은 아름다워 보았습니다.",
+    "words": ["beautiful", "home", "looked", "the camels'"],
+    "answer": "The camels' home looked beautiful"
+  },
+  {
+    "korean": "그 혹들은 이상해 보입니다.",
+    "words": ["look", "strange", "the humps"],
+    "answer": "The humps look strange"
+  },
+  {
+    "korean": "또한 그들의 다리는 더 길어졌습니다.",
+    "words": ["longer", "also", "got", "their legs"],
+    "answer": "Their legs also got longer"
+  },
+  {
+    "korean": "그들의 발은 더 넓어졌습니다.",
+    "words": ["wider", "their feet", "got"],
+    "answer": "Their feet got wider"
+  },
+  {
+    "korean": "그들의 귓속의 털은 더 길어졌습니다.",
+    "words": ["longer", "ear hair", "grew", "their"],
+    "answer": "Their ear hair grew longer"
+  },
+  {
+    "korean": "그들의 몸에 있는 털은 더 두꺼워졌습니다.",
+    "words": ["on", "thicker", "their bodies", "the hair", "got"],
+    "answer": "The hair on their bodies got thicker"
+  },
+  {
+    "korean": "그것들을 통해, 여러분은 더 강해질 것입니다. 낙타처럼요!",
+    "words": ["Through them,", "become", "a camel", "stronger,", "you'll", "like"],
+    "answer": "Through them, you'll become stronger, like a camel"
+  },
+  {
+    "korean": "미래에 우리의 삶은 스마트 홈과 더불어 편리해질 것입니다.",
+    "words": ["In the future,", "will", "become", "smart homes", "convenient", "our lives", "with"],
+    "answer": "In the future, our lives will become convenient with smart homes"
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, currentWords = [];
+    function prepareQuiz() {
+        const name = document.getElementById('name').value;
+        if (!name) return alert("이름을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+    function loadQuestion() {
+        if (currentIdx >= 10) return finishQuiz();
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = item.korean;
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+        resetSentence();
+    }
+    function resetSentence() {
+        currentWords = [];
+        const container = document.getElementById('chips-container');
+        const display = document.getElementById('sentence-display');
+        container.innerHTML = ''; display.innerHTML = '';
+        const shuffled = [...quizSet[currentIdx].words].sort(() => Math.random() - 0.5);
+        shuffled.forEach(w => {
+            const chip = document.createElement('div');
+            chip.className = 'word-chip'; chip.innerText = w;
+            chip.onclick = () => addWord(chip, w);
+            container.appendChild(chip);
+        });
+    }
+    function addWord(chip, word) {
+        if (chip.classList.contains('used')) return;
+        chip.classList.add('used'); currentWords.push(word);
+        const displayChip = document.createElement('div');
+        displayChip.className = 'word-chip in-sentence';
+        displayChip.innerText = word;
+        document.getElementById('sentence-display').appendChild(displayChip);
+    }
+    function submitAnswer() {
+        const userSentence = currentWords.join(" ").replace(/ ,/g, ",").replace(/ ./g, ".");
+        const correctSentence = quizSet[currentIdx].answer;
+        if (userSentence.toLowerCase() === correctSentence.toLowerCase()) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-score').innerText = score + " / 10";
+    }
+</script>
+</body>
+</html>

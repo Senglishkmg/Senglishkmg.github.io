@@ -1,0 +1,378 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gb104p2p03</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 90% !important; display: inline-block !important; text-align: center; font-size: 1.15rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 20px; }
+        .question-text { font-size: 1.25rem; font-weight: 700; color: #1E293B; margin-bottom: 25px; line-height: 1.6; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>gb104p2p03</h2>
+        <div class="guide-box">다음 문장에서 어법상 어색한 부분을 찾아 고치시오.<br>(틀린 부분이 없을 경우 x 또는 X 표시)</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 어법상 틀린 부분을 바르게 고쳐 쓰거나, 맞으면 x (또는 X)를 입력하세요.</div>
+        <div class="question-text" id="question-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="정답 고치기 또는 x 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "q": "It's from Germany, and it sounds beautifully.",
+    "ans": ["beautiful", "beautifully -> beautiful"]
+  },
+  {
+    "q": "I feel a little lazy and tire.",
+    "ans": ["tired", "tire -> tired"]
+  },
+  {
+    "q": "I feel happily on sunny days.",
+    "ans": ["happy", "happily -> happy"]
+  },
+  {
+    "q": "It's getting colder day by day.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "The leaves are turning yellow, red and brown.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "You look unhappy.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "It will grow too big for your apartment.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "He looks nicely.",
+    "ans": ["nice", "nicely -> nice"]
+  },
+  {
+    "q": "But the rooms looked small.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "Does my plan look good?",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "Jesi gets upset and walks out.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "That sounds greatly!",
+    "ans": ["great", "greatly -> great"]
+  },
+  {
+    "q": "Sally's pet feels cool and dry.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "You will feel greatly.",
+    "ans": ["great", "greatly -> great"]
+  },
+  {
+    "q": "It looks great with the mountains behind it.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "They all look differently.",
+    "ans": ["different", "differently -> different"]
+  },
+  {
+    "q": "She suddenly became blindly.",
+    "ans": ["blind", "blindly -> blind"]
+  },
+  {
+    "q": "Street food looks good and taste deliciously.",
+    "ans": ["delicious", "tastes delicious", "deliciously -> delicious"]
+  },
+  {
+    "q": "In Ottawa, a beaver tail is a big, flat bread. It tastes sweetly.",
+    "ans": ["sweet", "sweetly -> sweet"]
+  },
+  {
+    "q": "The river became very mud.",
+    "ans": ["muddy", "mud -> muddy"]
+  },
+  {
+    "q": "After a while, the river became clearly again.",
+    "ans": ["clear", "clearly -> clear"]
+  },
+  {
+    "q": "He got tired and stopped digging.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "Last weekend, her shell looked very dryly.",
+    "ans": ["dry", "dryly -> dry"]
+  },
+  {
+    "q": "They'll become weakly.",
+    "ans": ["weak", "weakly -> weak"]
+  },
+  {
+    "q": "He always looks so sad.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "I feel so happily.",
+    "ans": ["happy", "happily -> happy"]
+  },
+  {
+    "q": "She really felt full.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "Yena looks politely.",
+    "ans": ["polite", "politely -> polite"]
+  },
+  {
+    "q": "This apple looks delicious!",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "He sounded upset.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "Two boys were playing basketball at the park. They looked suspiciously.",
+    "ans": ["suspicious", "suspiciously -> suspicious"]
+  },
+  {
+    "q": "Every house looked similarly, but each one was different.",
+    "ans": ["similar", "similarly -> similar"]
+  },
+  {
+    "q": "I'm getting old and ill.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "Her hands feel so warmly.",
+    "ans": ["warm", "warmly -> warm"]
+  },
+  {
+    "q": "The king looked puzzle.",
+    "ans": ["puzzled", "puzzle -> puzzled"]
+  },
+  {
+    "q": "I look differently from you.",
+    "ans": ["different", "differently -> different"]
+  },
+  {
+    "q": "It didn't look my school.",
+    "ans": ["look like", "like", "look -> look like"]
+  },
+  {
+    "q": "It all smells really good.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "It smells really deliciously.",
+    "ans": ["delicious", "deliciously -> delicious"]
+  },
+  {
+    "q": "It is very cold there, so polar bears should stay warmly.",
+    "ans": ["warm", "warmly -> warm"]
+  },
+  {
+    "q": "At the end of the day, we felt proudly.",
+    "ans": ["proud", "proudly -> proud"]
+  },
+  {
+    "q": "It's four weeks old and looks a small ball.",
+    "ans": ["looks like", "like", "looks -> looks like"]
+  },
+  {
+    "q": "I was so worried, and Spikey looked like worried, too.",
+    "ans": ["worried", "looked worried", "like worried -> worried"]
+  },
+  {
+    "q": "I have a math test tomorrow, and I feel nervously.",
+    "ans": ["nervous", "nervously -> nervous"]
+  },
+  {
+    "q": "With those sweets, I always feel happily.",
+    "ans": ["happy", "happily -> happy"]
+  },
+  {
+    "q": "It sounds very excite.",
+    "ans": ["exciting", "excite -> exciting"]
+  },
+  {
+    "q": "Our home smells of dead animals.",
+    "ans": ["smells like", "like", "of -> like", "smells of -> smells like"]
+  },
+  {
+    "q": "The lions got scaring and ran away.",
+    "ans": ["scared", "scaring -> scared"]
+  },
+  {
+    "q": "The juice looks blood.",
+    "ans": ["looks like", "bloody", "looks blood -> looks like blood", "blood -> bloody"]
+  },
+  {
+    "q": "It looks like an elephant's leg.",
+    "ans": ["x", "X"]
+  },
+  {
+    "q": "The sultan got angrily.",
+    "ans": ["angry", "angrily -> angry"]
+  },
+  {
+    "q": "When the sky is red at night, sailors get happily.",
+    "ans": ["happy", "happily -> happy"]
+  },
+  {
+    "q": "The camels' home looked beautifully.",
+    "ans": ["beautiful", "beautifully -> beautiful"]
+  },
+  {
+    "q": "The humps look strangely.",
+    "ans": ["strange", "strangely -> strange"]
+  },
+  {
+    "q": "Through them, you'll become strongly, like a camel!",
+    "ans": ["strong", "strongly -> strong"]
+  },
+  {
+    "q": "That smells greatly.",
+    "ans": ["great", "greatly -> great"]
+  },
+  {
+    "q": "In the future, our lives will become conveniently with smart homes.",
+    "ans": ["convenient", "conveniently -> convenient"]
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    
+    function normalize(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/\s+/g, '').replace(/[.,?!~']/g, '');
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('question-display').innerText = (currentIdx + 1) + ". " + (item.q || '');
+
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        
+        const expectedAnswers = Array.isArray(item.ans) ? item.ans : [item.ans];
+        const userNorm = normalize(userInputVal);
+        
+        let isCorrect = expectedAnswers.some(ans => {
+            const ansNorm = normalize(ans);
+            if (ansNorm === userNorm) return true;
+            if (ansNorm.includes('->')) {
+                const parts = ansNorm.split('->');
+                if (parts[1] && parts[1] === userNorm) return true;
+            }
+            return false;
+        });
+        
+        results.push({ 
+            q: item.q, 
+            user: userInputVal, 
+            ans: expectedAnswers.join(' / '), 
+            isCorrect 
+        });
+        
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>${w.q}</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[어법 고치기 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q} -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_어법_고치기.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>
