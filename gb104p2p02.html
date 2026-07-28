@@ -1,0 +1,493 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gb104p2p02</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 90% !important; display: inline-block !important; text-align: center; font-size: 1.15rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 20px; }
+        .korean-box { font-size: 1.15rem; font-weight: 700; color: #2B6CB0; margin-bottom: 16px; word-break: keep-all; line-height: 1.5; background: #EBF8FF; padding: 12px 16px; border-radius: 10px; display: inline-block; width: 100%; box-sizing: border-box; }
+        .question-text { font-size: 1.25rem; font-weight: 700; color: #1E293B; margin-bottom: 25px; line-height: 1.6; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>gb104p2p02</h2>
+        <div class="guide-box">다음 우리말과 같은 뜻이 되도록 빈칸에 알맞은 단어를 쓰시오.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 제시된 우리말 해석을 확인하고 빈칸에 들어갈 알맞은 단어를 입력하세요.</div>
+        <div class="korean-box" id="korean-display"></div>
+        <div class="question-text" id="question-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="정답 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "korean": "슬퍼 보이시네요.",
+    "q": "You ______ sad.",
+    "ans": "look"
+  },
+  {
+    "korean": "그러나 물은 뜨거워져서 곧 끓게 됩니다.",
+    "q": "But the water becomes ______ and boils soon.",
+    "ans": "hot"
+  },
+  {
+    "korean": "그것은 독일에서 만들어진 것이고 아름다운 소리가 난다.",
+    "q": "It's from Germany, and it sounds ______.",
+    "ans": "beautiful"
+  },
+  {
+    "korean": "난 좀 나른하고 피곤해.",
+    "q": "I feel a little lazy and ______.",
+    "ans": "tired"
+  },
+  {
+    "korean": "난 화창한 날에 행복해.",
+    "q": "I feel ______ on sunny days.",
+    "ans": "happy"
+  },
+  {
+    "korean": "날마다 추워지고 있어.",
+    "q": "It's ______ colder day by day.",
+    "ans": "getting"
+  },
+  {
+    "korean": "나뭇잎들은 노란색, 빨간색과 갈색으로 변하고 있어.",
+    "q": "The leaves are ______ yellow, red and brown.",
+    "ans": "turning"
+  },
+  {
+    "korean": "기분이 안 좋아 보인다.",
+    "q": "You ______ unhappy.",
+    "ans": "look"
+  },
+  {
+    "korean": "아파트에 살기에는 너무 크게 자라게 될 거야.",
+    "q": "It will grow too ______ for your apartment.",
+    "ans": "big"
+  },
+  {
+    "korean": "그는 친절해 보이네요.",
+    "q": "He ______ nice.",
+    "ans": "looks"
+  },
+  {
+    "korean": "하지만 그 방들은 작아 보였다.",
+    "q": "But the rooms looked ______.",
+    "ans": "small"
+  },
+  {
+    "korean": "Jesi는 화가 나서 나가 버린다.",
+    "q": "Jesi gets ______ and walks out.",
+    "ans": "angry"
+  },
+  {
+    "korean": "Sally의 반려동물은 차갑고 건조한 느낌이 난다.",
+    "q": "Sally's pet ______ cool and dry.",
+    "ans": "feels"
+  },
+  {
+    "korean": "너 추워 보인다.",
+    "q": "You look ______.",
+    "ans": "cold"
+  },
+  {
+    "korean": "저는 너무 빨리 피곤해져요.",
+    "q": "I ______ tired too soon.",
+    "ans": "get"
+  },
+  {
+    "korean": "여러분은 기분이 좋아질 것입니다.",
+    "q": "You will ______ great.",
+    "ans": "feel"
+  },
+  {
+    "korean": "그것들은 모두 다르게 생겼어요.",
+    "q": "They all look ______.",
+    "ans": "different"
+  },
+  {
+    "korean": "van Gogh 씨는 슬퍼 보였다.",
+    "q": "Mr. van Gogh looked ______.",
+    "ans": "sad"
+  },
+  {
+    "korean": "그녀는 갑자기 시력을 잃게 되었다.",
+    "q": "She suddenly ______ blind.",
+    "ans": ["went", "became"]
+  },
+  {
+    "korean": "길거리 음식은 먹음직스러워 보이는데다가 맛있다.",
+    "q": "Street food ______ good and ______ delicious.",
+    "ans": [
+      "looks",
+      "tastes"
+    ]
+  },
+  {
+    "korean": "오타와에서 비버 테일은 크고 납작한 빵이다. 그것은 맛이 달콤하다.",
+    "q": "In Ottawa, a beaver tail is a big, flat bread. It tastes ______.",
+    "ans": "sweet"
+  },
+  {
+    "korean": "강은 흙탕물이 되었다.",
+    "q": "The river became very ______.",
+    "ans": "muddy"
+  },
+  {
+    "korean": "잠시 뒤에, 강물이 다시 맑아졌다.",
+    "q": "After a while, the river became ______ again.",
+    "ans": "clear"
+  },
+  {
+    "korean": "그는 지쳤고, 바닥 파는 것을 멈추었다.",
+    "q": "He got ______ and stopped digging.",
+    "ans": "tired"
+  },
+  {
+    "korean": "하지만 아파 보이지는 않아요.",
+    "q": "But she doesn't look ______.",
+    "ans": "sick"
+  },
+  {
+    "korean": "지난 주말에 바다의 껍질이 아주 건조해 보였어요.",
+    "q": "Last weekend, Bada’s shell looked very ______.",
+    "ans": "dry"
+  },
+  {
+    "korean": "그것들은 약해지게 되지.",
+    "q": "They'll become ______.",
+    "ans": "weak"
+  },
+  {
+    "korean": "그 아이는 늘 너무 슬퍼 보여.",
+    "q": "He always ______ so sad.",
+    "ans": "looks"
+  },
+  {
+    "korean": "저는 정말 행복합니다.",
+    "q": "I feel so ______.",
+    "ans": "happy"
+  },
+  {
+    "korean": "그녀는 정말 배가 불렀다.",
+    "q": "She really felt ______.",
+    "ans": "full"
+  },
+  {
+    "korean": "예나는 예의 바르게 보인다.",
+    "q": "Yena looks ______.",
+    "ans": "polite"
+  },
+  {
+    "korean": "이 사과 맛있어 보인다!",
+    "q": "This apple looks ______!",
+    "ans": "delicious"
+  },
+  {
+    "korean": "그의 목소리는 화난 것 같았다.",
+    "q": "He ______ upset.",
+    "ans": "sounded"
+  },
+  {
+    "korean": "그들이 수상해 보였어요.",
+    "q": "They looked ______.",
+    "ans": "suspicious"
+  },
+  {
+    "korean": "모든 집이 비슷해 보였지만 각각 달랐어요.",
+    "q": "Every house looked ______, but each one was different.",
+    "ans": "similar"
+  },
+  {
+    "korean": "나는 늙고 병들어가는구나.",
+    "q": "I'm getting ______ and i______.",
+    "ans": [
+      "old",
+      "ll"
+    ]
+  },
+  {
+    "korean": "기분이 나아질 거예요.",
+    "q": "You'll ______ better.",
+    "ans": "feel"
+  },
+  {
+    "korean": "요즘 당신이 흐릿하게 보여요.",
+    "q": "These days you look ______.",
+    "ans": "blurry"
+  },
+  {
+    "korean": "그녀의 손은 참 따뜻하게 느껴져요.",
+    "q": "Her hands feel so ______.",
+    "ans": "warm"
+  },
+  {
+    "korean": "왕이 당황한 듯 보였다.",
+    "q": "The king looked ______.",
+    "ans": "embarrassed"
+  },
+  {
+    "korean": "저는 여러분과 다르게 생겼습니다.",
+    "q": "I look ______ from you.",
+    "ans": "different"
+  },
+  {
+    "korean": "그것은 우리 학교 같진 않았어.",
+    "q": "It didn't ______ ______ my school.",
+    "ans": [
+      "look",
+      "like"
+    ]
+  },
+  {
+    "korean": "우리는 서로를 더 가깝게 느꼈다.",
+    "q": "We ______ closer to each other.",
+    "ans": "felt"
+  },
+  {
+    "korean": "모두 정말 냄새가 좋군요.",
+    "q": "It all ______ really good.",
+    "ans": "smells"
+  },
+  {
+    "korean": "그것은 정말 맛있는 냄새가 나요.",
+    "q": "It ______ really delicious.",
+    "ans": "smells"
+  },
+  {
+    "korean": "그곳은 매우 춥기 때문에 북극곰은 따뜻한 상태를 유지해야 한다.",
+    "q": "It is very cold there, so polar bears should stay ______.",
+    "ans": "warm"
+  },
+  {
+    "korean": "Amy는 매우 슬프고 외로웠다.",
+    "q": "Amy felt very ______ and ______.",
+    "ans": [
+      "sad",
+      "lonely"
+    ]
+  },
+  {
+    "korean": "그 후로 Amy는 더 이상 외롭지 않았다.",
+    "q": "After that, Amy didn't feel ______ any more.",
+    "ans": "lonely"
+  },
+  {
+    "korean": "마지막에, 우리는 뿌듯했다.",
+    "q": "At the end of the day, we felt ______.",
+    "ans": "proud"
+  },
+  {
+    "korean": "그것은 4주가 되었고 작은 공처럼 생겼다.",
+    "q": "It's four weeks old and ______ ______ a small ball.",
+    "ans": [
+      "looks",
+      "like"
+    ]
+  },
+  {
+    "korean": "나는 무척 걱정이 되었고, Spikey도 걱정하는 것처럼 보였다.",
+    "q": "I was so worried, and Spikey looked ______, too.",
+    "ans": "worried"
+  },
+  {
+    "korean": "나는 내일 수학 시험이 있어서 긴장이 돼.",
+    "q": "I have a math test tomorrow, and I feel ______.",
+    "ans": "nervous"
+  },
+  {
+    "korean": "매우 흥미진진하군요.",
+    "q": "It sounds very ______.",
+    "ans": "exciting"
+  },
+  {
+    "korean": "사자들은 겁이 나서 도망갔다.",
+    "q": "The lions got ______ and ran away.",
+    "ans": "scared"
+  },
+  {
+    "korean": "그 즙은 혈액처럼 보입니다.",
+    "q": "The juice ______ ______ blood.",
+    "ans": [
+      "looks",
+      "like"
+    ]
+  },
+  {
+    "korean": "술탄은 화가 났다.",
+    "q": "The sultan got ______.",
+    "ans": "angry"
+  },
+  {
+    "korean": "밤에 하늘이 붉을 때, 선원들은 행복하다.",
+    "q": "When the sky is red at night, sailors get ______.",
+    "ans": "happy"
+  },
+  {
+    "korean": "낙타의 집은 아름다워 보였습니다.",
+    "q": "The camels' home looked ______.",
+    "ans": "beautiful"
+  },
+  {
+    "korean": "그 혹들은 이상해 보입니다.",
+    "q": "The humps look ______.",
+    "ans": "strange"
+  },
+  {
+    "korean": "또한 그들의 다리는 더 길어졌습니다.",
+    "q": "Their legs also got ______.",
+    "ans": "longer"
+  },
+  {
+    "korean": "그들의 발은 더 넓어졌습니다.",
+    "q": "Their feet got ______.",
+    "ans": "wider"
+  },
+  {
+    "korean": "그들의 귓속의 털은 더 길어졌습니다.",
+    "q": "Their ear hair grew ______.",
+    "ans": "longer"
+  },
+  {
+    "korean": "그들의 몸에 있는 털은 더 두꺼워졌습니다.",
+    "q": "The hair on their bodies got ______.",
+    "ans": "thicker"
+  },
+  {
+    "korean": "그것들을 통해, 여러분은 더 강해질 것입니다. 낙타처럼요!",
+    "q": "Through them, you'll become ______, like a camel!",
+    "ans": "stronger"
+  },
+  {
+    "korean": "냄새가 근사하네요.",
+    "q": "That ______ great.",
+    "ans": "smells"
+  },
+  {
+    "korean": "미래에 우리의 삶은 스마트 홈과 더불어 편리해질 것입니다.",
+    "q": "In the future, our lives will become ______ with smart homes.",
+    "ans": "convenient"
+  }
+]
+;
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    
+    function normalize(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/[.,?!~']/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = (item.korean || '');
+        document.getElementById('question-display').innerText = (currentIdx + 1) + ". " + (item.q || '');
+
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        
+        const expectedAnswers = Array.isArray(item.ans) ? item.ans : [item.ans];
+        const isCorrect = expectedAnswers.some(ans => normalize(ans) === normalize(userInputVal));
+        
+        results.push({ 
+            korean: item.korean,
+            q: item.q, 
+            user: userInputVal, 
+            ans: expectedAnswers.join(' / '), 
+            isCorrect 
+        });
+        
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>[${w.korean}]<br>${w.q}</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[해석에 맞게 빈칸 채우기 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} [${r.korean}] ${r.q} -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_해석에_맞게_빈칸_채우기.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>
