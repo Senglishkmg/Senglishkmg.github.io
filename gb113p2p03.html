@@ -1,0 +1,391 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ㅁㅁㅁ</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 600px; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); text-align: center; }
+        .hidden { display: none; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; margin-bottom: 20px; border-left: 4px solid var(--primary-color); }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #E2E8F0; border-radius: 8px; box-sizing: border-box; }
+        #sentence-display { min-height: 60px; padding: 15px; border: 2px dashed #CBD5E0; border-radius: 12px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; background: #fff; }
+        .word-chip { padding: 10px 16px; background: #EDF2F7; border-radius: 25px; cursor: pointer; font-weight: 600; transition: 0.2s; border: 1px solid #E2E8F0; user-select: none; }
+        .word-chip:hover { background: #E2E8F0; }
+        .word-chip.used { opacity: 0.3; cursor: default; pointer-events: none; }
+        .word-chip.in-sentence { background: var(--primary-color); color: white; border: none; }
+        #chips-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }
+        button.btn-main { width: 100%; padding: 16px; background: var(--primary-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button.btn-reset { background: #A0AEC0; margin-top: 5px; }
+        .korean-text { font-size: 1.1rem; font-weight: bold; color: #1A365D; margin-bottom: 15px; }
+        .progress-bar { width: 100%; height: 6px; background: #EDF2F7; border-radius: 3px; margin-bottom: 20px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>ㅁㅁㅁ</h2>
+        <div class="guide-box">순서 배열 테스트를 시작합니다.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="korean-text" id="korean-display"></div>
+        <div class="guide-box">💡 아래 단어들을 순서대로 클릭하여 문장을 완성하세요. (배열된 단어를 누르면 지워집니다)</div>
+        <div id="sentence-display"></div>
+        <div id="chips-container"></div>
+        <button class="btn-main" id="submit-btn" onclick="submitAnswer()">정답 제출</button>
+        <button class="btn-main btn-reset" onclick="resetSentence()">지우기</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:#E53E3E;">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "korean": "여러분의 등을 곧게 유지하세요.",
+    "words": ["straight", "back", "keep", "your"],
+    "ans": "Keep your back straight."
+  },
+  {
+    "korean": "그것은 저도 약간 슬퍼지게 하네요.",
+    "words": ["makes", "too", "me", "it", "a little", "sad"],
+    "ans": "It makes me a little sad, too."
+  },
+  {
+    "korean": "그것은 저를 슬프게 만들었죠.",
+    "words": ["made", "sad", "me", "that"],
+    "ans": "That made me sad."
+  },
+  {
+    "korean": "아빠 펭귄은 그의 발등에 알을 품고, 따뜻하게 유지합니다.",
+    "words": ["the egg", "of", "on", "the father penguin", "warm", "top", "his", "holds", "it", "feet", "and", "keeps"],
+    "ans": "The father penguin holds the egg on top of his feet and keeps it warm."
+  },
+  {
+    "korean": "우리를 내버려 둬,",
+    "words": ["alone", "leave", "us"],
+    "ans": "Leave us alone."
+  },
+  {
+    "korean": "그들의 검은 피부가 그들을 따뜻하게 유지시켜 주는데, 이것은 검은 피부가 태양의 따뜻한 빛을 흡수하기 때문이다.",
+    "words": ["black", "keeps", "takes in", "the sun", "their", "them", "because", "it", "of", "warm", "skin", "the warm light"],
+    "ans": "Their black skin keeps them warm because it takes in the warm light of the sun."
+  },
+  {
+    "korean": "Ling은 빈 화분을 가지고 가고 싶지 않았지만, 그의 어머니는 그에게 정직하라고 말씀하셨다.",
+    "words": ["didn't", "told", "want", "to", "go", "empty", "honest", "pot", "Ling", "with", "an", "but", "his mother", "him", "to", "be"],
+    "ans": "Ling didn't want to go with an empty pot, but his mother told him to be honest."
+  },
+  {
+    "korean": "나는 그것을 Spikey라고 이름 지었다.",
+    "words": ["named", "Spikey", "I", "it"],
+    "ans": "I named it Spikey."
+  },
+  {
+    "korean": "기분이 좋아지게 해 주는 다른 것들을 해 봐.",
+    "words": ["doing", "other", "good", "try", "things", "you", "to", "make", "feel"],
+    "ans": "Try doing other things to make you feel good."
+  },
+  {
+    "korean": "이것이 그 섬을 아름답게 지켜 줍니다.",
+    "words": ["beautiful", "keeps", "this", "the island"],
+    "ans": "This keeps the island beautiful."
+  },
+  {
+    "korean": "그들의 다리는 뜨거운 모래로부터 높이 있기 위해 더 길어졌습니다.",
+    "words": ["got", "bodies", "their legs", "to", "the hot sand", "keep", "longer", "their", "high", "above"],
+    "ans": "Their legs got longer to keep their bodies high above the hot sand."
+  },
+  {
+    "korean": "친구들에게 좋은 말을 해라, 그러면 당신은 그들을 행복하게 만들 것이다.",
+    "words": ["good", "say", "happy", "to", "and", "you'll", "make", "words", "your friends", "them"],
+    "ans": "Say good words to your friends, and you'll make them happy."
+  },
+  {
+    "korean": "좋은 식단은 당신의 신체를 건강하게 유지시켜 준다.",
+    "words": ["good", "healthy", "diet", "body", "keeps", "a", "your"],
+    "ans": "A good diet keeps your body healthy."
+  },
+  {
+    "korean": "이 노래가 그를 유명하게 만들었다.",
+    "words": ["song", "famous", "made", "this", "him"],
+    "ans": "This song made him famous."
+  },
+  {
+    "korean": "나는 이 신발이 편하다는 것을 알게 되었다.",
+    "words": ["comfortable", "I", "the shoes", "found"],
+    "ans": "I found the shoes comfortable."
+  },
+  {
+    "korean": "그의 무례한 행동이 나를 화나게 만들었다.",
+    "words": ["rude", "his", "angry", "made", "behavior", "me"],
+    "ans": "His rude behavior made me angry."
+  },
+  {
+    "korean": "냉장고는 음식을 신선하게 유지한다.",
+    "words": ["keeps", "fresh", "food", "the refrigerator"],
+    "ans": "The refrigerator keeps food fresh."
+  },
+  {
+    "korean": "Amy는 그녀의 강아지를 Monster라고 부른다.",
+    "words": ["calls", "\"Monster\"", "her", "Amy", "dog"],
+    "ans": "Amy calls her dog \"Monster\"."
+  },
+  {
+    "korean": "시끄러운 음악은 나를 화나게 한다.",
+    "words": ["music", "crazy", "drives", "loud", "me"],
+    "ans": "Loud music drives me crazy."
+  },
+  {
+    "korean": "그것을 비밀로 지켜주세요.",
+    "words": ["it", "keep", "a secret", "please"],
+    "ans": "Keep it a secret, please."
+  },
+  {
+    "korean": "그 학급은 Mike를 반장으로 선출했다.",
+    "words": ["elected", "president", "Mike", "a", "the class", "class"],
+    "ans": "The class elected Mike a class president."
+  },
+  {
+    "korean": "당신의 손을 깨끗하게 유지하는 것이 중요합니다.",
+    "words": ["your", "important", "hands", "keeping", "clean", "is"],
+    "ans": "Keeping your hands clean is important."
+  },
+  {
+    "korean": "저 남자를 당신의 아버지라 불렀습니까?",
+    "words": ["you", "your father", "call", "that man", "did"],
+    "ans": "Did you call that man your father?"
+  },
+  {
+    "korean": "그는 그 문을 연채로 내버려두었다.",
+    "words": ["open", "left", "the door", "he"],
+    "ans": "He left the door open."
+  },
+  {
+    "korean": "나는 내 지갑이 사라진 것을 발견했다.",
+    "words": ["missing", "I", "my", "found", "wallet"],
+    "ans": "I found my wallet missing."
+  },
+  {
+    "korean": "나는 그가 밖으로 나가지 않기를 바랐다.",
+    "words": ["I", "him", "outside", "not", "wanted", "to", "go"],
+    "ans": "I wanted him not to go outside."
+  },
+  {
+    "korean": "그 선생님께서 그에게 조용하라고 말하셨다.",
+    "words": ["quiet", "told", "him", "the teacher", "to", "be"],
+    "ans": "The teacher told him to be quiet."
+  },
+  {
+    "korean": "동전은 정확한 교환을 가능하게 했다.",
+    "words": ["made", "possible", "exact", "coins", "exchanges"],
+    "ans": "Coins made exact exchanges possible."
+  },
+  {
+    "korean": "너무 자주 씻는 것은 피부를 건조하게 만들지도 몰라.",
+    "words": ["too", "your", "often", "may", "dry", "washing", "make", "skin"],
+    "ans": "Washing too often may make your skin dry."
+  },
+  {
+    "korean": "나는 수다와 독서가 유익하다는 걸 알아.",
+    "words": ["helpful", "chatting", "and", "find", "I", "reading"],
+    "ans": "I find chatting and reading helpful."
+  },
+  {
+    "korean": "모두들 이 수프를 맛있게 만들기 위해 애썼어요.",
+    "words": ["tried", "make", "delicious", "everyone", "to", "this", "soup"],
+    "ans": "Everyone tried to make this soup delicious."
+  },
+  {
+    "korean": "그녀는 내가 그녀를 질투하게 만들었다.",
+    "words": ["made", "her", "me", "jealous", "she", "about"],
+    "ans": "She made me jealous about her."
+  },
+  {
+    "korean": "여러분의 재능을 기부하는 것은 사람들을 행복하게 만듭니다.",
+    "words": ["your", "happy", "talent", "makes", "donating", "people"],
+    "ans": "Donating your talent makes people happy."
+  },
+  {
+    "korean": "비가 잔디를 촉촉하게 만들었다.",
+    "words": ["made", "the", "wet", "rain", "the grass"],
+    "ans": "The rain made the grass wet."
+  },
+  {
+    "korean": "고통과 어려움은 그것을 강하고 단단하게 만들었어.",
+    "words": ["hard", "and", "trouble", "made", "strong", "pain", "it", "and"],
+    "ans": "Pain and trouble made it strong and hard."
+  },
+  {
+    "korean": "네 후원이 그를 훨씬 더 행복하게 만들 거야.",
+    "words": ["support", "will", "your", "happier", "make", "him", "much"],
+    "ans": "Your support will make him much happier."
+  },
+  {
+    "korean": "나는 음식을 맵게 만들기 위해 칠리소스를 넣었어.",
+    "words": ["the dish", "I", "chili sauce", "in", "to", "make", "it", "put", "spicy"],
+    "ans": "I put chili sauce in the dish to make it spicy."
+  },
+  {
+    "korean": "저는 우리의 뇌를 건강하게 지키는 방법들에 관해 관심이 있습니다.",
+    "words": ["keep", "I", "interested", "in", "healthy", "ways", "am", "to", "our brains"],
+    "ans": "I am interested in ways to keep our brains healthy."
+  },
+  {
+    "korean": "저희 엄마는 제가 콘서트에 가는 것을 허락하지 않으실 거예요.",
+    "words": ["won't", "the concert", "allow", "my mom", "to", "me", "to", "go"],
+    "ans": "My mom won't allow me to go to the concert."
+  },
+  {
+    "korean": "우리는 그가 이길 것이라고 예상하지 않았다.",
+    "words": ["didn't", "win", "expect", "we", "him", "to"],
+    "ans": "We didn't expect him to win."
+  },
+  {
+    "korean": "카페인은 당신을 밤새 깨어있게 할 수도 있습니다.",
+    "words": ["can", "night", "you", "caffeine", "awake", "keep", "all"],
+    "ans": "Caffeine can keep you awake all night."
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    let activeChips = [];
+
+    function normalizeStr(str) {
+        if (!str) return '';
+        if (Array.isArray(str)) str = str.join(' ');
+        return String(str).toLowerCase().replace(/[.,?!~']/g, '').replace(/s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = item.korean || '';
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+        resetSentence();
+    }
+
+    function resetSentence() {
+        activeChips = [];
+        renderChips();
+    }
+
+    function renderChips() {
+        const item = quizSet[currentIdx];
+        const container = document.getElementById('chips-container');
+        const display = document.getElementById('sentence-display');
+        container.innerHTML = '';
+        display.innerHTML = '';
+
+        if (!item._shuffledWords) {
+            let words = Array.isArray(item.words) ? item.words : String(item.words || '').split(' ');
+            item._shuffledWords = [...words].sort(() => Math.random() - 0.5);
+        }
+
+        item._shuffledWords.forEach((w, idx) => {
+            const isUsed = activeChips.some(c => c.id === idx);
+            const chip = document.createElement('div');
+            chip.className = 'word-chip' + (isUsed ? ' used' : '');
+            chip.innerText = w;
+            if (!isUsed) {
+                chip.onclick = () => {
+                    activeChips.push({ id: idx, word: w });
+                    renderChips();
+                };
+            }
+            container.appendChild(chip);
+        });
+
+        activeChips.forEach((c, selIdx) => {
+            const chip = document.createElement('div');
+            chip.className = 'word-chip in-sentence';
+            chip.innerText = c.word;
+            chip.title = '클릭하여 삭제';
+            chip.onclick = () => {
+                activeChips.splice(selIdx, 1);
+                renderChips();
+            };
+            display.appendChild(chip);
+        });
+    }
+
+    function submitAnswer() {
+        if (activeChips.length === 0) return alert("단어를 선택하여 문장을 완성하세요.");
+        const userSentence = activeChips.map(c => c.word).join(" ");
+        const item = quizSet[currentIdx];
+        const rawAns = item.ans || item.answer || '';
+        const expectedList = Array.isArray(rawAns) ? rawAns : [rawAns];
+        
+        const isCorrect = expectedList.some(targetAns => normalizeStr(userSentence) === normalizeStr(targetAns));
+
+        results.push({
+            korean: item.korean,
+            user: userSentence,
+            ans: expectedList.join(' / '),
+            isCorrect
+        });
+
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item" style="background:#FFF5F5; padding:12px; border-radius:8px; margin-bottom:10px; border-left:4px solid #E53E3E; text-align:left;"><strong>[${w.korean}]</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[순서 배열 테스트 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} [${r.korean}] -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_순서배열_결과.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

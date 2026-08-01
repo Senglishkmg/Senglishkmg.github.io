@@ -1,0 +1,411 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>13강 Pattern2 Part02</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 90% !important; display: inline-block !important; text-align: center; font-size: 1.15rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 20px; }
+        .options-container { display: flex; gap: 12px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .option-btn { flex: 1; min-width: 130px; padding: 14px 18px; border: 2px solid #CBD5E1; background: white; border-radius: 12px; font-size: 1.1rem; font-weight: 600; color: #334155; cursor: pointer; transition: all 0.2s; }
+        .option-btn:hover { border-color: var(--primary-color); color: var(--primary-color); background: #F0F7FF; }
+        .option-btn.selected { border-color: var(--primary-color); background: var(--primary-color); color: white; }
+        .question-text { font-size: 1.25rem; font-weight: 700; color: #1E293B; margin-bottom: 25px; line-height: 1.6; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>13강 Pattern2 Part02</h2>
+        <div class="guide-box">다음 문장의 괄호 안에서 알맞은 표현을 고르시오.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 괄호 안의 보기 중 알맞은 단어를 선택하세요.</div>
+        <div class="question-text" id="question-display"></div>
+        <div class="options-container" id="options-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="선택 또는 직접 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "q": "Keep your back (straight / straightly).",
+    "opt1": "straight",
+    "opt2": "straightly",
+    "ans": "straight"
+  },
+  {
+    "q": "It makes me a little (sad / sadly), too.",
+    "opt1": "sad",
+    "opt2": "sadly",
+    "ans": "sad"
+  },
+  {
+    "q": "That made (I / me) sad.",
+    "opt1": "I",
+    "opt2": "me",
+    "ans": "me"
+  },
+  {
+    "q": "The father penguin keeps it (warm / warmly).",
+    "opt1": "warm",
+    "opt2": "warmly",
+    "ans": "warm"
+  },
+  {
+    "q": "Leave (us / we) alone.",
+    "opt1": "us",
+    "opt2": "we",
+    "ans": "us"
+  },
+  {
+    "q": "Their black skin keeps (they / them) warm because it takes in the warm light of the sun.",
+    "opt1": "they",
+    "opt2": "them",
+    "ans": "them"
+  },
+  {
+    "q": "Ling's mother told him (to be / be) honest.",
+    "opt1": "to be",
+    "opt2": "be",
+    "ans": "to be"
+  },
+  {
+    "q": "I named (it Spikey / it for Spikey).",
+    "opt1": "it Spikey",
+    "opt2": "it for Spikey",
+    "ans": "it Spikey"
+  },
+  {
+    "q": "Try doing other things to make you (feel / to feel) good.",
+    "opt1": "feel",
+    "opt2": "to feel",
+    "ans": "feel"
+  },
+  {
+    "q": "This keeps the island (beautiful / beautifully).",
+    "opt1": "beautiful",
+    "opt2": "beautifully",
+    "ans": "beautiful"
+  },
+  {
+    "q": "Their legs also got longer to keep their bodies (high / highly) above the hot sand.",
+    "opt1": "high",
+    "opt2": "highly",
+    "ans": "high"
+  },
+  {
+    "q": "Say good words to your friends, and you'll (create / make) them happy.",
+    "opt1": "create",
+    "opt2": "make",
+    "ans": "make"
+  },
+  {
+    "q": "A good diet keeps your body (health / healthy).",
+    "opt1": "health",
+    "opt2": "healthy",
+    "ans": "healthy"
+  },
+  {
+    "q": "This song made (he / him) famous.",
+    "opt1": "he",
+    "opt2": "him",
+    "ans": "him"
+  },
+  {
+    "q": "I found the shoes (comfortable / comfortably).",
+    "opt1": "comfortable",
+    "opt2": "comfortably",
+    "ans": "comfortable"
+  },
+  {
+    "q": "His rude behavior made me (angry / angrily).",
+    "opt1": "angry",
+    "opt2": "angrily",
+    "ans": "angry"
+  },
+  {
+    "q": "The refrigerator keeps food (fresh / freshly).",
+    "opt1": "fresh",
+    "opt2": "freshly",
+    "ans": "fresh"
+  },
+  {
+    "q": "Amy calls (her dog \"Monster\" / \"Monster\" her dog).",
+    "opt1": "her dog \"Monster\"",
+    "opt2": "\"Monster\" her dog",
+    "ans": "her dog \"Monster\""
+  },
+  {
+    "q": "Loud music drives me (crazy / crazily).",
+    "opt1": "crazy",
+    "opt2": "crazily",
+    "ans": "crazy"
+  },
+  {
+    "q": "Please keep (a secret it / it a secret).",
+    "opt1": "a secret it",
+    "opt2": "it a secret",
+    "ans": "it a secret"
+  },
+  {
+    "q": "The class elected (Mike / Mike's) a class president.",
+    "opt1": "Mike",
+    "opt2": "Mike's",
+    "ans": "Mike"
+  },
+  {
+    "q": "Keeping your hands (clean / cleanly) is important.",
+    "opt1": "clean",
+    "opt2": "cleanly",
+    "ans": "clean"
+  },
+  {
+    "q": "He left the door (open / openly).",
+    "opt1": "open",
+    "opt2": "openly",
+    "ans": "open"
+  },
+  {
+    "q": "I found my wallet (miss / missing).",
+    "opt1": "miss",
+    "opt2": "missing",
+    "ans": "missing"
+  },
+  {
+    "q": "The teacher told him (be / to be) quiet.",
+    "opt1": "be",
+    "opt2": "to be",
+    "ans": "to be"
+  },
+  {
+    "q": "Coins made exact exchanges (possible / possibly).",
+    "opt1": "possible",
+    "opt2": "possibly",
+    "ans": "possible"
+  },
+  {
+    "q": "Washing too often may make your skin (dry / dryly).",
+    "opt1": "dry",
+    "opt2": "dryly",
+    "ans": "dry"
+  },
+  {
+    "q": "I find chatting and reading (help / helpful).",
+    "opt1": "help",
+    "opt2": "helpful",
+    "ans": "helpful"
+  },
+  {
+    "q": "Everyone tried to make this soup (delicious / deliciously).",
+    "opt1": "delicious",
+    "opt2": "deliciously",
+    "ans": "delicious"
+  },
+  {
+    "q": "She made me (jealous / jealously) about her.",
+    "opt1": "jealous",
+    "opt2": "jealously",
+    "ans": "jealous"
+  },
+  {
+    "q": "Donating your talent makes people (happy / happily).",
+    "opt1": "happy",
+    "opt2": "happily",
+    "ans": "happy"
+  },
+  {
+    "q": "The rain made the grass (wet / wetly).",
+    "opt1": "wet",
+    "opt2": "wetly",
+    "ans": "wet"
+  },
+  {
+    "q": "Pain and trouble made it (strong / strongly) and hard.",
+    "opt1": "strong",
+    "opt2": "strongly",
+    "ans": "strong"
+  },
+  {
+    "q": "Your support will make (he / him) much happier.",
+    "opt1": "he",
+    "opt2": "him",
+    "ans": "him"
+  },
+  {
+    "q": "I put chili sauce in the dish to make it (spicy / spicily).",
+    "opt1": "spicy",
+    "opt2": "spicily",
+    "ans": "spicy"
+  },
+  {
+    "q": "I am interested in ways to keep (healthy our brains / our brains healthy).",
+    "opt1": "healthy our brains",
+    "opt2": "our brains healthy",
+    "ans": "our brains healthy"
+  },
+  {
+    "q": "My mom won't allow me (going / to go) to the concert.",
+    "opt1": "going",
+    "opt2": "to go",
+    "ans": "to go"
+  },
+  {
+    "q": "We didn't expect him (win / to win).",
+    "opt1": "win",
+    "opt2": "to win",
+    "ans": "to win"
+  },
+  {
+    "q": "Caffeine can keep (you / your) awake all night.",
+    "opt1": "you",
+    "opt2": "your",
+    "ans": "you"
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    
+    function normalize(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/[.,?!~']/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function extractOptionsFromQuestion(item) {
+        let opts = [];
+        if (item.opt1 && item.opt2) {
+            opts = [item.opt1, item.opt2];
+        } else if (Array.isArray(item.options) && item.options.length >= 2) {
+            opts = item.options;
+        } else if (item.q) {
+            const match = item.q.match(/\(([^/]+)\/([^)]+)\)/);
+            if (match) {
+                opts = [match[1].trim(), match[2].trim()];
+            }
+        }
+        return opts;
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('question-display').innerText = (currentIdx + 1) + ". " + (item.q || '');
+        
+        const optsContainer = document.getElementById('options-display');
+        optsContainer.innerHTML = '';
+        
+        const opts = extractOptionsFromQuestion(item);
+        opts.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => {
+                document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                document.getElementById('user-input').value = opt;
+            };
+            optsContainer.appendChild(btn);
+        });
+
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 선택하거나 입력하세요.");
+        const item = quizSet[currentIdx];
+        
+        const expectedAnswers = Array.isArray(item.ans) ? item.ans : [item.ans];
+        const isCorrect = expectedAnswers.some(ans => normalize(ans) === normalize(userInputVal));
+        
+        results.push({ 
+            q: item.q, 
+            user: userInputVal, 
+            ans: expectedAnswers.join(' / '), 
+            isCorrect 
+        });
+        
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>${w.q}</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[괄호 안 선택형 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q} -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_괄호_안_선택형.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

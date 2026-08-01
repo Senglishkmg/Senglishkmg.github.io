@@ -1,0 +1,344 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>13강 Pattern2 Part01</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 90% !important; display: inline-block !important; text-align: center; font-size: 1.15rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 20px; }
+        .target-box { font-size: 1.05rem; font-weight: 700; color: #2B6CB0; margin-bottom: 16px; background: #EBF8FF; padding: 10px 16px; border-radius: 10px; display: inline-block; width: 100%; box-sizing: border-box; }
+        .question-text { font-size: 1.25rem; font-weight: 700; color: #1E293B; margin-bottom: 25px; line-height: 1.6; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>13강 Pattern2 Part01</h2>
+        <div class="guide-box">다음 문장에서 지시된 문장 성분(목적어, 목적격보어 등)을 찾아 적으시오.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 문장을 확인하고 해당되는 문장 성분 단어를 적으세요. (여러 개일 경우 쉼표나 슬래시로 구분)</div>
+        <div class="target-box" id="target-display"></div>
+        <div class="question-text" id="question-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="정답 입력 (예: me, sad 또는 me / sad)" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "q": "Keep your back straight.",
+    "target": "목적어 / 목적격보어",
+    "ans": "your back / straight"
+  },
+  {
+    "q": "It makes me a little sad, too.",
+    "target": "목적어 / 목적격보어",
+    "ans": "me / a little sad"
+  },
+  {
+    "q": "That made me sad.",
+    "target": "목적어 / 목적격보어",
+    "ans": "me / sad"
+  },
+  {
+    "q": "The father penguin keeps it warm.",
+    "target": "목적어 / 목적격보어",
+    "ans": "it / warm"
+  },
+  {
+    "q": "Leave us alone.",
+    "target": "목적어 / 목적격보어",
+    "ans": "us / alone"
+  },
+  {
+    "q": "Their black skin keeps them warm because it takes in the warm light of the sun.",
+    "target": "목적어 / 목적격보어",
+    "ans": "them / warm"
+  },
+  {
+    "q": "Ling's mother told him to be honest.",
+    "target": "목적어 / 목적격보어",
+    "ans": "him / to be honest"
+  },
+  {
+    "q": "I named it Spikey.",
+    "target": "목적어 / 목적격보어",
+    "ans": "it / Spikey"
+  },
+  {
+    "q": "Try doing other things to make you feel good.",
+    "target": "목적어 / 목적격보어",
+    "ans": "you / feel good"
+  },
+  {
+    "q": "This keeps the island beautiful.",
+    "target": "목적어 / 목적격보어",
+    "ans": "the island / beautiful"
+  },
+  {
+    "q": "Their legs also got longer to keep their bodies high above the hot sand.",
+    "target": "목적어 / 목적격보어",
+    "ans": "their bodies / high above the hot sand"
+  },
+  {
+    "q": "Say good words to your friends, and you'll make them happy.",
+    "target": "목적어 / 목적격보어",
+    "ans": "them / happy"
+  },
+  {
+    "q": "A good diet keeps your body healthy.",
+    "target": "목적어 / 목적격보어",
+    "ans": "your body / healthy"
+  },
+  {
+    "q": "This song made him famous.",
+    "target": "목적어 / 목적격보어",
+    "ans": "him / famous"
+  },
+  {
+    "q": "I found the shoes comfortable.",
+    "target": "목적어 / 목적격보어",
+    "ans": "the shoes / comfortable"
+  },
+  {
+    "q": "His rude behavior made me angry.",
+    "target": "목적어 / 목적격보어",
+    "ans": "me / angry"
+  },
+  {
+    "q": "The refrigerator keeps food fresh.",
+    "target": "목적어 / 목적격보어",
+    "ans": "food / fresh"
+  },
+  {
+    "q": "Amy calls her dog \"Monster.\"",
+    "target": "목적어 / 목적격보어",
+    "ans": "her dog / \"Monster.\""
+  },
+  {
+    "q": "Loud music drives me crazy.",
+    "target": "목적어 / 목적격보어",
+    "ans": "me / crazy"
+  },
+  {
+    "q": "Please keep it a secret.",
+    "target": "목적어 / 목적격보어",
+    "ans": "it / a secret"
+  },
+  {
+    "q": "The class elected Mike a class president.",
+    "target": "목적어 / 목적격보어",
+    "ans": "Mike / a class president"
+  },
+  {
+    "q": "Did you call that man your father?",
+    "target": "목적어 / 목적격보어",
+    "ans": "that man / your father"
+  },
+  {
+    "q": "He left the door open.",
+    "target": "목적어 / 목적격보어",
+    "ans": "the door / open"
+  },
+  {
+    "q": "I found my wallet missing.",
+    "target": "목적어 / 목적격보어",
+    "ans": "my wallet / missing"
+  },
+  {
+    "q": "I wanted him not to go outside.",
+    "target": "목적어 / 목적격보어",
+    "ans": "him / not to go outside"
+  },
+  {
+    "q": "The teacher told him to be quiet.",
+    "target": "목적어 / 목적격보어",
+    "ans": "him / to be quiet"
+  },
+  {
+    "q": "Coins made exact exchanges possible.",
+    "target": "목적어 / 목적격보어",
+    "ans": "exact exchanges / possible"
+  },
+  {
+    "q": "Washing too often may make your skin dry.",
+    "target": "목적어 / 목적격보어",
+    "ans": "your skin / dry"
+  },
+  {
+    "q": "I find chatting and reading helpful.",
+    "target": "목적어 / 목적격보어",
+    "ans": "chatting and reading / helpful"
+  },
+  {
+    "q": "Everyone tried to make this soup delicious.",
+    "target": "목적어 / 목적격보어",
+    "ans": "this soup / delicious"
+  },
+  {
+    "q": "She made me jealous about her.",
+    "target": "목적어 / 목적격보어",
+    "ans": "me / jealous about her"
+  },
+  {
+    "q": "Donating your talent makes people happy.",
+    "target": "목적어 / 목적격보어",
+    "ans": "people / happy"
+  },
+  {
+    "q": "The rain made the grass wet.",
+    "target": "목적어 / 목적격보어",
+    "ans": "the grass / wet"
+  },
+  {
+    "q": "Pain and trouble made it strong and hard.",
+    "target": "목적어 / 목적격보어",
+    "ans": "it / strong and hard"
+  },
+  {
+    "q": "Your support will make him much happier.",
+    "target": "목적어 / 목적격보어",
+    "ans": "him / much happier"
+  },
+  {
+    "q": "I put chili sauce in the dish to make it spicy.",
+    "target": "목적어 / 목적격보어",
+    "ans": "it / spicy"
+  },
+  {
+    "q": "I am interested in ways to keep our brains healthy.",
+    "target": "목적어 / 목적격보어",
+    "ans": "our brains / healthy"
+  },
+  {
+    "q": "My mom won't allow me to go to the concert.",
+    "target": "목적어 / 목적격보어",
+    "ans": "me / to go to the concert"
+  },
+  {
+    "q": "We didn't expect him to win.",
+    "target": "목적어 / 목적격보어",
+    "ans": "him / to win"
+  },
+  {
+    "q": "Caffeine can keep you awake all night.",
+    "target": "목적어 / 목적격보어",
+    "ans": "you / awake"
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    
+    function normalize(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/[,/]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('target-display').innerText = "찾을 성분: " + (item.target || "목적어, 목적격보어");
+        document.getElementById('question-display').innerText = (currentIdx + 1) + ". " + (item.q || '');
+
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        
+        const expectedAnswers = Array.isArray(item.ans) ? item.ans : [item.ans];
+        const isCorrect = expectedAnswers.some(ans => normalize(ans) === normalize(userInputVal));
+        
+        results.push({ 
+            q: item.q, 
+            target: item.target || "목적어, 목적격보어",
+            user: userInputVal, 
+            ans: expectedAnswers.join(' / '), 
+            isCorrect 
+        });
+        
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>${w.q} (${w.target})</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[문장 성분 찾기 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q} (${r.target}) -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_문장성분_찾기.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>
