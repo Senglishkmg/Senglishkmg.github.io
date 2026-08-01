@@ -1,0 +1,631 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>13과 Pattern1 Part01</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 90% !important; display: inline-block !important; text-align: center; font-size: 1.15rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 20px; }
+        .bogi-box { background: #F8FAFC; border: 2px dashed #94A3B8; padding: 16px; border-radius: 12px; margin-bottom: 22px; text-align: center; }
+        .bogi-header { font-weight: bold; color: #1E293B; margin-bottom: 10px; font-size: 1.05rem; }
+        .bogi-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .chip { background: white; border: 1px solid #CBD5E1; color: #334155; font-weight: 600; font-size: 1rem; padding: 6px 14px; border-radius: 20px; cursor: pointer; user-select: none; transition: all 0.2s; }
+        .chip:hover { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .question-text { font-size: 1.25rem; font-weight: 700; color: #1E293B; margin-bottom: 20px; line-height: 1.6; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+        .my-ans { color: var(--wrong-color); font-weight: bold; margin-right: 10px; }
+        .correct-ans { color: var(--correct-color); font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>13과 Pattern1 Part01</h2>
+        <div class="guide-box">다음 빈칸에 &lt;보기&gt;에서 알맞은 단어를 골라 쓰시오.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 &lt;보기&gt;의 단어를 클릭하거나 직접 입력하여 빈칸을 완성하세요.</div>
+        <div class="bogi-box">
+            <div class="bogi-header">&lt;보 기&gt;</div>
+            <div class="bogi-chips" id="bogi-chips"></div>
+        </div>
+        <div class="question-text" id="question-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="정답 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "q": "Ms. Serpil is ______ a culture lesson about Turkey to Yebin's club.",
+    "options": ["showing", "getting", "sending", "teaching", "giving", "serving", "making"],
+    "ans": "teaching"
+  },
+  {
+    "q": "A few weeks ago, Sejin ______ his pictures to Yuri.",
+    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "ans": "showed"
+  },
+  {
+    "q": "He ______ three tips to her.",
+    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "ans": "gave"
+  },
+  {
+    "q": "I will ______ my brother this pencil case as a birthday present.",
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
+    "ans": "give"
+  },
+  {
+    "q": "Rachel ______ her family the picture with her phone.",
+    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "ans": "sent"
+  },
+  {
+    "q": "We will ______ you some questions.",
+    "options": ["show", "ask", "send", "teach", "give", "serve", "make"],
+    "ans": "ask"
+  },
+  {
+    "q": "The next day, all the students ______ the class something about their special talents.",
+    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "ans": "showed"
+  },
+  {
+    "q": "Can you ______ me some cold water?",
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
+    "ans": "get"
+  },
+  {
+    "q": "On Sundays, the members invite elderly people to the community center and ______ them warm meals.",
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
+    "ans": "serve"
+  },
+  {
+    "q": "I can ______ children Chinese characters.",
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
+    "ans": "teach"
+  },
+  {
+    "q": "Then I'll ______ you five glasses of juice next Sunday.",
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
+    "ans": "make"
+  },
+  {
+    "q": "An hour later, he ______ my portrait to me.",
+    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "ans": "showed"
+  },
+  {
+    "q": "______ me the medicine.",
+    "options": ["Show", "Get", "Send", "Teach", "Give", "Serve", "Make"],
+    "ans": "Give"
+  },
+  {
+    "q": "I'll come to your house every day and ______ you the medicine.",
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
+    "ans": "give"
+  },
+  {
+    "q": "I'll ______ you the money when I can see well.",
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
+    "ans": "give"
+  },
+  {
+    "q": "Dr. Danbad ______ the old woman good medicine.",
+    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "ans": "gave"
+  },
+  {
+    "q": "The doctor ______ you the good medicine, but why didn't you pay him any money?",
+    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "ans": "gave"
+  },
+  {
+    "q": "Homework ______ me too much stress because the teacher grades my homework.",
+    "options": ["shows", "gets", "sends", "teaches", "gives", "serves", "makes"],
+    "ans": "gives"
+  },
+  {
+    "q": "I will try to ______ you fun and useful homework.",
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
+    "ans": "give"
+  },
+  {
+    "q": "My parents ______ me 20 dollars for my weekly allowance.",
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
+    "ans": "give"
+  },
+  {
+    "q": "I often ______ small things for my family.",
+    "options": ["show", "buy", "send", "teach", "give", "serve", "make"],
+    "ans": "buy"
+  },
+  {
+    "q": "I will also ______ 1 dollar to hungry children in Africa.",
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
+    "ans": "send"
+  },
+  {
+    "q": "I'll ______ you how to make.",
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
+    "ans": "show"
+  },
+  {
+    "q": "______ us your talent.",
+    "options": ["Show", "Get", "Send", "Teach", "Give", "Serve", "Make"],
+    "ans": "Give"
+  },
+  {
+    "q": "I can also ______ them funny stories.",
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
+    "ans": "tell"
+  },
+  {
+    "q": "Ishaan's parents are worried about Ishaan, so they ______ him to a boarding school.",
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
+    "ans": "send"
+  },
+  {
+    "q": "It ______ happiness to you and other people.",
+    "options": ["sends", "owes", "gives", "promises", "buys", "tells"],
+    "ans": "gives"
+  },
+  {
+    "q": "She also ______ them some flowers.",
+    "options": ["sent", "owed", "gave", "promised", "bought", "told"],
+    "ans": "gave"
+  },
+  {
+    "q": "______ him a big kiss for me.",
+    "options": ["Send", "Owe", "Give", "Promise", "Buy", "Tell"],
+    "ans": "Give"
+  },
+  {
+    "q": "Please ______ me some pictures of our house.",
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
+    "ans": "send"
+  },
+  {
+    "q": "I want to ______ them to my friends in Korea.",
+    "options": ["show", "owe", "give", "promise", "buy", "tell"],
+    "ans": "show"
+  },
+  {
+    "q": "I'll ______ all my things to the cleverest son.",
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
+    "ans": "give"
+  },
+  {
+    "q": "I'll ______ you a test.",
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
+    "ans": "give"
+  },
+  {
+    "q": "______ me a lot of straw, please.",
+    "options": ["Send", "Owe", "Give", "Promise", "Buy", "Tell"],
+    "ans": "Give"
+  },
+  {
+    "q": "With 100 won, you can ______ a child in Rwanda three bananas.",
+    "options": ["give", "buy", "send", "owe", "promise", "tell"],
+    "ans": "buy"
+  },
+  {
+    "q": "With 1,000 won, you can ______ a child in Bangladesh a meal.",
+    "options": ["give", "buy", "send", "owe", "promise", "tell"],
+    "ans": "buy"
+  },
+  {
+    "q": "With 10,000 won, you can ______ 30 pills to sick children in North Korea.",
+    "options": ["give", "buy", "send", "owe", "promise", "tell"],
+    "ans": "send"
+  },
+  {
+    "q": "I'll ______ a golden apple to the biggest liar.",
+    "options": ["give", "buy", "send", "owe", "promise", "tell"],
+    "ans": "give"
+  },
+  {
+    "q": "The king ______ a signal to the two lions.",
+    "options": ["gave", "bought", "sent", "owed", "promised", "told"],
+    "ans": "sent"
+  },
+  {
+    "q": "You ______ me a bag of gold.",
+    "options": ["gave", "bought", "sent", "owed", "promised", "told"],
+    "ans": "promised"
+  },
+  {
+    "q": "Then, you ______ me a golden apple.",
+    "options": ["give", "buy", "send", "owe", "promise", "tell"],
+    "ans": "owe"
+  },
+  {
+    "q": "Then, ______ me a bag of gold.",
+    "options": ["Give", "Buy", "Send", "Owe", "Promise", "Tell"],
+    "ans": "give"
+  },
+  {
+    "q": "On New Year's Day, they ______ children money in red envelopes.",
+    "options": ["give", "buy", "send", "owe", "promise", "tell"],
+    "ans": "give"
+  },
+  {
+    "q": "He ______ the baby \"penguin milk\" from his throat.",
+    "options": ["gives", "buys", "sends", "owes", "promises", "tells"],
+    "ans": "gives"
+  },
+  {
+    "q": "______ them to your little cousins.",
+    "options": ["Give", "Buy", "Send", "Owe", "Promise", "Tell"],
+    "ans": "Give"
+  },
+  {
+    "q": "Every night, the mom ______ a fresh nest with branches for her baby.",
+    "options": ["shows", "gives", "sends", "tells", "makes", "brings", "writes", "buys"],
+    "ans": "makes"
+  },
+  {
+    "q": "Learn these words and ______ people your good manners.",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "show"
+  },
+  {
+    "q": "When your friend ______ you a hand, you must not forget to say \"thank you.\"",
+    "options": ["shows", "gives", "sends", "tells", "makes", "brings", "writes", "buys"],
+    "ans": "gives"
+  },
+  {
+    "q": "Can you ______ me money?",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "give"
+  },
+  {
+    "q": "Can you ______ me a house?",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "give"
+  },
+  {
+    "q": "Can you ______ me a boat?",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "give"
+  },
+  {
+    "q": "I want to ______ you something.",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "give"
+  },
+  {
+    "q": "Yewon takes care of her and ______ all her love to her.",
+    "options": ["shows", "gives", "sends", "tells", "makes", "brings", "writes", "buys"],
+    "ans": "gives"
+  },
+  {
+    "q": "I am going to ______ a seed to each one of you today.",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "give"
+  },
+  {
+    "q": "One year later, ______ your plant to me.",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "bring"
+  },
+  {
+    "q": "A year later, all the young people ______ their plants to the king.",
+    "options": ["brought", "gave", "sent", "told", "made", "showed", "wrote", "bought"],
+    "ans": "brought"
+  },
+  {
+    "q": "One year ago, I ______ a seed to each one of you.",
+    "options": ["brought", "gave", "sent", "told", "made", "showed", "wrote", "bought"],
+    "ans": "gave"
+  },
+  {
+    "q": "Only Ling had the courage and honesty to ______ an empty pot to me.",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "bring"
+  },
+  {
+    "q": "______ a letter to Santa with your wish.",
+    "options": ["Show", "Give", "Send", "Tell", "Make", "Bring", "Write", "Buy"],
+    "ans": "Write"
+  },
+  {
+    "q": "Many people ______ her letters.",
+    "options": ["brought", "gave", "sent", "told", "made", "showed", "wrote", "bought"],
+    "ans": "sent"
+  },
+  {
+    "q": "______ your parents a hug every day.",
+    "options": ["Show", "Give", "Send", "Tell", "Make", "Bring", "Write", "Buy"],
+    "ans": "Give"
+  },
+  {
+    "q": "She even ______ some of her food to Browny!",
+    "options": ["brought", "gave", "sent", "told", "made", "showed", "wrote", "bought"],
+    "ans": "gave"
+  },
+  {
+    "q": "Don't ______ chocolate or ice cream to a guinea pig.",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "give"
+  },
+  {
+    "q": "People usually ______ gifts for others, don't they?",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "buy"
+  },
+  {
+    "q": "For my grandfather's 70th birthday, I ______ a gift for him.",
+    "options": ["brought", "gave", "sent", "told", "made", "showed", "wrote", "bought"],
+    "ans": "made"
+  },
+  {
+    "q": "Do you want to ______ a special gift to your friend?",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "give"
+  },
+  {
+    "q": "I will ______ you a good DIY gift idea.",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "tell"
+  },
+  {
+    "q": "Tomorrow, we're going to ______ a thank you note for Ms. Crane.",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "write"
+  },
+  {
+    "q": "Russians ______ others bread to welcome them.",
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
+    "ans": "give"
+  },
+  {
+    "q": "We ______ music to sick children in the hospital.",
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
+    "ans": "teach"
+  },
+  {
+    "q": "During your tour, Socotra will ______ you a special experience.",
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
+    "ans": "give"
+  },
+  {
+    "q": "Socotra will ______ you a different world.",
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
+    "ans": "show"
+  },
+  {
+    "q": "I held her carefully in my arms and ______ her milk slowly.",
+    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "ans": "gave"
+  },
+  {
+    "q": "When I slowly get out of bed, RX2 ______ me three pills for breakfast.",
+    "options": ["sends", "tells", "shows", "brings", "makes", "teaches", "gives"],
+    "ans": "brings"
+  },
+  {
+    "q": "I'll ______ the best artist a prize.",
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
+    "ans": "give"
+  },
+  {
+    "q": "He ______ the third artist a lot of gold as a prize.",
+    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "ans": "gave"
+  },
+  {
+    "q": "Dreams can sometimes ______ us a lot about our real life.",
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
+    "ans": "tell"
+  },
+  {
+    "q": "Let's ______ lunch for them.",
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
+    "ans": "make"
+  },
+  {
+    "q": "The snow will ______ you happiness.",
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
+    "ans": "bring"
+  },
+  {
+    "q": "It ______ us exciting films, unusual plays, and different kinds of music.",
+    "options": ["sends", "tells", "shows", "brings", "makes", "teaches", "gives"],
+    "ans": "shows"
+  },
+  {
+    "q": "Artists ______ young children art.",
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
+    "ans": "teach"
+  },
+  {
+    "q": "They ______ everyone some advice and good jobs in the future.",
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
+    "ans": "give"
+  },
+  {
+    "q": "My friends ______ me their secrets or problems.",
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
+    "ans": "tell"
+  },
+  {
+    "q": "A kind woman ______ us two umbrellas.",
+    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "ans": "gave"
+  },
+  {
+    "q": "The teacher ______ two onions to us.",
+    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "ans": "gave"
+  },
+  {
+    "q": "You ______ me a good lesson.",
+    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "ans": "taught"
+  },
+  {
+    "q": "He ______ the people all his heart.",
+    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "ans": "gave"
+  },
+  {
+    "q": "He listens to others' problems and ______ them good advice.",
+    "options": ["sends", "tells", "shows", "brings", "makes", "teaches", "gives"],
+    "ans": "gives"
+  },
+  {
+    "q": "Thanks to him, Sumin can ______ her friends good advice, too.",
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
+    "ans": "give"
+  },
+  {
+    "q": "I ______ this story to Sohee.",
+    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "ans": "told"
+  },
+  {
+    "q": "I'll ______ you some advice.",
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
+    "ans": "give"
+  },
+  {
+    "q": "Then she ______ her spending diary to me.",
+    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "ans": "showed"
+  },
+  {
+    "q": "When you look sick, the mirror will check your health and ______ the information to your doctor.",
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
+    "ans": "send"
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    
+    function normalize(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/[.,?!~']/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('question-display').innerText = (currentIdx + 1) + ". " + (item.q || '');
+        
+        const chipsArea = document.getElementById('bogi-chips');
+        chipsArea.innerHTML = '';
+        const optionsList = Array.isArray(item.options) ? item.options : (item.options ? item.options.split(',').map(s => s.trim()) : []);
+        optionsList.forEach(opt => {
+            const btn = document.createElement('span');
+            btn.className = 'chip';
+            btn.innerText = opt;
+            btn.onclick = () => {
+                document.getElementById('user-input').value = opt;
+            };
+            chipsArea.appendChild(btn);
+        });
+
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        
+        const expectedAnswers = Array.isArray(item.ans) ? item.ans : [item.ans];
+        const isCorrect = expectedAnswers.some(ans => normalize(ans) === normalize(userInputVal));
+        
+        results.push({ 
+            q: item.q, 
+            options: item.options, 
+            user: userInputVal, 
+            ans: expectedAnswers.join(' / '), 
+            isCorrect 
+        });
+        
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                const optStr = Array.isArray(w.options) ? w.options.join(', ') : w.options;
+                area.innerHTML += `<div class="wrong-item"><strong>${w.q}</strong><br>&lt;보기&gt; ${optStr}<br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[보기에서 골라 써넣기 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q} -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_보기에서_골라_써넣기.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

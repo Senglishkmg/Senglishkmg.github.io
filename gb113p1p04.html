@@ -1,0 +1,571 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>13 문장의 형태 Pattern1 Part04</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 90% !important; display: inline-block !important; text-align: center; font-size: 1.15rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 20px; }
+        #original-display { font-size: 1.35rem; font-weight: 800; color: #1A365D; margin-bottom: 10px; word-break: keep-all; line-height: 1.5; }
+        #condition-display { font-size: 1.25rem; font-weight: 700; color: #E53E3E; margin: 15px 0 30px 0; line-height: 1.8; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+        .wrong-q { font-weight: bold; margin-bottom: 8px; display: block; }
+        .my-ans { color: var(--wrong-color); font-weight: bold; margin-right: 10px; }
+        .correct-ans { color: var(--correct-color); font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>13 문장의 형태 Pattern1 Part04</h2>
+        <div class="guide-box">주어진 영어 문장을 지시어 조건에 맞게 알맞은 문장으로 변형하여 입력하세요.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 조건에 맞게 영어 문장을 변형하여 완성하시오.</div>
+        <div id="original-display"></div>
+        <div id="condition-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="여기에 변형된 문장 전체 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "q": "Ms. Serpil is giving Yebin's club a culture lesson about Turkey.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Ms. Serpil is giving a culture lesson about Turkey to Yebin's club."
+  },
+  {
+    "q": "Sejin showed Yuri his pictures.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Sejin showed his pictures to Yuri."
+  },
+  {
+    "q": "He gave her three tips.",
+    "condition": "(3형식 문장으로)",
+    "ans": "He gave three tips to her."
+  },
+  {
+    "q": "I will give my brother this pencil case.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I will give this pencil case to my brother."
+  },
+  {
+    "q": "Rachel sent her family the picture with her phone.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Rachel sent the picture with her phone to her family."
+  },
+  {
+    "q": "We will give you some questions.",
+    "condition": "(3형식 문장으로)",
+    "ans": "We will give some questions to you."
+  },
+  {
+    "q": "All the students showed the class something about their special talents.",
+    "condition": "(3형식 문장으로)",
+    "ans": "All the students showed something about their special talents to the class."
+  },
+  {
+    "q": "On Sundays, the members serve them warm meals.",
+    "condition": "(3형식 문장으로)",
+    "ans": "On Sundays, the members serve warm meals to them."
+  },
+  {
+    "q": "I can teach children Chinese characters.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I can teach Chinese characters to children."
+  },
+  {
+    "q": "Then I'll make you five glasses of juice next Sunday.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Then I'll make five glasses of juice for you next Sunday."
+  },
+  {
+    "q": "An hour later, he showed me my portrait.",
+    "condition": "(3형식 문장으로)",
+    "ans": "An hour later, he showed my portrait to me."
+  },
+  {
+    "q": "Give me the medicine.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Give the medicine to me."
+  },
+  {
+    "q": "I'll come to your house every day and give you the medicine.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I'll come to your house every day and give the medicine to you."
+  },
+  {
+    "q": "I'll give you the money when I can see well.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I'll give the money to you when I can see well."
+  },
+  {
+    "q": "Dr. Danbad gave the old woman good medicine.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Dr. Danbad gave good medicine to the old woman."
+  },
+  {
+    "q": "The doctor gave you the good medicine.",
+    "condition": "(3형식 문장으로)",
+    "ans": "The doctor gave the good medicine to you."
+  },
+  {
+    "q": "Homework gives me too much stress.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Homework gives too much stress to me."
+  },
+  {
+    "q": "I will try to give you fun and useful homework.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I will try to give fun and useful homework to you."
+  },
+  {
+    "q": "I often buy my family small things.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I often buy small things for my family."
+  },
+  {
+    "q": "I will also send hungry children 1 dollar.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I will also send 1 dollar to hungry children."
+  },
+  {
+    "q": "Give us your talent.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Give your talent to us."
+  },
+  {
+    "q": "I can also tell them funny stories.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I can also tell funny stories to them."
+  },
+  {
+    "q": "It gives you happiness.",
+    "condition": "(3형식 문장으로)",
+    "ans": "It gives happiness to you."
+  },
+  {
+    "q": "She also gave them some flowers.",
+    "condition": "(3형식 문장으로)",
+    "ans": "She also gave some flowers to them."
+  },
+  {
+    "q": "Give him a big kiss for me.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Give a big kiss to him for me."
+  },
+  {
+    "q": "Please send me some pictures of our house.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Please send some pictures of our house to me."
+  },
+  {
+    "q": "I'll give the cleverest son all my things.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I'll give all my things to the cleverest son."
+  },
+  {
+    "q": "I'll give you a test.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I'll give a test to you."
+  },
+  {
+    "q": "Give me a lot of straw, please.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Give a lot of straw to me, please."
+  },
+  {
+    "q": "With 100 won, you can give a child in Rwanda three bananas.",
+    "condition": "(3형식 문장으로)",
+    "ans": "With 100 won, you can give three bananas to a child in Rwanda."
+  },
+  {
+    "q": "With 1,000 won, you can buy a child in Bangladesh a meal.",
+    "condition": "(3형식 문장으로)",
+    "ans": "With 1,000 won, you can buy a meal for a child in Bangladesh."
+  },
+  {
+    "q": "With 10,000 won, you can send sick children in North Korea 30 pills.",
+    "condition": "(3형식 문장으로)",
+    "ans": "With 10,000 won, you can send 30 pills to sick children in North Korea."
+  },
+  {
+    "q": "I'll give the biggest liar a golden apple.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I'll give a golden apple to the biggest liar."
+  },
+  {
+    "q": "The king gave the two lions a signal.",
+    "condition": "(3형식 문장으로)",
+    "ans": "The king gave a signal to the two lions."
+  },
+  {
+    "q": "You promised me a bag of gold.",
+    "condition": "(3형식 문장으로)",
+    "ans": "You promised a bag of gold to me."
+  },
+  {
+    "q": "Then, you owe me a golden apple.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Then, you owe a golden apple to me."
+  },
+  {
+    "q": "Then, give me a bag of gold.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Then, give a bag of gold to me."
+  },
+  {
+    "q": "On New Year's Day, they give children money in red envelopes.",
+    "condition": "(3형식 문장으로)",
+    "ans": "On New Year's Day, they give money in red envelopes to children."
+  },
+  {
+    "q": "He gives the baby \"penguin milk\" from his throat.",
+    "condition": "(3형식 문장으로)",
+    "ans": "He gives \"penguin milk\" from his throat to the baby."
+  },
+  {
+    "q": "Every night, the mom makes her baby a fresh nest with branches.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Every night, the mom makes a fresh nest with branches for her baby."
+  },
+  {
+    "q": "Learn these words and show people your good manners.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Learn these words and show your good manners to people."
+  },
+  {
+    "q": "Can you give me a house?",
+    "condition": "(3형식 문장으로)",
+    "ans": "Can you give a house to me?"
+  },
+  {
+    "q": "Can you give me a boat?",
+    "condition": "(3형식 문장으로)",
+    "ans": "Can you give a boat to me?"
+  },
+  {
+    "q": "I want to give you something.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I want to give something to you."
+  },
+  {
+    "q": "Yewon takes care of her and gives her all her love.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Yewon takes care of her and gives all her love to her."
+  },
+  {
+    "q": "I am going to give each one of you a seed today.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I am going to give a seed to each one of you today."
+  },
+  {
+    "q": "One year later, bring me your plant.",
+    "condition": "(3형식 문장으로)",
+    "ans": "One year later, bring your plant to me."
+  },
+  {
+    "q": "A year later, all the young people brought the king their plants.",
+    "condition": "(3형식 문장으로)",
+    "ans": "A year later, all the young people brought their plants to the king."
+  },
+  {
+    "q": "One year ago, I gave each one of you a seed.",
+    "condition": "(3형식 문장으로)",
+    "ans": "One year ago, I gave a seed to each one of you."
+  },
+  {
+    "q": "Only Ling had the courage and honesty to bring me an empty pot.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Only Ling had the courage and honesty to bring an empty pot to me."
+  },
+  {
+    "q": "Write Santa a letter with your wish.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Write a letter to Santa with your wish."
+  },
+  {
+    "q": "Many people sent her letters.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Many people sent letters to her."
+  },
+  {
+    "q": "Give your parents a hug every day.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Give a hug to your parents every day."
+  },
+  {
+    "q": "She even gave Browny some of her food!",
+    "condition": "(3형식 문장으로)",
+    "ans": "She even gave some of her food to Browny!"
+  },
+  {
+    "q": "Don't give a guinea pig chocolate or ice cream.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Don't give chocolate or ice cream to a guinea pig."
+  },
+  {
+    "q": "People usually buy others gifts, don't they?",
+    "condition": "(3형식 문장으로)",
+    "ans": "People usually buy gifts for others, don't they?"
+  },
+  {
+    "q": "For my grandfather's 70th birthday, I made him a gift.",
+    "condition": "(3형식 문장으로)",
+    "ans": "For my grandfather's 70th birthday, I made a gift for him."
+  },
+  {
+    "q": "Do you want to give your friend a special gift?",
+    "condition": "(3형식 문장으로)",
+    "ans": "Do you want to give a special gift to your friend?"
+  },
+  {
+    "q": "I will tell you a good DIY gift idea.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I will tell a good DIY gift idea to you."
+  },
+  {
+    "q": "Tomorrow, we're going to make Ms. Crane a thank you note.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Tomorrow, we're going to make a thank you note for Ms. Crane."
+  },
+  {
+    "q": "Russians give others bread to welcome them.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Russians give bread to others to welcome them."
+  },
+  {
+    "q": "We teach sick children in the hospital music.",
+    "condition": "(3형식 문장으로)",
+    "ans": "We teach music to sick children in the hospital."
+  },
+  {
+    "q": "During your tour, Socotra will give you a special experience.",
+    "condition": "(3형식 문장으로)",
+    "ans": "During your tour, Socotra will give a special experience to you."
+  },
+  {
+    "q": "Socotra will show you a different world.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Socotra will show a different world to you."
+  },
+  {
+    "q": "I held her carefully in my arms and gave her milk slowly.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I held her carefully in my arms and gave milk to her slowly."
+  },
+  {
+    "q": "When I slowly get out of bed, RX2 brings me three pills for breakfast.",
+    "condition": "(3형식 문장으로)",
+    "ans": "When I slowly get out of bed, RX2 brings three pills to me for breakfast."
+  },
+  {
+    "q": "I'll give the best artist a prize.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I'll give a prize to the best artist."
+  },
+  {
+    "q": "He gave the third artist a lot of gold.",
+    "condition": "(3형식 문장으로)",
+    "ans": "He gave a lot of gold to the third artist."
+  },
+  {
+    "q": "Let's make them lunch.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Let's make lunch for them."
+  },
+  {
+    "q": "The snow will bring you happiness.",
+    "condition": "(3형식 문장으로)",
+    "ans": "The snow will bring happiness to you."
+  },
+  {
+    "q": "It shows us exciting films.",
+    "condition": "(3형식 문장으로)",
+    "ans": "It shows exciting films to us."
+  },
+  {
+    "q": "Artists teach young children art.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Artists teach art to young children."
+  },
+  {
+    "q": "They give everyone some advice and good jobs in the future.",
+    "condition": "(3형식 문장으로)",
+    "ans": "They give some advice and good jobs to everyone in the future."
+  },
+  {
+    "q": "My friends tell me their secrets or problems.",
+    "condition": "(3형식 문장으로)",
+    "ans": "My friends tell their secrets or problems to me."
+  },
+  {
+    "q": "A kind woman gave us two umbrellas.",
+    "condition": "(3형식 문장으로)",
+    "ans": "A kind woman gave two umbrellas to us."
+  },
+  {
+    "q": "The teacher gave us two onions.",
+    "condition": "(3형식 문장으로)",
+    "ans": "The teacher gave two onions to us."
+  },
+  {
+    "q": "You taught me a good lesson.",
+    "condition": "(3형식 문장으로)",
+    "ans": "You taught a good lesson to me."
+  },
+  {
+    "q": "He gave the people all his heart.",
+    "condition": "(3형식 문장으로)",
+    "ans": "He gave all his heart to the people."
+  },
+  {
+    "q": "He listens to others' problems and gives them good advice.",
+    "condition": "(3형식 문장으로)",
+    "ans": "He listens to others' problems and gives good advice to them."
+  },
+  {
+    "q": "Thanks to him, Sumin can give her friends good advice, too.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Thanks to him, Sumin can give good advice to her friends, too."
+  },
+  {
+    "q": "I told Sohee this story.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I told this story to Sohee."
+  },
+  {
+    "q": "I'll give you some advice.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I'll give some advice to you."
+  },
+  {
+    "q": "Then she showed me her diary.",
+    "condition": "(3형식 문장으로)",
+    "ans": "Then she showed her diary to me."
+  },
+  {
+    "q": "The mirror will send your doctor the information.",
+    "condition": "(3형식 문장으로)",
+    "ans": "The mirror will send the information to your doctor."
+  },
+  {
+    "q": "I would like to ask you a favor.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I would like to ask a favor of you."
+  },
+  {
+    "q": "I want to cook my friends some food.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I want to cook some food for my friends."
+  },
+  {
+    "q": "I'll lend you some money only this time.",
+    "condition": "(3형식 문장으로)",
+    "ans": "I'll lend some money to you only this time."
+  },
+  {
+    "q": "A kind woman served me a meal.",
+    "condition": "(3형식 문장으로)",
+    "ans": "A kind woman served a meal to me."
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    
+    function normalize(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/[.,?!~']/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('original-display').innerText = item.q || '';
+        document.getElementById('condition-display').innerText = item.condition || '';
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        const isCorrect = normalize(item.ans) === normalize(userInputVal);
+        results.push({ q: item.q, cond: item.condition, user: userInputVal, ans: item.ans, isCorrect });
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>${w.q} ${w.cond}</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+    function downloadResult() {
+        const txt = `[조건부 문장변형 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q} ${r.cond} -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_조건부_문장변형.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>
