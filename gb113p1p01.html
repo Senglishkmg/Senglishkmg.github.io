@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>13과 Pattern1 Part01</title>
+    <title>13 문장의 형태 Pattern1 Part01</title>
     <style>
         :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
         body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
@@ -20,21 +20,20 @@
         .bogi-box { background: #F8FAFC; border: 2px dashed #94A3B8; padding: 16px; border-radius: 12px; margin-bottom: 22px; text-align: center; }
         .bogi-header { font-weight: bold; color: #1E293B; margin-bottom: 10px; font-size: 1.05rem; }
         .bogi-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-        .chip { background: white; border: 1px solid #CBD5E1; color: #334155; font-weight: 600; font-size: 1rem; padding: 6px 14px; border-radius: 20px; cursor: pointer; user-select: none; transition: all 0.2s; }
+        .chip { background: white; border: 1px solid #CBD5E1; color: #334155; font-weight: 600; font-size: 0.95rem; padding: 6px 14px; border-radius: 20px; cursor: pointer; user-select: none; transition: all 0.2s; }
         .chip:hover { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .korean-box { font-size: 1.15rem; font-weight: 700; color: #2B6CB0; margin-bottom: 12px; word-break: keep-all; line-height: 1.5; background: #EBF8FF; padding: 12px 16px; border-radius: 10px; display: inline-block; width: 100%; box-sizing: border-box; }
         .question-text { font-size: 1.25rem; font-weight: 700; color: #1E293B; margin-bottom: 20px; line-height: 1.6; word-break: keep-all; }
         .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
         #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
         .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
-        .my-ans { color: var(--wrong-color); font-weight: bold; margin-right: 10px; }
-        .correct-ans { color: var(--correct-color); font-weight: bold; }
     </style>
 </head>
 <body>
 <div class="container">
     <div id="setup-page">
-        <h2>13과 Pattern1 Part01</h2>
-        <div class="guide-box">다음 빈칸에 &lt;보기&gt;에서 알맞은 단어를 골라 쓰시오.</div>
+        <h2>13 문장의 형태 Pattern1 Part01</h2>
+        <div class="guide-box">다음 우리말과 같은 뜻이 되도록 &lt;보기&gt;에서 알맞은 말을 골라 빈칸을 완성하시오.</div>
         <input type="text" id="school" placeholder="학교명">
         <input type="text" id="student-info" placeholder="학년/반/번호">
         <input type="text" id="name" placeholder="성명">
@@ -42,11 +41,12 @@
     </div>
     <div id="quiz-page" class="hidden">
         <div class="progress-bar"><div id="progress-inner"></div></div>
-        <div class="guide-box">💡 &lt;보기&gt;의 단어를 클릭하거나 직접 입력하여 빈칸을 완성하세요.</div>
+        <div class="guide-box">💡 우리말 해석을 참고하여 &lt;보기&gt;에서 알맞은 단어/표현을 골라 쓰세요.</div>
         <div class="bogi-box">
             <div class="bogi-header">&lt;보 기&gt;</div>
             <div class="bogi-chips" id="bogi-chips"></div>
         </div>
+        <div class="korean-box" id="korean-display"></div>
         <div class="question-text" id="question-display"></div>
         <input type="text" id="user-input" class="answer-input" placeholder="정답 입력" autocomplete="off">
         <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
@@ -65,466 +65,559 @@
 <script>
     const allQuestions = [
   {
+    "korean": "Serpil 선생님이 예빈이의 동아리에게 터키에 대한 문화 수업을 하고 있다.",
     "q": "Ms. Serpil is ______ a culture lesson about Turkey to Yebin's club.",
-    "options": ["showing", "getting", "sending", "teaching", "giving", "serving", "making"],
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "teaching"
   },
   {
+    "korean": "몇 주 전에 세진이는 유리에게 그가 찍은 사진들을 보여주었다.",
     "q": "A few weeks ago, Sejin ______ his pictures to Yuri.",
-    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "showed"
   },
   {
+    "korean": "그는 그녀에게 세 가지 조언을 해 주었다.",
     "q": "He ______ three tips to her.",
-    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "gave"
   },
   {
+    "korean": "나는 내 남동생에게 생일 선물로 이 필통을 줄 거야.",
     "q": "I will ______ my brother this pencil case as a birthday present.",
     "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "give"
   },
   {
+    "korean": "Rachel은 전화기로 그녀의 가족에게 그 사진을 보냈다.",
     "q": "Rachel ______ her family the picture with her phone.",
-    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "sent"
   },
   {
+    "korean": "여러분에게 몇 가지 질문을 하겠습니다.",
     "q": "We will ______ you some questions.",
-    "options": ["show", "ask", "send", "teach", "give", "serve", "make"],
-    "ans": "ask"
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
+    "ans": "give"
   },
   {
+    "korean": "다음 날, 모든 학생들은 반 친구들에게 그들의 특별한 재능에 대한 것을 보여주었다.",
     "q": "The next day, all the students ______ the class something about their special talents.",
-    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "showed"
   },
   {
+    "korean": "나에게 차가운 물을 좀 가져다 주겠니?",
     "q": "Can you ______ me some cold water?",
     "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "get"
   },
   {
+    "korean": "일요일마다 회원들은 지역 주민 회관으로 어르신들을 초대해서 따뜻한 식사를 대접한다.",
     "q": "On Sundays, the members invite elderly people to the community center and ______ them warm meals.",
     "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "serve"
   },
   {
+    "korean": "나는 아이들에게 한자를 가르칠 수 있어.",
     "q": "I can ______ children Chinese characters.",
     "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "teach"
   },
   {
+    "korean": "그러면 제가 다음 주 일요일에 주스 다섯 잔을 만들어 드릴게요.",
     "q": "Then I'll ______ you five glasses of juice next Sunday.",
     "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "make"
   },
   {
+    "korean": "한 시간 후에, 그는 내 초상화를 나에게 보여 주었어.",
     "q": "An hour later, he ______ my portrait to me.",
-    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "showed"
   },
   {
+    "korean": "내게 그 약을 주세요.",
     "q": "______ me the medicine.",
-    "options": ["Show", "Get", "Send", "Teach", "Give", "Serve", "Make"],
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "Give"
   },
   {
+    "korean": "제가 매일 당신 집에 가서 당신에게 약을 드리겠습니다.",
     "q": "I'll come to your house every day and ______ you the medicine.",
     "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "give"
   },
   {
+    "korean": "내가 앞을 잘 보게 되면 당신에게 돈을 드리겠어요.",
     "q": "I'll ______ you the money when I can see well.",
     "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "give"
   },
   {
+    "korean": "Danbad 박사는 노부인에게 좋은 약을 주었다.",
     "q": "Dr. Danbad ______ the old woman good medicine.",
-    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "gave"
   },
   {
+    "korean": "의사가 부인에게 좋은 약을 주었는데, 부인은 왜 의사에게 돈을 주지 않았나요?",
     "q": "The doctor ______ you the good medicine, but why didn't you pay him any money?",
-    "options": ["showed", "got", "sent", "taught", "gave", "served", "made"],
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "gave"
   },
   {
+    "korean": "숙제는 나에게 너무 많은 스트레스를 준다 왜냐하면 선생님께서 숙제에 점수를 매기기 때문이다.",
     "q": "Homework ______ me too much stress because the teacher grades my homework.",
-    "options": ["shows", "gets", "sends", "teaches", "gives", "serves", "makes"],
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "gives"
   },
   {
+    "korean": "저도 여러분에게 재미있고 유용한 숙제를 내주려고 노력하겠어요.",
     "q": "I will try to ______ you fun and useful homework.",
     "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "give"
   },
   {
+    "korean": "나의 부모님은 매주 용돈으로 나에게 20달러를 주신다.",
     "q": "My parents ______ me 20 dollars for my weekly allowance.",
     "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "give"
   },
   {
+    "korean": "나는 종종 나의 가족을 위해 소소한 것들을 산다.",
     "q": "I often ______ small things for my family.",
-    "options": ["show", "buy", "send", "teach", "give", "serve", "make"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "buy"
   },
   {
+    "korean": "나는 또한 아프리카에 있는 굶주린 아이들에게 1달러를 보낼 것이다.",
     "q": "I will also ______ 1 dollar to hungry children in Africa.",
-    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "send"
   },
   {
+    "korean": "어떻게 만드는지 제가 보여 드릴게요.",
     "q": "I'll ______ you how to make.",
     "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "show"
   },
   {
+    "korean": "여러분의 재능을 저희에게 기부해주세요.",
     "q": "______ us your talent.",
-    "options": ["Show", "Get", "Send", "Teach", "Give", "Serve", "Make"],
+    "options": ["show", "get", "send", "teach", "give", "serve", "make"],
     "ans": "Give"
   },
   {
+    "korean": "저는 그분들께 재미있는 이야기 도 해드릴 수 있어요.",
     "q": "I can also ______ them funny stories.",
     "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "tell"
   },
   {
+    "korean": "Ishaan의 부모님은 Ishaan이 걱정스러워서 그를 기속학교에 보낸다.",
     "q": "Ishaan's parents are worried about Ishaan, so they ______ him to a boarding school.",
     "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "send"
   },
   {
+    "korean": "그것은 여러분과 다른 사람들 모두에게 행복을 가져다 줍니다.",
     "q": "It ______ happiness to you and other people.",
-    "options": ["sends", "owes", "gives", "promises", "buys", "tells"],
-    "ans": "gives"
+    "options": ["send", "owe", "give", "promise", "buy", "tell", "bring"],
+    "ans": "brings"
   },
   {
+    "korean": "그녀는 또한 그들에게 꽃을 드렸다.",
     "q": "She also ______ them some flowers.",
-    "options": ["sent", "owed", "gave", "promised", "bought", "told"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "gave"
   },
   {
+    "korean": "그에게 제 마음을 전해주세요.",
     "q": "______ him a big kiss for me.",
-    "options": ["Send", "Owe", "Give", "Promise", "Buy", "Tell"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "Give"
   },
   {
+    "korean": "저에게 우리 집 사진을 몇 장 보내주세요.",
     "q": "Please ______ me some pictures of our house.",
     "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "send"
   },
   {
+    "korean": "한국에 있는 친구들에게 그것들을 보여주고 싶어요.",
     "q": "I want to ______ them to my friends in Korea.",
-    "options": ["show", "owe", "give", "promise", "buy", "tell"],
+    "options": ["show", "send", "owe", "give", "promise", "buy", "tell"],
     "ans": "show"
   },
   {
+    "korean": "나는 나의 모든 것을 가장 영리한 아들에게 주겠다.",
     "q": "I'll ______ all my things to the cleverest son.",
     "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "give"
   },
   {
+    "korean": "내가 너희들에게 시험을 내줄 것이다.",
     "q": "I'll ______ you a test.",
     "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "give"
   },
   {
+    "korean": "내게 짚을 많이 주시오.",
     "q": "______ me a lot of straw, please.",
-    "options": ["Send", "Owe", "Give", "Promise", "Buy", "Tell"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "Give"
   },
   {
+    "korean": "100원으로 여러분은 르완다의 아이 한 명에게 세 개의 바나나를 줄 수 있습니다.",
     "q": "With 100 won, you can ______ a child in Rwanda three bananas.",
-    "options": ["give", "buy", "send", "owe", "promise", "tell"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "buy"
   },
   {
+    "korean": "1,000원으로 여러분은 방글라데시의 아이 한 명에게 한 끼의 식사를 사 줄 수 있습니다.",
     "q": "With 1,000 won, you can ______ a child in Bangladesh a meal.",
-    "options": ["give", "buy", "send", "owe", "promise", "tell"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "buy"
   },
   {
+    "korean": "10,000원으로 여러분은 북한의 아픈 아이들에게 30개의 약을 보낼 수 있습니다.",
     "q": "With 10,000 won, you can ______ 30 pills to sick children in North Korea.",
-    "options": ["give", "buy", "send", "owe", "promise", "tell"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "send"
   },
   {
+    "korean": "가장 큰 거짓말을 하는 사람에게 황금 사과를 주겠다.",
     "q": "I'll ______ a golden apple to the biggest liar.",
-    "options": ["give", "buy", "send", "owe", "promise", "tell"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "give"
   },
   {
+    "korean": "왕은 두 마리의 사자에게 신호를 보냈습니다.",
     "q": "The king ______ a signal to the two lions.",
-    "options": ["gave", "bought", "sent", "owed", "promised", "told"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "sent"
   },
   {
+    "korean": "당신은 저에게 황금 한 자루를 약속했지요.",
     "q": "You ______ me a bag of gold.",
-    "options": ["gave", "bought", "sent", "owed", "promised", "told"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "promised"
   },
   {
+    "korean": "그렇다면 저에게 황금 사과를 하나 빚지시는군요.",
     "q": "Then, you ______ me a golden apple.",
-    "options": ["give", "buy", "send", "owe", "promise", "tell"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "owe"
   },
   {
+    "korean": "그럼, 황금 한 자루를 주십시오.",
     "q": "Then, ______ me a bag of gold.",
-    "options": ["Give", "Buy", "Send", "Owe", "Promise", "Tell"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "give"
   },
   {
+    "korean": "새해에 그들은 아이들에게 돈을 빨간색 봉투에 넣어서 줍니다.",
     "q": "On New Year's Day, they ______ children money in red envelopes.",
-    "options": ["give", "buy", "send", "owe", "promise", "tell"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "give"
   },
   {
+    "korean": "그는 자신의 목에서 ‘펭귄 우유’를 꺼내서 새끼에게 줍니다.",
     "q": "He ______ the baby \"penguin milk\" from his throat.",
-    "options": ["gives", "buys", "sends", "owes", "promises", "tells"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "gives"
   },
   {
+    "korean": "그것들을 당신의 어린 사촌들에게 주세요.",
     "q": "______ them to your little cousins.",
-    "options": ["Give", "Buy", "Send", "Owe", "Promise", "Tell"],
+    "options": ["send", "owe", "give", "promise", "buy", "tell"],
     "ans": "Give"
   },
   {
+    "korean": "매일 밤, 어미는 아기에게 나뭇가지로 쾌적한 둥지를 만들어 줍니다.",
     "q": "Every night, the mom ______ a fresh nest with branches for her baby.",
-    "options": ["shows", "gives", "sends", "tells", "makes", "brings", "writes", "buys"],
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "makes"
   },
   {
+    "korean": "이런 말들을 배워서 사람들에게 좋은 예절을 보여 주세요.",
     "q": "Learn these words and ______ people your good manners.",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "show"
   },
   {
+    "korean": "당신의 친구가 당신을 도울 때, 당신도 ‘고마워’라고 말하는 것을 잊어서는 안 됩니다.",
     "q": "When your friend ______ you a hand, you must not forget to say \"thank you.\"",
-    "options": ["shows", "gives", "sends", "tells", "makes", "brings", "writes", "buys"],
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "gives"
   },
   {
+    "korean": "나에게 돈을 줄 수 있니?",
     "q": "Can you ______ me money?",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "give"
   },
   {
+    "korean": "나에게 집을 줄 수 있니?",
     "q": "Can you ______ me a house?",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "give"
   },
   {
+    "korean": "나에게 배를 줄 수 있니?",
     "q": "Can you ______ me a boat?",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "give"
   },
   {
+    "korean": "나는 너에게 무엇인가 주고 싶어.",
     "q": "I want to ______ you something.",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "give"
   },
   {
+    "korean": "예원이는 그녀를 돌봐 주고, 그녀에게 모든 사랑을 준다.",
     "q": "Yewon takes care of her and ______ all her love to her.",
-    "options": ["shows", "gives", "sends", "tells", "makes", "brings", "writes", "buys"],
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "gives"
   },
   {
+    "korean": "나는 오늘 너희 각자에게 씨앗을 줄 것이다.",
     "q": "I am going to ______ a seed to each one of you today.",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "give"
   },
   {
+    "korean": "1년 후 너의 식물을 내게 가져오라.",
     "q": "One year later, ______ your plant to me.",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "bring"
   },
   {
+    "korean": "1년 후, 모든 젊은이들은 그들의 식물을 왕에게 가지고 갔다.",
     "q": "A year later, all the young people ______ their plants to the king.",
-    "options": ["brought", "gave", "sent", "told", "made", "showed", "wrote", "bought"],
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "brought"
   },
   {
+    "korean": "1년 전, 나는 너희 각자에게 씨앗을 주었다.",
     "q": "One year ago, I ______ a seed to each one of you.",
-    "options": ["brought", "gave", "sent", "told", "made", "showed", "wrote", "bought"],
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "gave"
   },
   {
+    "korean": "오직 Ling만이 빈 화분을 내게 가져오는 용기와 정직함을 가졌다.",
     "q": "Only Ling had the courage and honesty to ______ an empty pot to me.",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "bring"
   },
   {
+    "korean": "산타에게 당신의 소원을 담아 편지를 쓰세요.",
     "q": "______ a letter to Santa with your wish.",
-    "options": ["Show", "Give", "Send", "Tell", "Make", "Bring", "Write", "Buy"],
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "Write"
   },
   {
+    "korean": "많은 사람들이 그녀에게 편지를 보냈다.",
     "q": "Many people ______ her letters.",
-    "options": ["brought", "gave", "sent", "told", "made", "showed", "wrote", "bought"],
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "sent"
   },
   {
+    "korean": "부모님을 매일 안아드리세요.",
     "q": "______ your parents a hug every day.",
-    "options": ["Show", "Give", "Send", "Tell", "Make", "Bring", "Write", "Buy"],
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "Give"
   },
   {
+    "korean": "그녀는 심지어 Browny에게 자신의 음식을 좀 주었다!",
     "q": "She even ______ some of her food to Browny!",
-    "options": ["brought", "gave", "sent", "told", "made", "showed", "wrote", "bought"],
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "gave"
   },
   {
+    "korean": "기니피그에게는 초콜릿이나 아이스크림을 주지 마세요.",
     "q": "Don't ______ chocolate or ice cream to a guinea pig.",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "give"
   },
   {
+    "korean": "사람들은 보통 다른 사람에게 줄 선물을 사지, 그렇지 않니?",
     "q": "People usually ______ gifts for others, don't they?",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "buy"
   },
   {
+    "korean": "나는 할아버지의 70번째 생신에 할아버지께 드릴 선물을 만들었어.",
     "q": "For my grandfather's 70th birthday, I ______ a gift for him.",
-    "options": ["brought", "gave", "sent", "told", "made", "showed", "wrote", "bought"],
+    "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "made"
   },
   {
+    "korean": "친구에게 특별한 선물을 주고 싶니?",
     "q": "Do you want to ______ a special gift to your friend?",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "give"
   },
   {
+    "korean": "내가 너희들에게 멋진 DIY 선물 아이디어를 말해 줄게.",
     "q": "I will ______ you a good DIY gift idea.",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "tell"
   },
   {
+    "korean": "내일 우리는 Crane 선생님께 감사 쪽지를 만들 거예요.",
     "q": "Tomorrow, we're going to ______ a thank you note for Ms. Crane.",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
-    "ans": "write"
+    "ans": "make"
   },
   {
+    "korean": "러시아 사람들은 다른 사람들에게 그들을 환영하기 위해 빵을 줍니다.",
     "q": "Russians ______ others bread to welcome them.",
     "options": ["show", "give", "send", "tell", "make", "bring", "write", "buy"],
     "ans": "give"
   },
   {
+    "korean": "우리는 병원에 있는 아픈 아이들에게 음악을 가르쳐.",
     "q": "We ______ music to sick children in the hospital.",
     "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "teach"
   },
   {
+    "korean": "여행하는 동안 소코트라는 당신에게 특별한 경험을 줄 것입니다.",
     "q": "During your tour, Socotra will ______ you a special experience.",
     "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "give"
   },
   {
+    "korean": "소코트라는 당신에게 다른 세상을 보여줄 것입니다.",
     "q": "Socotra will ______ you a different world.",
     "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "show"
   },
   {
+    "korean": "나는 그녀를 조심스럽게 내 팔에 안고 그녀에게 천천히 우유를 주었다.",
     "q": "I held her carefully in my arms and ______ her milk slowly.",
-    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "gave"
   },
   {
+    "korean": "내가 침대에서 천천히 빠져나올 때, RX2가 내게 아침 식사용 알약 세 개를 가져온다.",
     "q": "When I slowly get out of bed, RX2 ______ me three pills for breakfast.",
-    "options": ["sends", "tells", "shows", "brings", "makes", "teaches", "gives"],
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "brings"
   },
   {
+    "korean": "최고의 화가에게 상을 주겠다.",
     "q": "I'll ______ the best artist a prize.",
     "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "give"
   },
   {
+    "korean": "그는 세 번째 화가에게 상으로 많은 금을 주었다.",
     "q": "He ______ the third artist a lot of gold as a prize.",
-    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "gave"
   },
   {
+    "korean": "꿈은 때때로 우리의 현실 생활에 대해 많은 것을 이야기해 준다.",
     "q": "Dreams can sometimes ______ us a lot about our real life.",
     "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "tell"
   },
   {
+    "korean": "부모님께 점심을 만들어 드리자.",
     "q": "Let's ______ lunch for them.",
     "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "make"
   },
   {
+    "korean": "눈이 여러분에게 행복을 가져다줄 것입니다.",
     "q": "The snow will ______ you happiness.",
     "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "bring"
   },
   {
+    "korean": "그것은 우리에게 흥미진진한 영화, 독특한 연극, 그리고 다양한 장르의 음악을 보여줍니다.",
     "q": "It ______ us exciting films, unusual plays, and different kinds of music.",
-    "options": ["sends", "tells", "shows", "brings", "makes", "teaches", "gives"],
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "shows"
   },
   {
+    "korean": "예술가들은 어린아이들에게 예술을 가르쳐 줍니다.",
     "q": "Artists ______ young children art.",
     "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "teach"
   },
   {
+    "korean": "그것들은 모두에게 몇몇 조언과 미래에 좋은 직업을 제공한다.",
     "q": "They ______ everyone some advice and good jobs in the future.",
     "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "give"
   },
   {
+    "korean": "내 친구들은 나에게 그들의 비밀이나 문제점을 이야기한다.",
     "q": "My friends ______ me their secrets or problems.",
     "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "tell"
   },
   {
+    "korean": "친절한 여자분이 우리에게 우산 두 개를 주셨다.",
     "q": "A kind woman ______ us two umbrellas.",
-    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "gave"
   },
   {
+    "korean": "선생님은 우리에게 양파 두 개를 주셨다.",
     "q": "The teacher ______ two onions to us.",
-    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "gave"
   },
   {
+    "korean": "너는 내게 훌륭한 교훈을 가르쳐 주었다.",
     "q": "You ______ me a good lesson.",
-    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "taught"
   },
   {
+    "korean": "그는 그 사람들에게 그의 마음 전부를 주었습니다.",
     "q": "He ______ the people all his heart.",
-    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "gave"
   },
   {
+    "korean": "그는 다른 사람들의 고민을 들어주고 그들에게 좋은 충고를 줍니다.",
     "q": "He listens to others' problems and ______ them good advice.",
-    "options": ["sends", "tells", "shows", "brings", "makes", "teaches", "gives"],
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "gives"
   },
   {
+    "korean": "그 덕분에 수민이도 역시 그녀의 친구들에게 좋은 충고를 줄 수 있습니다.",
     "q": "Thanks to him, Sumin can ______ her friends good advice, too.",
     "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "give"
   },
   {
+    "korean": "저는 소희에게 이 이야기를 말해주었습니다.",
     "q": "I ______ this story to Sohee.",
-    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "told"
   },
   {
+    "korean": "내가 조언을 해 줄게.",
     "q": "I'll ______ you some advice.",
     "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "give"
   },
   {
+    "korean": "그러고 나서 그녀는 그녀의 용돈 기입장을 제게 보여 주었습니다.",
     "q": "Then she ______ her spending diary to me.",
-    "options": ["sent", "told", "showed", "brought", "made", "taught", "gave"],
+    "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "showed"
   },
   {
+    "korean": "여러분이 아파 보일 때, 거울은 여러분의 건강을 점검하고 그 정보를 의사에게 보낼 것입니다.",
     "q": "When you look sick, the mirror will check your health and ______ the information to your doctor.",
     "options": ["send", "tell", "show", "bring", "make", "teach", "give"],
     "ans": "send"
@@ -558,6 +651,7 @@
     function loadQuestion() {
         if (currentIdx >= quizSet.length) { finishQuiz(); return; }
         const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = (item.korean || '');
         document.getElementById('question-display').innerText = (currentIdx + 1) + ". " + (item.q || '');
         
         const chipsArea = document.getElementById('bogi-chips');
@@ -588,6 +682,7 @@
         const isCorrect = expectedAnswers.some(ans => normalize(ans) === normalize(userInputVal));
         
         results.push({ 
+            korean: item.korean,
             q: item.q, 
             options: item.options, 
             user: userInputVal, 
@@ -614,17 +709,17 @@
             area.innerHTML = '';
             wrongList.forEach(w => {
                 const optStr = Array.isArray(w.options) ? w.options.join(', ') : w.options;
-                area.innerHTML += `<div class="wrong-item"><strong>${w.q}</strong><br>&lt;보기&gt; ${optStr}<br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+                area.innerHTML += `<div class="wrong-item"><strong>[${w.korean}]<br>${w.q}</strong><br>&lt;보기&gt; ${optStr}<br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
             });
         }
     }
 
     function downloadResult() {
-        const txt = `[보기에서 골라 써넣기 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q} -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const txt = `[보기에서 골라 해석에 맞게 써넣기 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} [${r.korean}] ${r.q} -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
         const blob = new Blob([txt], {type:'text/plain'});
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `${userInfo.name}_보기에서_골라_써넣기.txt`; a.click(); URL.revokeObjectURL(a.href);
+        a.download = `${userInfo.name}_보기에서_골라_해석에_맞게_써넣기.txt`; a.click(); URL.revokeObjectURL(a.href);
     }
 </script>
 </body>
