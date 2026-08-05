@@ -1,0 +1,609 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gb202p1p01</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 90% !important; display: inline-block !important; text-align: center; font-size: 1.15rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 20px; }
+        .options-container { display: flex; gap: 12px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .option-btn { flex: 1; min-width: 130px; padding: 14px 18px; border: 2px solid #CBD5E1; background: white; border-radius: 12px; font-size: 1.1rem; font-weight: 600; color: #334155; cursor: pointer; transition: all 0.2s; }
+        .option-btn:hover { border-color: var(--primary-color); color: var(--primary-color); background: #F0F7FF; }
+        .option-btn.selected { border-color: var(--primary-color); background: var(--primary-color); color: white; }
+        .question-text { font-size: 1.25rem; font-weight: 700; color: #1E293B; margin-bottom: 25px; line-height: 1.6; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>gb202p1p01</h2>
+        <div class="guide-box">다음 문장의 괄호 안에서 알맞은 표현을 고르시오.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 괄호 안의 보기 중 알맞은 단어를 선택하세요.</div>
+        <div class="question-text" id="question-display"></div>
+        <div class="options-container" id="options-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="선택 또는 직접 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "q": "Sounds (interested / interesting)!",
+    "opt1": "interested",
+    "opt2": "interesting",
+    "ans": "interesting"
+  },
+  {
+    "q": "My mom looks (excited / exciting) because she got yut.",
+    "opt1": "excited",
+    "opt2": "exciting",
+    "ans": "excited"
+  },
+  {
+    "q": "That (looks / looks like) a lot of fun.",
+    "opt1": "looks",
+    "opt2": "looks like",
+    "ans": "looks like"
+  },
+  {
+    "q": "The waiters always smile, so I feel (comfortable / comfortably) here.",
+    "opt1": "comfortable",
+    "opt2": "comfortably",
+    "ans": "comfortable"
+  },
+  {
+    "q": "Sometimes he looked (sadly / sad). I don't know why.",
+    "opt1": "sadly",
+    "opt2": "sad",
+    "ans": "sad"
+  },
+  {
+    "q": "He (looked like / looked) very rich.",
+    "opt1": "looked like",
+    "opt2": "looked",
+    "ans": "looked"
+  },
+  {
+    "q": "He (looked like / looked) a friendly person.",
+    "opt1": "looked like",
+    "opt2": "looked",
+    "ans": "looked like"
+  },
+  {
+    "q": "He (looked / looked like) a waiter. He was always polite.",
+    "opt1": "looked",
+    "opt2": "looked like",
+    "ans": "looked like"
+  },
+  {
+    "q": "Their costumes and dances are simple, but the people look (active / actively) and (live / lively).",
+    "opt1": "actively, live",
+    "opt2": "active, lively",
+    "ans": "active, lively"
+  },
+  {
+    "q": "In 1883, Renoir completed two paintings that look very (similarly / similar), The Dance in the City and The Dance in the Country.",
+    "opt1": "similarly",
+    "opt2": "similar",
+    "ans": "similar"
+  },
+  {
+    "q": "Both paintings show a couple who are dancing, but the women look (differently / different) from each other.",
+    "opt1": "differently",
+    "opt2": "different",
+    "ans": "different"
+  },
+  {
+    "q": "I feel (happily / happy) to be able to help seniors in need.",
+    "opt1": "happily",
+    "opt2": "happy",
+    "ans": "happy"
+  },
+  {
+    "q": "This soup smells (deliciously / delicious)!",
+    "opt1": "deliciously",
+    "opt2": "delicious",
+    "ans": "delicious"
+  },
+  {
+    "q": "I felt (greatly / great) because my small effort saved electricity.",
+    "opt1": "greatly",
+    "opt2": "great",
+    "ans": "great"
+  },
+  {
+    "q": "Put on a scarf, and you will look (fashionable / fashionably).",
+    "opt1": "fashionable",
+    "opt2": "fashionably",
+    "ans": "fashionable"
+  },
+  {
+    "q": "The man (looked / looked like) mean.",
+    "opt1": "looked",
+    "opt2": "looked like",
+    "ans": "looked"
+  },
+  {
+    "q": "Miss Fairchild looked (surprised / surprising).",
+    "opt1": "surprised",
+    "opt2": "surprising",
+    "ans": "surprised"
+  },
+  {
+    "q": "The Boat Race may not look very (interested / interesting) at first.",
+    "opt1": "interested",
+    "opt2": "interesting",
+    "ans": "interesting"
+  },
+  {
+    "q": "I don't (feel like / feel) hungry in the morning.",
+    "opt1": "feel like",
+    "opt2": "feel",
+    "ans": "feel"
+  },
+  {
+    "q": "Yena drew a picture of me. It really (looks / looks like) me.",
+    "opt1": "looks",
+    "opt2": "looks like",
+    "ans": "looks like"
+  },
+  {
+    "q": "Everyone looked (busily / busy).",
+    "opt1": "busily",
+    "opt2": "busy",
+    "ans": "busy"
+  },
+  {
+    "q": "The band in the mural looks so (reality / real)!",
+    "opt1": "reality",
+    "opt2": "real",
+    "ans": "real"
+  },
+  {
+    "q": "When the handles are together, it (looks / looks like) a heart.",
+    "opt1": "looks",
+    "opt2": "looks like",
+    "ans": "looks like"
+  },
+  {
+    "q": "My dad (looked like / looked) really wonderful. I felt proud of him.",
+    "opt1": "looked like",
+    "opt2": "looked",
+    "ans": "looked"
+  },
+  {
+    "q": "I may (feel / feel like) ashamed.",
+    "opt1": "feel",
+    "opt2": "feel like",
+    "ans": "feel"
+  },
+  {
+    "q": "I felt (happily / happy) because the children liked my storytelling.",
+    "opt1": "happily",
+    "opt2": "happy",
+    "ans": "happy"
+  },
+  {
+    "q": "When I said good-bye to the children, they looked (sad / sadly).",
+    "opt1": "sad",
+    "opt2": "sadly",
+    "ans": "sad"
+  },
+  {
+    "q": "I found a beehive. It's full of honey. It smells so (sweetly / sweet).",
+    "opt1": "sweetly",
+    "opt2": "sweet",
+    "ans": "sweet"
+  },
+  {
+    "q": "Doctors also wear white because it (looks / looks like) clean.",
+    "opt1": "looks",
+    "opt2": "looks like",
+    "ans": "looks"
+  },
+  {
+    "q": "If you paint the walls light green in your room, you'll feel more (comfortable / comfortably).",
+    "opt1": "comfortable",
+    "opt2": "comfortably",
+    "ans": "comfortable"
+  },
+  {
+    "q": "I was worried about the ants, but they (looked / looked like) okay.",
+    "opt1": "looked",
+    "opt2": "looked like",
+    "ans": "looked"
+  },
+  {
+    "q": "Did you buy new shoes? They look (greatly / great)!",
+    "opt1": "greatly",
+    "opt2": "great",
+    "ans": "great"
+  },
+  {
+    "q": "My hobby is raising spiders. It might sound (strange / strangely) to you.",
+    "opt1": "strange",
+    "opt2": "strangely",
+    "ans": "strange"
+  },
+  {
+    "q": "I (feel like / feel) a star when people ask to take a picture with me.",
+    "opt1": "feel like",
+    "opt2": "feel",
+    "ans": "feel like"
+  },
+  {
+    "q": "Why do I look (differently / different) from other people?",
+    "opt1": "differently",
+    "opt2": "different",
+    "ans": "different"
+  },
+  {
+    "q": "How do you like your pictures? Does your painting (look / look like) Warhol's?",
+    "opt1": "look",
+    "opt2": "look like",
+    "ans": "look like"
+  },
+  {
+    "q": "Frank thought the drink (sounded / tasted) better.",
+    "opt1": "sounded",
+    "opt2": "tasted",
+    "ans": "tasted"
+  },
+  {
+    "q": "Naturally colored clothes (smell like / smell) unusual tree leaves.",
+    "opt1": "smell like",
+    "opt2": "smell",
+    "ans": "smell like"
+  },
+  {
+    "q": "It (smells / smells like) fish!",
+    "opt1": "smells",
+    "opt2": "smells like",
+    "ans": "smells like"
+  },
+  {
+    "q": "When Isabella tried to hug Hanako, Hanako looked so (surprisedly / surprised).",
+    "opt1": "surprisedly",
+    "opt2": "surprised",
+    "ans": "surprised"
+  },
+  {
+    "q": "Hyemi looks (friend / friendly). I like her smile.",
+    "opt1": "friend",
+    "opt2": "friendly",
+    "ans": "friendly"
+  },
+  {
+    "q": "Some rap songs are not easy, but many of them (sound / sound like) cool.",
+    "opt1": "sound",
+    "opt2": "sound like",
+    "ans": "sound"
+  },
+  {
+    "q": "It sounds (clearly / clear) and (beautifully / beautiful) when I play it slowly. It sounds (strong / strongly) and (powerful / powerfully) when I play it quickly.",
+    "opt1": "clearly, beautifully, strongly, powerfully",
+    "opt2": "clear, beautiful, strong, powerful",
+    "ans": "clear, beautiful, strong, powerful"
+  },
+  {
+    "q": "The man (looked / looked like) a little worried.",
+    "opt1": "looked",
+    "opt2": "looked like",
+    "ans": "looked"
+  },
+  {
+    "q": "Come and try our dish! It (looks like / looks) a little dark.",
+    "opt1": "looks like",
+    "opt2": "looks",
+    "ans": "looks"
+  },
+  {
+    "q": "Chinese soy sauce makes all foods taste (deliciously / delicious).",
+    "opt1": "deliciously",
+    "opt2": "delicious",
+    "ans": "delicious"
+  },
+  {
+    "q": "The tiger in the painting is lovable, and (looks more like / looks more) a cat than a tiger.",
+    "opt1": "looks more like",
+    "opt2": "looks more",
+    "ans": "looks more like"
+  },
+  {
+    "q": "The peaks on the left look (softly / soft), but the peaks on the right (look like / look) sharp and rocky.",
+    "opt1": "softly, look like",
+    "opt2": "soft, look",
+    "ans": "soft, look"
+  },
+  {
+    "q": "That's why he looks (unhappily / unhappy) in most of his pictures.",
+    "opt1": "unhappily",
+    "opt2": "unhappy",
+    "ans": "unhappy"
+  },
+  {
+    "q": "When dogs feel (nervously / nervous), they bark in order to express their feelings.",
+    "opt1": "nervously",
+    "opt2": "nervous",
+    "ans": "nervous"
+  },
+  {
+    "q": "I (feel / feel like) sorry when I see other homeless dogs and cats in the streets.",
+    "opt1": "feel",
+    "opt2": "feel like",
+    "ans": "feel"
+  },
+  {
+    "q": "They (look like / look) sad and hungry.",
+    "opt1": "look like",
+    "opt2": "look",
+    "ans": "look"
+  },
+  {
+    "q": "That means he did not feel (closely / close) to his parents.",
+    "opt1": "closely",
+    "opt2": "close",
+    "ans": "close"
+  },
+  {
+    "q": "Art therapy (sounds / sounds like) really amazing.",
+    "opt1": "sounds",
+    "opt2": "sounds like",
+    "ans": "sounds"
+  },
+  {
+    "q": "Do you think that I (look like / look) a little different?",
+    "opt1": "look like",
+    "opt2": "look",
+    "ans": "look"
+  },
+  {
+    "q": "Suddenly, we felt far more (comfortably / comfortable).",
+    "opt1": "comfortably",
+    "opt2": "comfortable",
+    "ans": "comfortable"
+  },
+  {
+    "q": "She looked (busily / busy) with her schoolwork.",
+    "opt1": "busily",
+    "opt2": "busy",
+    "ans": "busy"
+  },
+  {
+    "q": "It (looks / looks like) funny, but it's similar to what we have in our schools today.",
+    "opt1": "looks",
+    "opt2": "looks like",
+    "ans": "looks"
+  },
+  {
+    "q": "What do you think our future will (look / look like)?",
+    "opt1": "look",
+    "opt2": "look like",
+    "ans": "look like"
+  },
+  {
+    "q": "He (felt / felt like) he was in the air.",
+    "opt1": "felt",
+    "opt2": "felt like",
+    "ans": "felt like"
+  },
+  {
+    "q": "As time went on, I (felt / felt like) confident.",
+    "opt1": "felt",
+    "opt2": "felt like",
+    "ans": "felt"
+  },
+  {
+    "q": "I feel more (confidently / confident) now.",
+    "opt1": "confidently",
+    "opt2": "confident",
+    "ans": "confident"
+  },
+  {
+    "q": "It tasted (sweetly / sweet) and (delicious / deliciously).",
+    "opt1": "sweetly, deliciously",
+    "opt2": "sweet, delicious",
+    "ans": "sweet, delicious"
+  },
+  {
+    "q": "Do this and (feel like / feel) good about yourself!",
+    "opt1": "feel like",
+    "opt2": "feel",
+    "ans": "feel"
+  },
+  {
+    "q": "My bill (looks / looks like) a spoon.",
+    "opt1": "looks",
+    "opt2": "looks like",
+    "ans": "looks like"
+  },
+  {
+    "q": "It looks (funnily / funny), doesn't it?",
+    "opt1": "funnily",
+    "opt2": "funny",
+    "ans": "funny"
+  },
+  {
+    "q": "He (looked / looked like) tired from walking.",
+    "opt1": "looked",
+    "opt2": "looked like",
+    "ans": "looked"
+  },
+  {
+    "q": "The magic soup (tastes / tastes like) good, but it would (taste / taste like) even better with some carrots.",
+    "opt1": "tastes like, taste like",
+    "opt2": "tastes, taste",
+    "ans": "tastes, taste"
+  },
+  {
+    "q": "Their houses (look / look like) big holes in the ground.",
+    "opt1": "look",
+    "opt2": "look like",
+    "ans": "look like"
+  },
+  {
+    "q": "I (feel like / feel) sad to see my friends becoming disposable trash.",
+    "opt1": "feel like",
+    "opt2": "feel",
+    "ans": "feel"
+  },
+  {
+    "q": "In this painting, Napoleon looks very (strongly / strong) on his big white horse. He (looks like / looks) ready to climb the Alps.",
+    "opt1": "strongly, looks like",
+    "opt2": "strong, looks",
+    "ans": "strong, looks"
+  },
+  {
+    "q": "Everyone says it looks (greatly / great) on me.",
+    "opt1": "greatly",
+    "opt2": "great",
+    "ans": "great"
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    
+    function normalize(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/[.,?!~']/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function extractOptionsFromQuestion(item) {
+        let opts = [];
+        if (item.opt1 && item.opt2) {
+            opts = [item.opt1, item.opt2];
+        } else if (Array.isArray(item.options) && item.options.length >= 2) {
+            opts = item.options;
+        } else if (item.q) {
+            const match = item.q.match(/\(([^/]+)\/([^)]+)\)/);
+            if (match) {
+                opts = [match[1].trim(), match[2].trim()];
+            }
+        }
+        return opts;
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('question-display').innerText = (currentIdx + 1) + ". " + (item.q || '');
+        
+        const optsContainer = document.getElementById('options-display');
+        optsContainer.innerHTML = '';
+        
+        const opts = extractOptionsFromQuestion(item);
+        opts.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => {
+                document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                document.getElementById('user-input').value = opt;
+            };
+            optsContainer.appendChild(btn);
+        });
+
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 선택하거나 입력하세요.");
+        const item = quizSet[currentIdx];
+        
+        const expectedAnswers = Array.isArray(item.ans) ? item.ans : [item.ans];
+        const isCorrect = expectedAnswers.some(ans => normalize(ans) === normalize(userInputVal));
+        
+        results.push({ 
+            q: item.q, 
+            user: userInputVal, 
+            ans: expectedAnswers.join(' / '), 
+            isCorrect 
+        });
+        
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>${w.q}</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[괄호 안 선택형 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q} -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_괄호_안_선택형.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

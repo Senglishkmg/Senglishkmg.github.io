@@ -1,0 +1,627 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>순서배열 영작</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 600px; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); text-align: center; }
+        .hidden { display: none; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; margin-bottom: 20px; border-left: 4px solid var(--primary-color); }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #E2E8F0; border-radius: 8px; box-sizing: border-box; }
+        #sentence-display { min-height: 60px; padding: 15px; border: 2px dashed #CBD5E0; border-radius: 12px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; background: #fff; }
+        .word-chip { padding: 10px 16px; background: #EDF2F7; border-radius: 25px; cursor: pointer; font-weight: 600; transition: 0.2s; border: 1px solid #E2E8F0; user-select: none; }
+        .word-chip:hover { background: #E2E8F0; }
+        .word-chip.used { opacity: 0.3; cursor: default; pointer-events: none; }
+        .word-chip.in-sentence { background: var(--primary-color); color: white; border: none; }
+        #chips-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }
+        button.btn-main { width: 100%; padding: 16px; background: var(--primary-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button.btn-reset { background: #A0AEC0; margin-top: 5px; }
+        .korean-text { font-size: 1.1rem; font-weight: bold; color: #1A365D; margin-bottom: 15px; }
+        .progress-bar { width: 100%; height: 6px; background: #EDF2F7; border-radius: 3px; margin-bottom: 20px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>순서배열 영작</h2>
+        <div class="guide-box">순서 배열 테스트를 시작합니다.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="korean-text" id="korean-display"></div>
+        <div id="english-frame-display" class="hidden" style="font-size: 1.05rem; font-weight: 600; color: #2B6CB0; background: #EBF8FF; border: 1px solid #BEE3F8; padding: 10px 14px; border-radius: 8px; margin-bottom: 15px; text-align: center;"></div>
+        <div class="guide-box">💡 아래 단어들을 순서대로 클릭하여 문장을 완성하세요. (배열된 단어를 누르면 지워집니다)</div>
+        <div id="sentence-display"></div>
+        <div id="chips-container"></div>
+        <button class="btn-main" id="submit-btn" onclick="submitAnswer()">정답 제출</button>
+        <button class="btn-main btn-reset" onclick="resetSentence()">지우기</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:#E53E3E;">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "korean": "저희 엄마는 윷이 나와서 흥분하신 것 같아요.",
+    "q": "______.",
+    "words": ["excited", "looks", "got", "my mom", "because", "she", "yut"],
+    "ans": ["My mom looks excited because she got yut."]
+  },
+  {
+    "korean": "정말 재미있어 보이네요.",
+    "q": "______.",
+    "words": ["looks", "that", "fun", "like", "a lot of"],
+    "ans": ["That looks like a lot of fun."]
+  },
+  {
+    "korean": "웨이터들이 항상 웃고 있으니 내 마음도 편해.",
+    "q": "The waiters always smile, so ______.",
+    "words": ["comfortable", "I", "feel", "here"],
+    "ans": ["I feel comfortable here", "The waiters always smile, so I feel comfortable here."]
+  },
+  {
+    "korean": "가끔씩 그는 슬퍼 보였어요. 왜 그랬는지는 저도 모르겠어요.",
+    "q": "Sometimes ______. I don't know why.",
+    "words": ["he", "sad", "looked"],
+    "ans": ["he looked sad", "Sometimes he looked sad. I don't know why."]
+  },
+  {
+    "korean": "그는 무척 부유해 보였어요.",
+    "q": "______.",
+    "words": ["looked", "he", "very", "rich"],
+    "ans": ["He looked very rich."]
+  },
+  {
+    "korean": "그는 친근한 사람처럼 보였어요.",
+    "q": "______.",
+    "words": ["friendly", "he", "like", "a", "looked", "person"],
+    "ans": ["He looked like a friendly person."]
+  },
+  {
+    "korean": "그는 웨이터처럼 보였어요. 그는 항상 예의 발랐거든요.",
+    "q": "______. He was always polite.",
+    "words": ["looked", "a waiter", "he", "like"],
+    "ans": ["He looked like a waiter", "He looked like a waiter. He was always polite."]
+  },
+  {
+    "korean": "그들의 의상과 춤은 단순하지만, 그 사람들은 활동적이고 생기 있어 보인다.",
+    "q": "Their costumes and dances are simple, but ______.",
+    "words": ["active", "the people", "and", "look", "lively"],
+    "ans": ["the people look active and lively", "Their costumes and dances are simple, but the people look active and lively."]
+  },
+  {
+    "korean": "두 그림 모두 춤추고 있는 한 쌍의 남녀를 보여 주지만, 여자들은 서로 달라 보인다.",
+    "q": "Both paintings show a couple who are dancing, but ______.",
+    "words": ["different", "the women", "from", "look", "each other"],
+    "ans": ["the women look different from each other", "Both paintings show a couple who are dancing, but the women look different from each other."]
+  },
+  {
+    "korean": "이 수프는 맛있는 냄새가 나네요!",
+    "q": "______!",
+    "words": ["delicious", "smells", "this", "soup"],
+    "ans": ["This soup smells delicious!"]
+  },
+  {
+    "korean": "나의 작은 노력으로 전기를 아껴서 기분이 매우 좋았다.",
+    "q": "______ because my small effort saved electricity.",
+    "words": ["felt", "I", "great"],
+    "ans": ["I felt great", "I felt great because my small effort saved electricity."]
+  },
+  {
+    "korean": "스카프를 둘러라, 그러면 여러분은 멋지게 보일 것이다.",
+    "q": "Put on a scarf, and ______.",
+    "words": ["fashionable", "look", "you", "will"],
+    "ans": ["you will look fashionable", "Put on a scarf, and you will look fashionable."]
+  },
+  {
+    "korean": "그 남자는 성격이 나빠 보였다.",
+    "q": "______.",
+    "words": ["the", "looked", "mean", "man"],
+    "ans": ["The man looked mean."]
+  },
+  {
+    "korean": "그는 처음에는 당혹스러워 보였다.",
+    "q": "______ at first.",
+    "words": ["seemed", "he", "embarrassed"],
+    "ans": ["he seemed embarrassed", "He seemed embarrassed at first."]
+  },
+  {
+    "korean": "Fairchild 양은 놀란 것처럼 보였다.",
+    "q": "______.",
+    "words": ["looked", "Miss Fairchild", "surprised"],
+    "ans": ["Miss Fairchild looked surprised."]
+  },
+  {
+    "korean": "Boat Race는 처음에는 그리 재미있어 보이지 않을지도 모른다.",
+    "q": "______ at first.",
+    "words": ["the Boat Race", "very interesting", "may", "look", "not"],
+    "ans": ["The Boat Race may not look very interesting", "The Boat Race may not look very interesting at first."]
+  },
+  {
+    "korean": "나는 아침에는 배가 고프지 않다.",
+    "q": "______.",
+    "words": ["feel", "I", "don't", "in the morning", "hungry"],
+    "ans": ["I don't feel hungry in the morning."]
+  },
+  {
+    "korean": "예나는 나를 그렸다. 그것은 정말로 나처럼 보인다.",
+    "q": "Yena drew a picture of me. ______.",
+    "words": ["it", "looks", "really", "me", "like"],
+    "ans": ["It really looks like me", "Yena drew a picture of me. It really looks like me."]
+  },
+  {
+    "korean": "벽화 속의 밴드는 정말 진짜처럼 보여요!",
+    "q": "______!",
+    "words": ["in the mural", "looks", "the band", "real", "so"],
+    "ans": ["The band in the mural looks so real!"]
+  },
+  {
+    "korean": "손잡이들을 합치면, 그것은 하트처럼 보입니다.",
+    "q": "When the handles are together, ______.",
+    "words": ["a heart", "looks", "it", "like"],
+    "ans": ["it looks like a heart", "When the handles are together, it looks like a heart."]
+  },
+  {
+    "korean": "모든 사람들은 바빠 보였다.",
+    "q": "______.",
+    "words": ["looked", "everyone", "busy"],
+    "ans": ["Everyone looked busy."]
+  },
+  {
+    "korean": "아빠는 정말 멋져 보이셨다. 나는 그분이 자랑스럽게 느껴졌다.",
+    "q": "______. ______.",
+    "words": ["dad", "wonderful", "looked", "my", "really", "of", "felt", "him", "I", "proud"],
+    "ans": ["My dad looked really wonderful. I felt proud of him."]
+  },
+  {
+    "korean": "나는 창피할 것 같아.",
+    "q": "______.",
+    "words": ["ashamed", "may", "feel", "I"],
+    "ans": ["I may feel ashamed."]
+  },
+  {
+    "korean": "나는 그 아이들이 내가 해 주는 이야기를 좋아해서 행복했다.",
+    "q": "______.",
+    "words": ["happy", "I", "my storytelling", "felt", "the children", "because", "liked"],
+    "ans": ["I felt happy because the children liked my storytelling."]
+  },
+  {
+    "korean": "내가 벌집을 찾았어. 그것은 꿀로 가득해. 그것은 매우 달콤한 냄새가 나.",
+    "q": "I found a beehive. It's full of honey. ______.",
+    "words": ["smells", "it", "sweet", "so"],
+    "ans": ["It smells so sweet", "I found a beehive. It's full of honey. It smells so sweet."]
+  },
+  {
+    "korean": "흰색이 깨끗해 보이기 때문에 의사들은 흰색 옷을 입습니다.",
+    "q": "______.",
+    "words": ["also", "looks", "wear", "clean", "white", "because", "doctors", "it"],
+    "ans": ["Doctors also wear white because it looks clean."]
+  },
+  {
+    "korean": "방을 연한 녹색으로 칠하면 당신은 더 편안함을 느낄 것입니다.",
+    "q": "If you paint the walls light green in your room, ______.",
+    "words": ["comfortable", "feel", "you'll", "more"],
+    "ans": ["you'll feel more comfortable", "If you paint the walls light green in your room, you'll feel more comfortable."]
+  },
+  {
+    "korean": "나는 개미들이 걱정이 됐지만, 개미들은 괜찮아 보였다.",
+    "q": "______.",
+    "words": ["looked", "I", "they", "was", "about", "okay", "the ants", "worried", "but"],
+    "ans": ["I was worried about the ants, but they looked okay."]
+  },
+  {
+    "korean": "너 새 신발 샀니? 멋져 보여!",
+    "q": "Did you buy new shoes? ______!",
+    "words": ["great", "they", "look"],
+    "ans": ["They look great", "Did you buy new shoes? They look great!"]
+  },
+  {
+    "korean": "제 취미는 거미를 기르는 것이에요. 제 취미가 이상하게 들릴 수도 있겠네요.",
+    "q": "My hobby is raising spiders. ______.",
+    "words": ["strange", "to", "it", "might", "you", "sound"],
+    "ans": ["It might sound strange to you", "My hobby is raising spiders. It might sound strange to you."]
+  },
+  {
+    "korean": "사람들이 사진을 함께 찍어달라고 부탁해 올 때면 마치 스타가 된 기분이 들곤 해요.",
+    "q": "______ a star when people ask to take a picture with me.",
+    "words": ["like", "a", "star", "I", "feel"],
+    "ans": ["I feel like a star", "I feel like a star when people ask to take a picture with me."]
+  },
+  {
+    "korean": "왜 나는 다른 사람들과 다르게 생겼지?",
+    "q": "______ other people?",
+    "words": ["do", "different", "look", "why", "I", "from"],
+    "ans": ["Why do I look different from", "Why do I look different from other people?"]
+  },
+  {
+    "korean": "당신의 그림은 어떤가요? 워홀의 그림처럼 보이나요?",
+    "q": "How do you like your pictures? ______?",
+    "words": ["look", "your", "Warhol's", "painting", "does", "like"],
+    "ans": ["Does your painting look like Warhol's", "How do you like your pictures? Does your painting look like Warhol's?"]
+  },
+  {
+    "korean": "Frank는 그 음료의 맛이 더 좋다고 생각했다.",
+    "q": "______.",
+    "words": ["drink", "thought", "Frank", "tasted", "better", "the"],
+    "ans": ["Frank thought the drink tasted better."]
+  },
+  {
+    "korean": "천연적으로 염색한 옷은 독특한 나뭇잎 냄새가 납니다.",
+    "q": "Naturally colored clothes ______.",
+    "words": ["like", "unusual", "tree", "leaves", "smell"],
+    "ans": ["smell like unusual tree leaves", "Naturally colored clothes smell like unusual tree leaves."]
+  },
+  {
+    "korean": "생선 냄새가 나네요!",
+    "q": "______!",
+    "words": ["like", "smells", "it", "fish"],
+    "ans": ["It smells like fish!"]
+  },
+  {
+    "korean": "이사벨라가 하나코를 포옹하려고 했을 때 하나코는 아주 놀란 것처럼 보였습니다.",
+    "q": "______, ______.",
+    "words": ["Hanako", "tried", "to", "Isabella", "hug", "when", "looked", "surprised", "so"],
+    "ans": ["When Isabella tried to hug Hanako, Hanako looked so surprised."]
+  },
+  {
+    "korean": "혜미는 친절해 보인다. 나는 그녀의 미소가 좋다.",
+    "q": "______. I like her smile.",
+    "words": ["friendly", "looks", "Hyemi"],
+    "ans": ["Hyemi looks friendly", "Hyemi looks friendly. I like her smile."]
+  },
+  {
+    "korean": "몇몇 랩은 쉽지 않지만, 그들의 대다수는 아주 멋지게 들려.",
+    "q": "______, but ______.",
+    "words": ["not", "easy", "rap songs", "are", "some", "many", "of", "sound", "them", "cool"],
+    "ans": ["Some rap songs are not easy, but many of them sound cool."]
+  },
+  {
+    "korean": "내가 이것을 천천히 연주할 때 이것은 청아하고 아름답게 들려. 내가 빠르게 연주할 때는 강하고 힘차게 들려.",
+    "q": "______ when I play it slowly. ______ when I play it quickly.",
+    "words": ["it", "clear", "and", "sounds", "beautiful", "strong", "powerful"],
+    "ans": ["It sounds clear and beautiful when I play it slowly. It sounds strong and powerful when I play it quickly."]
+  },
+  {
+    "korean": "그 남자는 조금 걱정스러워 보였다.",
+    "q": "______.",
+    "words": ["looked", "the", "a", "little", "worried", "man"],
+    "ans": ["The man looked a little worried."]
+  },
+  {
+    "korean": "와서 우리의 요리를 먹어봐! 이것은 약간 어두워 보여.",
+    "q": "Come and try our dish! ______.",
+    "words": ["dark", "looks", "little", "a", "it"],
+    "ans": ["It looks a little dark", "Come and try our dish! It looks a little dark."]
+  },
+  {
+    "korean": "중국식 간장은 모든 음식을 맛있게 만들어.",
+    "q": "Chinese soy sauce ______.",
+    "words": ["delicious", "all foods", "makes", "taste"],
+    "ans": ["makes all foods taste delicious", "Chinese soy sauce makes all foods taste delicious."]
+  },
+  {
+    "korean": "그림 속의 호랑이는 사랑스럽고, 호랑이보다는 고양이처럼 보입니다.",
+    "q": "The tiger in the painting is lovable, and ______ than a tiger.",
+    "words": ["like", "a cat", "looks more"],
+    "ans": ["looks more like a cat", "The tiger in the painting is lovable, and looks more like a cat than a tiger."]
+  },
+  {
+    "korean": "왼쪽의 봉우리들은 부드러워 보이지만, 오른쪽의 봉우리들은 날카롭고 험준해 보입니다.",
+    "q": "______, but the peaks on the right ______.",
+    "words": ["look", "on the left", "the peaks", "soft", "and", "sharp", "rocky"],
+    "ans": ["The peaks on the left look soft, but the peaks on the right look sharp and rocky."]
+  },
+  {
+    "korean": "대부분의 사진 속에서 그가 행복해 보이지 않는 것은 이러한 이유 때문입니다.",
+    "q": "______ in most of his pictures.",
+    "words": ["looks", "that's", "why", "unhappy", "he"],
+    "ans": ["That's why he looks unhappy", "That's why he looks unhappy in most of his pictures."]
+  },
+  {
+    "korean": "개들은 불안감을 느낄 때, 자신의 느낌을 표현하기 위해서 짖습니다.",
+    "q": "______, ______.",
+    "words": ["feel", "nervous", "when", "dogs", "they", "in order to", "bark", "their feelings", "express"],
+    "ans": ["When dogs feel nervous, they bark in order to express their feelings."]
+  },
+  {
+    "korean": "저는 길거리에서 다른 집 없이 떠도는 강아지와 고양이를 보면 가여워요.",
+    "q": "______ when ______ in the streets.",
+    "words": ["feel", "sorry", "I", "dogs", "homeless", "and", "other", "see", "cats"],
+    "ans": ["I feel sorry when I see homeless dogs and other cats in the streets."]
+  },
+  {
+    "korean": "그들은 슬프고 배고파 보여요.",
+    "q": "______.",
+    "words": ["look", "and", "sad", "they", "hungry"],
+    "ans": ["They look sad and hungry."]
+  },
+  {
+    "korean": "그것은 그 소년이 부모님에게 친밀감을 느끼지 않았다는 것을 의미해요.",
+    "q": "That means ______.",
+    "words": ["he", "feel", "not", "close to", "his parents", "did"],
+    "ans": ["he did not feel close to his parents", "That means he did not feel close to his parents."]
+  },
+  {
+    "korean": "미술 치료는 정말 놀라운 것 같아요.",
+    "q": "______.",
+    "words": ["sounds", "amazing", "art", "really", "therapy"],
+    "ans": ["Art therapy really sounds amazing."]
+  },
+  {
+    "korean": "여러분은 제가 약간 (여러분과) 달라 보인다고 생각하시나요?",
+    "q": "Do you think that ______?",
+    "words": ["different", "a", "look", "little", "I"],
+    "ans": ["I look a little different", "Do you think that I look a little different?"]
+  },
+  {
+    "korean": "갑자기 우리는 훨씬 더 편해지는 것을 느꼈습니다.",
+    "q": "Suddenly, ______.",
+    "words": ["more", "felt", "comfortable", "we", "far"],
+    "ans": ["we felt far more comfortable", "Suddenly, we felt far more comfortable."]
+  },
+  {
+    "korean": "그녀는 학교 공부로 바빠 보였어요.",
+    "q": "______.",
+    "words": ["looked", "she", "with", "her schoolwork", "busy"],
+    "ans": ["She looked busy with her schoolwork."]
+  },
+  {
+    "korean": "그것은 웃겨 보이지만, 오늘날 우리가 학교에 가지고 있는 것과 비슷합니다.",
+    "q": "______, but ______ today.",
+    "words": ["looks", "funny", "it", "similar to", "what we have", "it's", "in our schools"],
+    "ans": ["It looks funny, but it's similar to what we have in our schools today."]
+  },
+  {
+    "korean": "여러분은 우리의 미래가 어떤 모습일 것이라고 생각하나요?",
+    "q": "______?",
+    "words": ["do", "like look", "will", "our future", "you", "think", "what"],
+    "ans": ["What do you think our future will look like?"]
+  },
+  {
+    "korean": "그는 마치 공중에 떠있는 것처럼 느꼈습니다.",
+    "q": "______.",
+    "words": ["felt", "he", "he was", "in the air", "like"],
+    "ans": ["He felt like he was in the air."]
+  },
+  {
+    "korean": "시간이 지날수록 자신감이 생겼어요.",
+    "q": "______, ______.",
+    "words": ["time", "as", "on", "went", "felt", "I", "confident"],
+    "ans": ["As time went on, I felt confident."]
+  },
+  {
+    "korean": "이제 훨씬 자신감이 생긴 것 같아요.",
+    "q": "______ now.",
+    "words": ["confident", "I", "more", "feel"],
+    "ans": ["I feel more confident", "I feel more confident now."]
+  },
+  {
+    "korean": "그것은 달고 맛있었다.",
+    "q": "______.",
+    "words": ["it", "and", "tasted", "sweet", "delicious"],
+    "ans": ["It tasted sweet and delicious."]
+  },
+  {
+    "korean": "이것을 하고 여러분 자신에 대해 기분 좋게 느끼십시오!",
+    "q": "Do this and ______!",
+    "words": ["feel", "about", "yourself", "good"],
+    "ans": ["feel good about yourself", "Do this and feel good about yourself!"]
+  },
+  {
+    "korean": "제 부리는 숟가락처럼 생겼습니다.",
+    "q": "______.",
+    "words": ["looks", "bill", "my", "a spoon", "like"],
+    "ans": ["My bill looks like a spoon."]
+  },
+  {
+    "korean": "재밌게 생겼죠, 그렇지 않나요?",
+    "q": "______, doesn't it?",
+    "words": ["it", "funny", "looks"],
+    "ans": ["It looks funny", "It looks funny, doesn't it?"]
+  },
+  {
+    "korean": "그는 걸어서 지쳐 보였어요.",
+    "q": "______.",
+    "words": ["tired", "he", "from", "walking", "looked"],
+    "ans": ["He looked tired from walking."]
+  },
+  {
+    "korean": "마법 수프는 맛이 좋아요. 하지만 당근이 좀 있으면 훨씬 더 맛있을 텐데요.",
+    "q": "______, but ______.",
+    "words": ["good", "magic", "soup", "tastes", "the", "taste", "it", "even better", "would", "with some carrots"],
+    "ans": ["The magic soup tastes good, but it would taste even better with some carrots."]
+  },
+  {
+    "korean": "그들의 집은 땅에 있는 커다란 구멍처럼 보입니다.",
+    "q": "______.",
+    "words": ["big", "holes", "their houses", "like", "look", "in the ground"],
+    "ans": ["Their houses look like big holes in the ground."]
+  },
+  {
+    "korean": "내 친구들이 사용하고 버릴 수 있는 쓰레기가 되는 것을 보게 되어 슬퍼.",
+    "q": "______.",
+    "words": ["I", "becoming", "feel sad", "my friends", "to see", "disposable trash"],
+    "ans": ["I feel sad to see my friends becoming disposable trash."]
+  },
+  {
+    "korean": "이 그림에서 나폴레옹은 자신의 커다란 백마 위에서 매우 강하게 보인다. 그는 알프스를 올라갈 준비가 된 것처럼 보인다.",
+    "q": "In this painting, ______ on his big white horse. ______.",
+    "words": ["very", "strong", "Napoleon", "looks", "looks", "climb", "the", "ready", "Alps", "to", "he"],
+    "ans": ["In this painting, Napoleon looks very strong on his big white horse. He looks ready to climb the Alps."]
+  },
+  {
+    "korean": "그는 가난하고 배고파 보였다.",
+    "q": "______.",
+    "words": ["hungry", "looked", "poor", "and", "he"],
+    "ans": ["He looked poor and hungry."]
+  },
+  {
+    "korean": "모든 사람들이 그것이 나에게 잘 어울린다고 말해요.",
+    "q": "______.",
+    "words": ["says", "it", "on", "great", "everyone", "looks", "me"],
+    "ans": ["Everyone says it looks great on me."]
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    let activeChips = [];
+
+    function normalizeStr(str) {
+        if (!str) return '';
+        if (Array.isArray(str)) str = str.join(' ');
+        return String(str).toLowerCase().replace(/[.,?!~']/g, '').replace(/s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = item.korean || '';
+        const frameEl = document.getElementById('english-frame-display');
+        const engFrame = item.q || item.englishFrame || item.sentence || '';
+        if (engFrame) {
+            frameEl.innerText = engFrame;
+            frameEl.classList.remove('hidden');
+        } else {
+            frameEl.classList.add('hidden');
+        }
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+        resetSentence();
+    }
+
+    function resetSentence() {
+        activeChips = [];
+        renderChips();
+    }
+
+    function renderChips() {
+        const item = quizSet[currentIdx];
+        const container = document.getElementById('chips-container');
+        const display = document.getElementById('sentence-display');
+        container.innerHTML = '';
+        display.innerHTML = '';
+
+        if (!item._shuffledWords) {
+            let words = Array.isArray(item.words) ? item.words : String(item.words || '').split(' ');
+            item._shuffledWords = [...words].sort(() => Math.random() - 0.5);
+        }
+
+        item._shuffledWords.forEach((w, idx) => {
+            const isUsed = activeChips.some(c => c.id === idx);
+            const chip = document.createElement('div');
+            chip.className = 'word-chip' + (isUsed ? ' used' : '');
+            chip.innerText = w;
+            if (!isUsed) {
+                chip.onclick = () => {
+                    activeChips.push({ id: idx, word: w });
+                    renderChips();
+                };
+            }
+            container.appendChild(chip);
+        });
+
+        activeChips.forEach((c, selIdx) => {
+            const chip = document.createElement('div');
+            chip.className = 'word-chip in-sentence';
+            chip.innerText = c.word;
+            chip.title = '클릭하여 삭제';
+            chip.onclick = () => {
+                activeChips.splice(selIdx, 1);
+                renderChips();
+            };
+            display.appendChild(chip);
+        });
+    }
+
+    function submitAnswer() {
+        if (activeChips.length === 0) return alert("단어를 선택하여 문장을 완성하세요.");
+        const userSentence = activeChips.map(c => c.word).join(" ");
+        const item = quizSet[currentIdx];
+        const rawAns = item.ans || item.answer || '';
+        const expectedList = Array.isArray(rawAns) ? rawAns : [rawAns];
+        
+        const engFrame = item.q || item.englishFrame || item.sentence || '';
+        let constructedFull = '';
+        if (engFrame && engFrame.includes('______')) {
+            constructedFull = engFrame.replace(/______+/g, userSentence);
+        }
+
+        const isCorrect = expectedList.some(targetAns => {
+            const normUser = normalizeStr(userSentence);
+            const normTarget = normalizeStr(targetAns);
+            if (normUser === normTarget) return true;
+            if (constructedFull && normalizeStr(constructedFull) === normTarget) return true;
+            return false;
+        });
+
+        results.push({
+            korean: (item.korean ? item.korean : '') + (engFrame ? (' [문맥: ' + engFrame + ']') : ''),
+            user: userSentence,
+            ans: expectedList.join(' / '),
+            isCorrect
+        });
+
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item" style="background:#FFF5F5; padding:12px; border-radius:8px; margin-bottom:10px; border-left:4px solid #E53E3E; text-align:left;"><strong>[${w.korean}]</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[순서 배열 테스트 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} [${r.korean}] -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_순서배열_결과.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

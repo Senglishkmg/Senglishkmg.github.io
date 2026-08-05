@@ -1,0 +1,321 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>빈칸쓰기</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 550px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 70% !important; display: inline-block !important; text-align: center; font-size: 1.1rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 10px; }
+        #korean-display { font-size: 1.25rem; font-weight: 800; color: #1A365D; margin-bottom: 15px; word-break: keep-all; line-height: 1.5; }
+        #question-display { font-size: 1.35rem; font-weight: 700; color: #2D3748; margin: 30px 0; line-height: 1.8; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+        .wrong-q { font-weight: bold; margin-bottom: 8px; display: block; }
+        .wrong-compare { font-size: 0.9rem; }
+        .my-ans { color: var(--wrong-color); font-weight: bold; margin-right: 10px; }
+        .correct-ans { color: var(--correct-color); font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>빈칸쓰기</h2>
+        <div class="guide-box">한글 해석과 영어 문장을 확인한 후, 빈칸에 들어갈 알맞은 단어를 입력하세요.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 해석에 맞게 빈칸에 알맞은 단어(구)를 입력하시오.</div>
+        <div id="korean-display"></div>
+        <div id="question-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="여기에 정답 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "korean": "아침에 나는 배가 고파서 학교 공부에 집중할 수가 없다.",
+    "question": "During the morning, I get ______ and can't focus on schoolwork.",
+    "answer": ["hungry"]
+  },
+  {
+    "korean": "이제 여러분은 건강을 유지하는 법을 알고 있습니다.",
+    "question": "Now you know how to stay ______.",
+    "answer": ["healthy"]
+  },
+  {
+    "korean": "아침 식사를 하지 않으면 여러분의 뇌는 충분한 영양분을 공급받지 못하게 되고, 배고픔과 피곤을 느끼게 됩니다.",
+    "question": "If you don't eat breakfast, your brain doesn't receive enough nutrition and you get ______.",
+    "answer": ["hungry and tired"]
+  },
+  {
+    "korean": "요즘 들어 한국어를 배우는 외국인에 대한 이야기를 듣는 것이 점점 흔해지고 있습니다.",
+    "question": "Nowadays, it is becoming more ______ to hear about foreigners learning Korean.",
+    "answer": ["common"]
+  },
+  {
+    "korean": "캘거리 올림픽 이후에 자메이카 팀은 열심히 연습해서 실력이 향상되었다.",
+    "question": "After the Calgary Olympics, the Jamaican team practiced hard and got much ______.",
+    "answer": ["better"]
+  },
+  {
+    "korean": "홍수가 더 심해지고 있구나.",
+    "question": "The floods are becoming ______.",
+    "answer": ["worse"]
+  },
+  {
+    "korean": "마침내 배가 왔을 때, 우리는 모두 신이 났다.",
+    "question": "When the boat finally came, we all got ______.",
+    "answer": ["excited"]
+  },
+  {
+    "korean": "모든 사람들이 그 점을 좋아해서, 동전은 빠르게 인기를 얻게 되었다.",
+    "question": "Everyone liked the idea, so coins quickly became ______.",
+    "answer": ["popular"]
+  },
+  {
+    "korean": "그는 처음에는 당혹스러워 보였다.",
+    "question": "He seemed ______ at first.",
+    "answer": ["confused"]
+  },
+  {
+    "korean": "Mattie는 열 살이었을 때, 병이 더 악화되어 거의 죽을 뻔했다.",
+    "question": "When he was ten years old, Mattie's illness ______ worse, and he almost died.",
+    "answer": ["became", "got"]
+  },
+  {
+    "korean": "그들의 우정이 깊어지면서, 그들의 그림 기법도 더 비슷해졌다.",
+    "question": "As their friendship grew, their painting styles became more ______.",
+    "answer": ["similar"]
+  },
+  {
+    "korean": "두 번째 식당은 조금 지루해 보여.",
+    "question": "The second restaurant seems a little ______.",
+    "answer": ["boring"]
+  },
+  {
+    "korean": "왕은 화가 나서 피디아스를 죽이기로 결심했다.",
+    "question": "The king got ______ and decided to kill Pythias.",
+    "answer": ["angry"]
+  },
+  {
+    "korean": "이사벨라와 하나코 모두 마음이 편치 않았습니다.",
+    "question": "Both Isabella and Hanako ______ uncomfortable.",
+    "answer": ["felt"]
+  },
+  {
+    "korean": "그러면 꿈이 이루어 질 거예요.",
+    "question": "Then, your dreams will ______.",
+    "answer": ["come true"]
+  },
+  {
+    "korean": "나는 더러워졌고 가끔 그녀는 내게 먹이를 주는 것조차 잊어버렸어요.",
+    "question": "I got ______ and sometimes she even forgot to feed me.",
+    "answer": ["dirty"]
+  },
+  {
+    "korean": "놀랍게도, 그 아기 새는 다치지 않았다.",
+    "question": "Surprisingly, the baby bird didn't get ______.",
+    "answer": ["hurt"]
+  },
+  {
+    "korean": "새끼는 Kaspar의 발 위에서 따뜻하게 지낼 수 있다.",
+    "question": "The baby can stay ______ on Kaspar's feet.",
+    "answer": ["warm"]
+  },
+  {
+    "korean": "여러분의 선생님이나 부모님께 이야기하는 것은 불편하게 느껴지나요?",
+    "question": "Do you feel ______ speaking to your teacher or your parents?",
+    "answer": ["uncomfortable"]
+  },
+  {
+    "korean": "Mason은 그 아기 새를 정성들여 돌보아 주었고, 그 새는 더 크고 튼튼하게 자랐습니다.",
+    "question": "Mason looked after the baby bird carefully, so the bird grew ______.",
+    "answer": ["bigger and stronger"]
+  },
+  {
+    "korean": "11월 12일, Brielle의 상태는 악화되었다.",
+    "question": "On November 12th, Brielle's condition got ______.",
+    "answer": ["worse"]
+  },
+  {
+    "korean": "그녀의 얼굴은 창백해졌다.",
+    "question": "Her face turned ______.",
+    "answer": ["pale"]
+  },
+  {
+    "korean": "오래지않아, 이 쌍둥이의 소식과 사진은 전 세계적으로 유명해졌다.",
+    "question": "Before long, the news and a photo of the twins became ______ around the world.",
+    "answer": ["famous"]
+  },
+  {
+    "korean": "곧, 여러분은 배가 고파질 것입니다.",
+    "question": "Sooner or later, you are going to get ______.",
+    "answer": ["hungry"]
+  },
+  {
+    "korean": "점점, 그의 낚시는 덜 성공적이게 되었으나, 현자는 새를 잡기 시작했습니다.",
+    "question": "Gradually, his fishing became ______, but the wise man began to catch birds.",
+    "answer": ["less successful"]
+  },
+  {
+    "korean": "그들은 행복해졌고 Lapio에게 금을 조금 주었습니다.",
+    "question": "They became ______ and gave Lapio some gold.",
+    "answer": ["happy"]
+  },
+  {
+    "korean": "저는 그들 모두가 한국 대중음악에 관심을 갖게 되었으면 좋겠어요.",
+    "question": "I hope they will all become ______ in K-pop.",
+    "answer": ["interested"]
+  },
+  {
+    "korean": "이런 사람들은 계속해서 열심히 노력했고, 결코 포기하지 않았으며, 자기 자신을 믿는 것을 멈추지 않았기 때문에 성공하게 되었다.",
+    "question": "These people became ______ because they kept working hard, never gave up, and never stopped believing in themselves.",
+    "answer": ["successful"]
+  },
+  {
+    "korean": "곧, 그 뗏목은 거대해졌고 우리는 그 위에서 축구를 할 수 있었습니다!",
+    "question": "Soon, the raft became ______, and we could play soccer on it!",
+    "answer": ["huge"]
+  },
+  {
+    "korean": "우리는 젖은 경기장에서 맨발로 축구를 하는 것에 능숙해졌습니다.",
+    "question": "We became ______ at playing on the wet field without shoes.",
+    "answer": ["good"]
+  },
+  {
+    "korean": "그녀는 겨우 몇 페이지를 넘기다가 잠이 들어 버렸다.",
+    "question": "She turned only a few pages before her eyes became ______.",
+    "answer": ["heavy"]
+  },
+  {
+    "korean": "그의 발견들 덕분에 전기를 생산하는 것이 훨씬 더 쉬워졌습니다.",
+    "question": "Thanks to his discoveries, making electricity became much ______.",
+    "answer": ["easier"]
+  },
+  {
+    "korean": "갑자기 날이 어두워졌고, 개구리들이 하늘에서 떨어지기 시작했습니다.",
+    "question": "Suddenly it got ______, and frogs started to fall from the sky.",
+    "answer": ["dark"]
+  },
+  {
+    "korean": "그들의 옷은 형형색색으로 물들고 모두들 행복해 한다.",
+    "question": "Their clothes become ______ and everybody is happy.",
+    "answer": ["colorful"]
+  },
+  {
+    "korean": "유명해진 많은 사람들은 처음에는 성공적이지 않았다.",
+    "question": "Many people who became ______ were not successful at the beginning.",
+    "answer": ["famous"]
+  },
+  {
+    "korean": "Monet은 그의 스타일을 고수하였고 시간이 지나면서 그것은 유명해졌다.",
+    "question": "Monet kept at his style and over time it became ______.",
+    "answer": ["famous"]
+  },
+  {
+    "korean": "날은 매우 추웠고 어두워지고 있었다.",
+    "question": "It was pretty cold and getting ______.",
+    "answer": ["dark"]
+  },
+  {
+    "korean": "그는 몸이 더러워져야 했고, 손이 조금 아팠다.",
+    "question": "He had to ______, and his hands hurt a little.",
+    "answer": ["get dirty"]
+  },
+  {
+    "korean": "그것은 이미 상점에서 구입할 수 있다.",
+    "question": "It has already become ______ in stores.",
+    "answer": ["available"]
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = item.korean || '';
+        document.getElementById('question-display').innerText = item.question;
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        const isCorrect = item.answer.some(ans => ans.toLowerCase().replace(/\s+/g, ' ') === userInputVal.toLowerCase().replace(/\s+/g, ' '));
+        results.push({ q: item.question, k: item.korean, user: userInputVal, ans: item.answer.join(" / "), isCorrect });
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>${w.k ? w.k + '<br>' : ''}${w.q}</strong><br>내 답: <span style="color:red">${w.user}</span> | 정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+    function downloadResult() {
+        const txt = `[빈칸쓰기주관식 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.k ? r.k + ' -> ' : ''}${r.q} (답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_빈칸쓰기주관식.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

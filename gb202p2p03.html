@@ -1,0 +1,559 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2과 패턴2 파트3</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 600px; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); text-align: center; }
+        .hidden { display: none; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; margin-bottom: 20px; border-left: 4px solid var(--primary-color); }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #E2E8F0; border-radius: 8px; box-sizing: border-box; }
+        #sentence-display { min-height: 60px; padding: 15px; border: 2px dashed #CBD5E0; border-radius: 12px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; background: #fff; }
+        .word-chip { padding: 10px 16px; background: #EDF2F7; border-radius: 25px; cursor: pointer; font-weight: 600; transition: 0.2s; border: 1px solid #E2E8F0; user-select: none; }
+        .word-chip:hover { background: #E2E8F0; }
+        .word-chip.used { opacity: 0.3; cursor: default; pointer-events: none; }
+        .word-chip.in-sentence { background: var(--primary-color); color: white; border: none; }
+        #chips-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }
+        button.btn-main { width: 100%; padding: 16px; background: var(--primary-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button.btn-reset { background: #A0AEC0; margin-top: 5px; }
+        .korean-text { font-size: 1.1rem; font-weight: bold; color: #1A365D; margin-bottom: 15px; }
+        .progress-bar { width: 100%; height: 6px; background: #EDF2F7; border-radius: 3px; margin-bottom: 20px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>2과 패턴2 파트3</h2>
+        <div class="guide-box">순서 배열 테스트를 시작합니다.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="korean-text" id="korean-display"></div>
+        <div id="english-frame-display" class="hidden" style="font-size: 1.05rem; font-weight: 600; color: #2B6CB0; background: #EBF8FF; border: 1px solid #BEE3F8; padding: 10px 14px; border-radius: 8px; margin-bottom: 15px; text-align: center;"></div>
+        <div class="guide-box">💡 아래 단어들을 순서대로 클릭하여 문장을 완성하세요. (배열된 단어를 누르면 지워집니다)</div>
+        <div id="sentence-display"></div>
+        <div id="chips-container"></div>
+        <button class="btn-main" id="submit-btn" onclick="submitAnswer()">정답 제출</button>
+        <button class="btn-main btn-reset" onclick="resetSentence()">지우기</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:#E53E3E;">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "korean": "아침에 나는 배가 고파서 학교 공부에 집중할 수가 없다.",
+    "q": "During the morning, ______.",
+    "words": ["schoolwork", "I", "hungry", "can't", "and", "get", "focus on"],
+    "ans": [
+      "I get hungry and can't focus on schoolwork",
+      "During the morning, I get hungry and can't focus on schoolwork."
+    ]
+  },
+  {
+    "korean": "이제 여러분은 건강을 유지하는 법을 알고 있습니다.",
+    "q": "Now ______.",
+    "words": ["stay", "know", "how to", "healthy", "you"],
+    "ans": [
+      "you know how to stay healthy",
+      "Now you know how to stay healthy."
+    ]
+  },
+  {
+    "korean": "아침 식사를 하지 않으면 여러분의 뇌는 충분한 영양분을 공급받지 못하게 되고, 배고픔과 피곤을 느끼게 됩니다.",
+    "q": "If you don't eat breakfast, ______.",
+    "words": ["enough nutrition", "doesn't", "receive", "your brain", "and", "you", "hungry", "get", "and", "tired"],
+    "ans": [
+      "your brain doesn't receive enough nutrition and you get hungry and tired",
+      "If you don't eat breakfast, your brain doesn't receive enough nutrition and you get hungry and tired."
+    ]
+  },
+  {
+    "korean": "캘거리 올림픽 이후에 자메이카 팀은 열심히 연습해서 실력이 향상되었다.",
+    "q": "After the Calgary Olympics, ______.",
+    "words": ["practiced hard", "the Jamaican team", "much better", "and", "got"],
+    "ans": [
+      "the Jamaican team practiced hard and got much better",
+      "After the Calgary Olympics, the Jamaican team practiced hard and got much better."
+    ]
+  },
+  {
+    "korean": "자메이카의 첫 봅슬레이 팀 덕분에 많은 사람들이 그 스포츠에 흥미를 가지게 되었다.",
+    "q": "Thanks to the first Jamaican bobsleigh team, ______.",
+    "words": ["interested", "many people", "in", "have become", "the sport"],
+    "ans": [
+      "many people have become interested in the sport",
+      "Thanks to the first Jamaican bobsleigh team, many people have become interested in the sport."
+    ]
+  },
+  {
+    "korean": "홍수가 더 심해지고 있구나.",
+    "q": "______.",
+    "words": ["worse", "becoming", "the floods", "are"],
+    "ans": [
+      "The floods are becoming worse",
+      "the floods are becoming worse"
+    ]
+  },
+  {
+    "korean": "마침내 배가 왔을 때, 우리는 모두 신이 났다.",
+    "q": "______, ______.",
+    "words": ["the boat", "when", "came", "finally", "got", "we", "excited", "all"],
+    "ans": [
+      "When the boat finally came, we all got excited",
+      "when the boat finally came, we all got excited"
+    ]
+  },
+  {
+    "korean": "모든 사람들이 그 점을 좋아해서, 동전은 빠르게 인기를 얻게 되었다.",
+    "q": "Everyone liked the idea, so ______.",
+    "words": ["became", "coins", "popular", "quickly"],
+    "ans": [
+      "coins quickly became popular",
+      "coins became popular quickly",
+      "Everyone liked the idea, so coins quickly became popular."
+    ]
+  },
+  {
+    "korean": "Mattie는 열 살이었을 때, 병이 더 악화되어 거의 죽을 뻔했다.",
+    "q": "When he was ten years old, ______.",
+    "words": ["he", "Mattie's illness", "worse", ",", "and", "almost", "got", "died"],
+    "ans": [
+      "Mattie's illness got worse, and he almost died",
+      "When he was ten years old, Mattie's illness got worse, and he almost died."
+    ]
+  },
+  {
+    "korean": "그들의 우정이 깊어지면서, 그들의 그림 기법도 더 비슷해졌다.",
+    "q": "______, ______.",
+    "words": ["their friendship", "as", "grew", "became", "their", "more", "painting styles", "similar"],
+    "ans": [
+      "As their friendship grew, their painting styles became more similar",
+      "as their friendship grew, their painting styles became more similar"
+    ]
+  },
+  {
+    "korean": "두 번째 식당은 조금 지루해 보여.",
+    "q": "______.",
+    "words": ["boring", "the second", "seems", "a little", "restaurant"],
+    "ans": [
+      "The second restaurant seems a little boring",
+      "the second restaurant seems a little boring"
+    ]
+  },
+  {
+    "korean": "왕은 화가 나서 피디아스를 죽이기로 결심했다.",
+    "q": "______.",
+    "words": ["and", "to kill", "decided", "the king", "got", "Pythias", "angry"],
+    "ans": [
+      "The king got angry and decided to kill Pythias",
+      "the king got angry and decided to kill Pythias"
+    ]
+  },
+  {
+    "korean": "이사벨라와 하나코 모두 마음이 편치 않았습니다.",
+    "q": "______.",
+    "words": ["and", "Hanako", "felt", "Isabella", "both", "uncomfortable"],
+    "ans": [
+      "Both Isabella and Hanako felt uncomfortable",
+      "both Isabella and Hanako felt uncomfortable"
+    ]
+  },
+  {
+    "korean": "그러면 꿈이 이루어 질 거예요.",
+    "q": "Then, ______.",
+    "words": ["your", "come", "dreams", "true", "will"],
+    "ans": [
+      "your dreams will come true",
+      "Then, your dreams will come true."
+    ]
+  },
+  {
+    "korean": "나는 더러워졌고 가끔 그녀는 내게 먹이를 주는 것조차 잊어버렸어요.",
+    "q": "______ and sometimes ______.",
+    "words": ["got", "dirty", "I", "even", "to", "forgot", "feed", "me", "she"],
+    "ans": [
+      "I got dirty and sometimes she even forgot to feed me",
+      "I got dirty, she even forgot to feed me"
+    ]
+  },
+  {
+    "korean": "놀랍게도, 그 아기 새는 다치지 않았다.",
+    "q": "Surprisingly, ______.",
+    "words": ["the baby bird", "didn't", "hurt", "get"],
+    "ans": [
+      "the baby bird didn't get hurt",
+      "Surprisingly, the baby bird didn't get hurt."
+    ]
+  },
+  {
+    "korean": "새끼는 Kaspar의 발 위에서 따뜻하게 지낼 수 있다.",
+    "q": "______.",
+    "words": ["can", "stay", "on", "the baby", "Kaspar's feet", "warm"],
+    "ans": [
+      "The baby can stay warm on Kaspar's feet",
+      "the baby can stay warm on Kaspar's feet"
+    ]
+  },
+  {
+    "korean": "여러분의 선생님이나 부모님께 이야기하는 것은 불편하게 느껴지나요?",
+    "q": "______?",
+    "words": ["your teacher", "feel", "or", "uncomfortable", "your parents", "speaking to", "do you"],
+    "ans": [
+      "Do you feel uncomfortable speaking to your teacher or your parents",
+      "do you feel uncomfortable speaking to your teacher or your parents"
+    ]
+  },
+  {
+    "korean": "Mason은 그 아기 새를 정성들여 돌보아 주었고, 그 새는 더 크고 튼튼하게 자랐습니다.",
+    "q": "______, so ______.",
+    "words": ["looked", "after", "the baby bird", "carefully", "Mason", "grew", "stronger", "and", "the bird", "bigger"],
+    "ans": [
+      "Mason looked after the baby bird carefully, so the bird grew stronger and bigger",
+      "Mason looked after the baby bird carefully, so the bird grew bigger and stronger"
+    ]
+  },
+  {
+    "korean": "11월 12일, Brielle의 상태는 악화되었다.",
+    "q": "On November 12th, ______.",
+    "words": ["got", "Brielle's", "worse", "condition"],
+    "ans": [
+      "Brielle's condition got worse",
+      "On November 12th, Brielle's condition got worse."
+    ]
+  },
+  {
+    "korean": "그녀의 얼굴은 창백해졌다.",
+    "q": "______.",
+    "words": ["turned", "her", "blue", "face"],
+    "ans": [
+      "Her face turned blue",
+      "her face turned blue"
+    ]
+  },
+  {
+    "korean": "오래지않아, 이 쌍둥이의 소식과 사진은 전 세계적으로 유명해졌다.",
+    "q": "Before long, ______.",
+    "words": ["of", "became", "the twins", "the news and a photo", "famous", "around the world"],
+    "ans": [
+      "the news and a photo of the twins became famous around the world",
+      "Before long, the news and a photo of the twins became famous around the world."
+    ]
+  },
+  {
+    "korean": "곧, 여러분은 배가 고파질 것입니다.",
+    "q": "Sooner or later, ______.",
+    "words": ["get", "going", "to", "are", "hungry", "you"],
+    "ans": [
+      "you are going to get hungry",
+      "Sooner or later, you are going to get hungry."
+    ]
+  },
+  {
+    "korean": "점점, 그의 낚시는 덜 성공적이게 되었으나, 현자는 새를 잡기 시작했습니다.",
+    "q": "Gradually, ______, but ______.",
+    "words": ["became", "less", "fishing", "successful", "his", "birds", "to", "began", "the wise man", "catch"],
+    "ans": [
+      "his fishing became less successful, but the wise man began to catch birds",
+      "Gradually, his fishing became less successful, but the wise man began to catch birds."
+    ]
+  },
+  {
+    "korean": "그들은 행복해졌고 Lapio에게 금을 조금 주었습니다.",
+    "q": "______.",
+    "words": ["and", "gave", "they", "happy", "Lapio", "some gold", "became"],
+    "ans": [
+      "They became happy and gave Lapio some gold",
+      "they became happy and gave Lapio some gold"
+    ]
+  },
+  {
+    "korean": "저는 그들 모두가 한국 대중음악에 관심을 갖게 되었으면 좋겠어요.",
+    "q": "______.",
+    "words": ["K-pop", "interested", "they", "hope", "will", "in", "I", "all become"],
+    "ans": [
+      "I hope they will all become interested in K-pop",
+      "i hope they will all become interested in k-pop"
+    ]
+  },
+  {
+    "korean": "이런 사람들은 계속해서 열심히 노력했고, 결코 포기하지 않았으며, 자기 자신을 믿는 것을 멈추지 않았기 때문에 성공하게 되었다.",
+    "q": "______ because ______.",
+    "words": ["people", "these", "successful", "became", "they", "and", "never stopped", "kept working", "hard,", "believing in", "never gave up,", "themselves"],
+    "ans": [
+      "These people became successful because they kept working hard, never gave up, and never stopped believing in themselves",
+      "these people became successful because they kept working hard, never gave up, and never stopped believing in themselves"
+    ]
+  },
+  {
+    "korean": "곧, 그 뗏목은 거대해졌고 우리는 그 위에서 축구를 할 수 있었습니다!",
+    "q": "Soon, ______, and ______!",
+    "words": ["big", "the raft", "became", "play", "could", "soccer", "on", "it", "we"],
+    "ans": [
+      "the raft became big, and we could play soccer on it",
+      "Soon, the raft became big, and we could play soccer on it!"
+    ]
+  },
+  {
+    "korean": "우리는 젖은 경기장에서 맨발로 축구를 하는 것에 능숙해졌습니다.",
+    "q": "______.",
+    "words": ["without shoes", "on the wet field", "became", "at", "good", "we", "playing"],
+    "ans": [
+      "We became good at playing without shoes on the wet field",
+      "we became good at playing without shoes on the wet field"
+    ]
+  },
+  {
+    "korean": "그녀는 겨우 몇 페이지를 넘기다가 잠이 들어 버렸다.",
+    "q": "She turned only a few pages before ______.",
+    "words": ["eyes", "became", "heavy", "her"],
+    "ans": [
+      "her eyes became heavy",
+      "She turned only a few pages before her eyes became heavy."
+    ]
+  },
+  {
+    "korean": "그의 발견들 덕분에 전기를 생산하는 것이 훨씬 더 쉬워졌습니다.",
+    "q": "______, ______.",
+    "words": ["his", "discoveries", "thanks", "to", "electricity", "became", "much", "easier", "making"],
+    "ans": [
+      "Thanks to his discoveries, making electricity became much easier",
+      "thanks to his discoveries, making electricity became much easier"
+    ]
+  },
+  {
+    "korean": "갑자기 날이 어두워졌고, 개구리들이 하늘에서 떨어지기 시작했습니다.",
+    "q": "______, and ______.",
+    "words": ["dark", "it", "got", "suddenly", "to", "the sky", "from", "fall", "started", "frogs"],
+    "ans": [
+      "It suddenly got dark, and frogs started to fall from the sky",
+      "it suddenly got dark, and frogs started to fall from the sky"
+    ]
+  },
+  {
+    "korean": "그들의 옷은 형형색색으로 물들고 모두들 행복해 한다.",
+    "q": "______.",
+    "words": ["colorful", "their clothes", "everybody", "is", "become", "and", "happy"],
+    "ans": [
+      "Their clothes become colorful and everybody is happy",
+      "their clothes become colorful and everybody is happy"
+    ]
+  },
+  {
+    "korean": "유명해진 많은 사람들은 처음에는 성공적이지 않았다.",
+    "q": "______ at the beginning.",
+    "words": ["famous", "were", "not", "who became", "successful", "many people"],
+    "ans": [
+      "Many people who became famous were not successful",
+      "Many people who became famous were not successful at the beginning."
+    ]
+  },
+  {
+    "korean": "Monet은 그의 스타일을 고수하였고 시간이 지나면서 그것은 유명해졌다.",
+    "q": "______ and over time ______.",
+    "words": ["Monet", "kept", "at", "his style", "became", "it", "popular"],
+    "ans": [
+      "Monet kept at his style and over time it became popular",
+      "Monet kept at his style, it became popular"
+    ]
+  },
+  {
+    "korean": "날은 매우 추웠고 어두워지고 있었다.",
+    "q": "______.",
+    "words": ["pretty", "was", "getting", "and", "it", "cold", "dark"],
+    "ans": [
+      "It was getting pretty cold and dark",
+      "it was getting pretty cold and dark"
+    ]
+  },
+  {
+    "korean": "그는 가난하고 배고파 보였다.",
+    "q": "______.",
+    "words": ["poor", "looked", "and", "hungry", "he"],
+    "ans": [
+      "He looked poor and hungry",
+      "he looked poor and hungry"
+    ]
+  },
+  {
+    "korean": "그는 몸이 더러워져야 했고, 손이 조금 아팠다.",
+    "q": "______.",
+    "words": ["get", "dirty,", "his hands", "had to", "and", "hurt", "a little", "he"],
+    "ans": [
+      "He had to get dirty, and his hands hurt a little",
+      "he had to get dirty, and his hands hurt a little"
+    ]
+  },
+  {
+    "korean": "그것은 이미 상점에서 구입할 수 있다.",
+    "q": "______.",
+    "words": ["it", "stores", "available", "has already", "become", "in"],
+    "ans": [
+      "It has already become available in stores",
+      "it has already become available in stores"
+    ]
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    let activeChips = [];
+
+    function normalizeStr(str) {
+        if (!str) return '';
+        if (Array.isArray(str)) str = str.join(' ');
+        return String(str).toLowerCase().replace(/[.,?!~']/g, '').replace(/s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = item.korean || '';
+        const frameEl = document.getElementById('english-frame-display');
+        const engFrame = item.q || item.englishFrame || item.sentence || '';
+        if (engFrame) {
+            frameEl.innerText = engFrame;
+            frameEl.classList.remove('hidden');
+        } else {
+            frameEl.classList.add('hidden');
+        }
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+        resetSentence();
+    }
+
+    function resetSentence() {
+        activeChips = [];
+        renderChips();
+    }
+
+    function renderChips() {
+        const item = quizSet[currentIdx];
+        const container = document.getElementById('chips-container');
+        const display = document.getElementById('sentence-display');
+        container.innerHTML = '';
+        display.innerHTML = '';
+
+        if (!item._shuffledWords) {
+            let words = Array.isArray(item.words) ? item.words : String(item.words || '').split(' ');
+            item._shuffledWords = [...words].sort(() => Math.random() - 0.5);
+        }
+
+        item._shuffledWords.forEach((w, idx) => {
+            const isUsed = activeChips.some(c => c.id === idx);
+            const chip = document.createElement('div');
+            chip.className = 'word-chip' + (isUsed ? ' used' : '');
+            chip.innerText = w;
+            if (!isUsed) {
+                chip.onclick = () => {
+                    activeChips.push({ id: idx, word: w });
+                    renderChips();
+                };
+            }
+            container.appendChild(chip);
+        });
+
+        activeChips.forEach((c, selIdx) => {
+            const chip = document.createElement('div');
+            chip.className = 'word-chip in-sentence';
+            chip.innerText = c.word;
+            chip.title = '클릭하여 삭제';
+            chip.onclick = () => {
+                activeChips.splice(selIdx, 1);
+                renderChips();
+            };
+            display.appendChild(chip);
+        });
+    }
+
+    function submitAnswer() {
+        if (activeChips.length === 0) return alert("단어를 선택하여 문장을 완성하세요.");
+        const userSentence = activeChips.map(c => c.word).join(" ");
+        const item = quizSet[currentIdx];
+        const rawAns = item.ans || item.answer || '';
+        const expectedList = Array.isArray(rawAns) ? rawAns : [rawAns];
+        
+        const engFrame = item.q || item.englishFrame || item.sentence || '';
+        let constructedFull = '';
+        if (engFrame && engFrame.includes('______')) {
+            constructedFull = engFrame.replace(/______+/g, userSentence);
+        }
+
+        const isCorrect = expectedList.some(targetAns => {
+            const normUser = normalizeStr(userSentence);
+            const normTarget = normalizeStr(targetAns);
+            if (normUser === normTarget) return true;
+            if (constructedFull && normalizeStr(constructedFull) === normTarget) return true;
+            return false;
+        });
+
+        results.push({
+            korean: (item.korean ? item.korean : '') + (engFrame ? (' [문맥: ' + engFrame + ']') : ''),
+            user: userSentence,
+            ans: expectedList.join(' / '),
+            isCorrect
+        });
+
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item" style="background:#FFF5F5; padding:12px; border-radius:8px; margin-bottom:10px; border-left:4px solid #E53E3E; text-align:left;"><strong>[${w.korean}]</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[순서 배열 테스트 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} [${r.korean}] -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_순서배열_결과.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>
