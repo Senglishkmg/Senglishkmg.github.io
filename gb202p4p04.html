@@ -1,0 +1,753 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gb202p4p04</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 90% !important; display: inline-block !important; text-align: center; font-size: 1.15rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 20px; }
+        .question-text { font-size: 1.25rem; font-weight: 700; color: #1E293B; margin-bottom: 25px; line-height: 1.6; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>gb202p4p04</h2>
+        <div class="guide-box">다음 문장에서 어법상 어색한 부분을 찾아 고치시오.<br>(틀린 부분이 없을 경우 x 또는 X 표시)</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 어법상 틀린 부분을 바르게 고쳐 쓰거나, 맞으면 x (또는 X)를 입력하세요.</div>
+        <div class="question-text" id="question-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="정답 고치기 또는 x 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "q": "I give haircuts for elderly people who live alone.",
+    "ans": [
+      "to",
+      "for -> to",
+      "to elderly people"
+    ]
+  },
+  {
+    "q": "I started visiting elderly people at home to give to them a haircut.",
+    "ans": [
+      "give them",
+      "give to them -> give them",
+      "to give them"
+    ]
+  },
+  {
+    "q": "Breakfast gives energy both your body and brain.",
+    "ans": [
+      "to",
+      "energy to both",
+      "energy both -> energy to both"
+    ]
+  },
+  {
+    "q": "A boy came to his mother and gave a piece of paper her.",
+    "ans": [
+      "to her",
+      "gave her a piece of paper",
+      "gave a piece of paper to her"
+    ]
+  },
+  {
+    "q": "We gave all the food the other soldiers.",
+    "ans": [
+      "to",
+      "to the other soldiers",
+      "food to the other soldiers"
+    ]
+  },
+  {
+    "q": "People made coins of different sizes and gave to different values them.",
+    "ans": [
+      "gave them different values",
+      "gave different values to them"
+    ]
+  },
+  {
+    "q": "The banks gave people of paper slips as receipts.",
+    "ans": [
+      "paper slips",
+      "people paper slips",
+      "people of paper slips -> people paper slips"
+    ]
+  },
+  {
+    "q": "When you see something, your eyes send your brain to the information.",
+    "ans": [
+      "send your brain the information",
+      "send the information to your brain"
+    ]
+  },
+  {
+    "q": "I wrote a letter myself in the future.",
+    "ans": [
+      "to myself",
+      "myself -> to myself"
+    ]
+  },
+  {
+    "q": "He sometimes brings cookies class and gives us them.",
+    "ans": [
+      "cookies to class",
+      "gives them to us"
+    ]
+  },
+  {
+    "q": "Sumi kindly showed to me her notebook.",
+    "ans": [
+      "showed me",
+      "showed to me -> showed me",
+      "showed her notebook to me"
+    ]
+  },
+  {
+    "q": "I read a story the children.",
+    "ans": [
+      "to",
+      "a story to the children",
+      "read the children a story"
+    ]
+  },
+  {
+    "q": "After the show, we gave the children for the dolls.",
+    "ans": [
+      "gave the children the dolls",
+      "gave the dolls to the children"
+    ]
+  },
+  {
+    "q": "This game will give me for a chance to get to know you better.",
+    "ans": [
+      "give me a chance",
+      "give me for -> give me"
+    ]
+  },
+  {
+    "q": "I cannot tell my name you.",
+    "ans": [
+      "tell you my name",
+      "tell my name to you"
+    ]
+  },
+  {
+    "q": "Someone gives you for a gift at your birthday party, and you don't like it.",
+    "ans": [
+      "gives you a gift",
+      "gives you for -> gives you"
+    ]
+  },
+  {
+    "q": "I showed to them some pictures of activities on Navruz.",
+    "ans": [
+      "showed them",
+      "showed to them -> showed them",
+      "showed some pictures of activities on Navruz to them"
+    ]
+  },
+  {
+    "q": "My mom cooked for us Sumalak, an Uzbekistani food.",
+    "ans": [
+      "cooked us Sumalak",
+      "cooked Sumalak for us"
+    ]
+  },
+  {
+    "q": "I want to go fishing and cook some food to my friends.",
+    "ans": [
+      "for",
+      "to -> for",
+      "cook some food for my friends"
+    ]
+  },
+  {
+    "q": "I would like to ask a favor you.",
+    "ans": [
+      "of",
+      "ask a favor of you",
+      "ask you a favor"
+    ]
+  },
+  {
+    "q": "Please give one last chance me.",
+    "ans": [
+      "give me one last chance",
+      "give one last chance to me"
+    ]
+  },
+  {
+    "q": "Can I give to you some advice about your sign?",
+    "ans": [
+      "give you",
+      "give to you -> give you",
+      "give some advice about your sign to you"
+    ]
+  },
+  {
+    "q": "Please send your articles for us!",
+    "ans": [
+      "to",
+      "for -> to",
+      "send your articles to us"
+    ]
+  },
+  {
+    "q": "My experience has given an important lesson me.",
+    "ans": [
+      "given me an important lesson",
+      "given an important lesson to me"
+    ]
+  },
+  {
+    "q": "Can you tell for me how to train dogs?",
+    "ans": [
+      "tell me",
+      "tell for me -> tell me"
+    ]
+  },
+  {
+    "q": "When she sits, give a little food for her.",
+    "ans": [
+      "to",
+      "for -> to",
+      "give a little food to her"
+    ]
+  },
+  {
+    "q": "I will tell to you what to do.",
+    "ans": [
+      "tell you",
+      "tell to you -> tell you"
+    ]
+  },
+  {
+    "q": "She took out an old photo and showed it me.",
+    "ans": [
+      "showed it to me",
+      "to",
+      "it me -> it to me"
+    ]
+  },
+  {
+    "q": "They used to give children bad names such as \"Gaeddongi.\" They believed names like this would bring good luck children, too.",
+    "ans": [
+      "bring children good luck",
+      "bring good luck to children"
+    ]
+  },
+  {
+    "q": "He even made shoes to protect our feet to us.",
+    "ans": [
+      "for us",
+      "to us -> for us"
+    ]
+  },
+  {
+    "q": "In 2005, he formed a brass band, and taught to us how to play music.",
+    "ans": [
+      "taught us",
+      "taught to us -> taught us"
+    ]
+  },
+  {
+    "q": "He started teaching English and math us.",
+    "ans": [
+      "teaching us English and math",
+      "teaching English and math to us"
+    ]
+  },
+  {
+    "q": "I will send some pictures of Salar de Uyuni you.",
+    "ans": [
+      "send you some pictures",
+      "to you",
+      "send some pictures of Salar de Uyuni to you"
+    ]
+  },
+  {
+    "q": "Could you show to us some examples of art therapy?",
+    "ans": [
+      "show us",
+      "show to us -> show us"
+    ]
+  },
+  {
+    "q": "I will give a bigger jar of honey you.",
+    "ans": [
+      "give you a bigger jar of honey",
+      "give a bigger jar of honey to you"
+    ]
+  },
+  {
+    "q": "I cannot give honey you for free.",
+    "ans": [
+      "give you honey",
+      "give honey to you"
+    ]
+  },
+  {
+    "q": "The next day, the donkey gathered some nuts, and brought the fox them.",
+    "ans": [
+      "brought them to the fox",
+      "brought the fox some nuts"
+    ]
+  },
+  {
+    "q": "Later, Faraday sent the notes Davy.",
+    "ans": [
+      "sent Davy the notes",
+      "sent the notes to Davy"
+    ]
+  },
+  {
+    "q": "Please give to them a big hand!",
+    "ans": [
+      "give them",
+      "give to them -> give them"
+    ]
+  },
+  {
+    "q": "At the end of their performances, they serve vegetable soup the audience.",
+    "ans": [
+      "serve vegetable soup to the audience",
+      "serve the audience vegetable soup"
+    ]
+  },
+  {
+    "q": "Dad told Yuri to write an apology letter Mr. Yun.",
+    "ans": [
+      "to Mr. Yun",
+      "write Mr. Yun an apology letter"
+    ]
+  },
+  {
+    "q": "I wanted to show the book Tito.",
+    "ans": [
+      "show Tito the book",
+      "show the book to Tito"
+    ]
+  },
+  {
+    "q": "After the game, Mr. Han showed to me the pictures.",
+    "ans": [
+      "showed me",
+      "showed to me -> showed me",
+      "showed the pictures to me"
+    ]
+  },
+  {
+    "q": "You've learned that proverbs teach lessons you.",
+    "ans": [
+      "teach you lessons",
+      "teach lessons to you"
+    ]
+  },
+  {
+    "q": "These are my new sneakers. My sister Sally gave me them.",
+    "ans": [
+      "gave them to me",
+      "gave me them -> gave them to me"
+    ]
+  },
+  {
+    "q": "Send notes or flowers a friend.",
+    "ans": [
+      "to a friend",
+      "Send a friend notes or flowers"
+    ]
+  },
+  {
+    "q": "He kindly gave tips on overcoming it for me.",
+    "ans": [
+      "to me",
+      "for me -> to me"
+    ]
+  },
+  {
+    "q": "I'll lend some money you only this time.",
+    "ans": [
+      "lend you some money",
+      "lend some money to you"
+    ]
+  },
+  {
+    "q": "They give me to lots of enjoyment.",
+    "ans": [
+      "give me lots of enjoyment",
+      "give to -> give"
+    ]
+  },
+  {
+    "q": "She didn't send any photos of me.",
+    "ans": [
+      "to me",
+      "of me -> to me",
+      "send me any photos"
+    ]
+  },
+  {
+    "q": "Mason made a cage to his bird.",
+    "ans": [
+      "for",
+      "to -> for",
+      "made a cage for his bird"
+    ]
+  },
+  {
+    "q": "Last year we made handmade soaps and gave our classmates them.",
+    "ans": [
+      "gave them to our classmates",
+      "gave our classmates them -> gave them to our classmates"
+    ]
+  },
+  {
+    "q": "Doctors were very excited and sent to a newspaper this unbelievable story.",
+    "ans": [
+      "sent a newspaper this unbelievable story",
+      "sent this unbelievable story to a newspaper"
+    ]
+  },
+  {
+    "q": "He gave Jenny to the little dog she always wanted.",
+    "ans": [
+      "gave Jenny the little dog",
+      "gave to -> gave"
+    ]
+  },
+  {
+    "q": "You can show your passion for cooking her.",
+    "ans": [
+      "show her your passion for cooking",
+      "show your passion for cooking to her"
+    ]
+  },
+  {
+    "q": "The King was worried about him and asked a wise man to teach justice him.",
+    "ans": [
+      "teach him justice",
+      "teach justice to him"
+    ]
+  },
+  {
+    "q": "The wise man congratulated Lapio and gave him for some food.",
+    "ans": [
+      "gave him some food",
+      "gave him for -> gave him"
+    ]
+  },
+  {
+    "q": "A poor man served a meal for them.",
+    "ans": [
+      "to them",
+      "served them a meal"
+    ]
+  },
+  {
+    "q": "Lapio wanted to give to his gold them.",
+    "ans": [
+      "give them his gold",
+      "give his gold to them"
+    ]
+  },
+  {
+    "q": "He gave a big smile for us and he called our names one by one.",
+    "ans": [
+      "to us",
+      "for us -> to us",
+      "gave us a big smile"
+    ]
+  },
+  {
+    "q": "When my dad couldn't buy school books me, he bought me them.",
+    "ans": [
+      "buy me school books",
+      "bought them for me"
+    ]
+  },
+  {
+    "q": "Do you still want to tell me it?",
+    "ans": [
+      "tell it to me",
+      "tell me it -> tell it to me"
+    ]
+  },
+  {
+    "q": "You want to tell to me something bad about my friend, and you're not sure that it's true?",
+    "ans": [
+      "tell me",
+      "tell to me -> tell me"
+    ]
+  },
+  {
+    "q": "All in all, this beautiful folk painting shows for us a new year's wish for good and happy days.",
+    "ans": [
+      "shows us",
+      "shows for us -> shows us",
+      "shows to us"
+    ]
+  },
+  {
+    "q": "The painting shows Mt. Geumgang us.",
+    "ans": [
+      "shows us Mt. Geumgang",
+      "shows Mt. Geumgang to us"
+    ]
+  },
+  {
+    "q": "The piece of falling ice in Step 5 gives it to this energy.",
+    "ans": [
+      "gives this energy to it",
+      "gives it this energy"
+    ]
+  },
+  {
+    "q": "When your friends give you on advice, please don't get upset.",
+    "ans": [
+      "give you advice",
+      "give you on -> give you"
+    ]
+  },
+  {
+    "q": "When one of the children gave a thank-you card for me last week, I was so happy.",
+    "ans": [
+      "to me",
+      "for me -> to me"
+    ]
+  },
+  {
+    "q": "Could we give good advice them?",
+    "ans": [
+      "give them good advice",
+      "give good advice to them"
+    ]
+  },
+  {
+    "q": "Can you lend to me a pot so I can make some magic soup?",
+    "ans": [
+      "lend me",
+      "lend to me -> lend me"
+    ]
+  },
+  {
+    "q": "Thank you for lending the pot me.",
+    "ans": [
+      "lending me the pot",
+      "lending the pot to me"
+    ]
+  },
+  {
+    "q": "If you do so, we think it will bring bad luck people who live in the house.",
+    "ans": [
+      "bring bad luck to people",
+      "bring people who live in the house bad luck"
+    ]
+  },
+  {
+    "q": "They believe it may bring bad luck them.",
+    "ans": [
+      "bring them bad luck",
+      "bring bad luck to them"
+    ]
+  },
+  {
+    "q": "We can give our cellphones the teacher in the morning and she can return us them when we leave in the afternoon.",
+    "ans": [
+      "give the teacher our cellphones",
+      "return them to us"
+    ]
+  },
+  {
+    "q": "The girl who was studying history passed it Tom. He passed the girl in green to it.",
+    "ans": [
+      "passed it to Tom",
+      "passed it to the girl in green"
+    ]
+  },
+  {
+    "q": "Jenna passed the note the boy in blue.",
+    "ans": [
+      "passed the note to the boy in blue",
+      "passed the boy in blue the note"
+    ]
+  },
+  {
+    "q": "The boy in blue gave the note Sally.",
+    "ans": [
+      "gave the note to Sally",
+      "gave Sally the note"
+    ]
+  },
+  {
+    "q": "Dave first gave to it to the girl who was studying history, Mary.",
+    "ans": [
+      "gave it to",
+      "gave to it -> gave it"
+    ]
+  },
+  {
+    "q": "Parents give money in red envelopes their children.",
+    "ans": [
+      "give their children money in red envelopes",
+      "give money in red envelopes to their children"
+    ]
+  },
+  {
+    "q": "Today when Sora got home, her mother gave to her a letter.",
+    "ans": [
+      "gave her",
+      "gave to her -> gave her",
+      "gave a letter to her"
+    ]
+  },
+  {
+    "q": "She also tells a lot about Korea us.",
+    "ans": [
+      "tells us a lot about Korea",
+      "tells a lot about Korea to us"
+    ]
+  },
+  {
+    "q": "I want to write to you a letter in Korean.",
+    "ans": [
+      "write you",
+      "write to you -> write you"
+    ]
+  },
+  {
+    "q": "Sora showed to her mother the Korean words that Carlos put in the letter.",
+    "ans": [
+      "showed her mother",
+      "showed to her mother -> showed her mother"
+    ]
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    
+    function normalize(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/\s+/g, '').replace(/[.,?!~']/g, '');
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('question-display').innerText = (currentIdx + 1) + ". " + (item.q || '');
+
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        
+        const expectedAnswers = Array.isArray(item.ans) ? item.ans : [item.ans];
+        const userNorm = normalize(userInputVal);
+        
+        let isCorrect = expectedAnswers.some(ans => {
+            const ansNorm = normalize(ans);
+            if (ansNorm === userNorm) return true;
+            if (ansNorm.includes('->')) {
+                const parts = ansNorm.split('->');
+                if (parts[1] && parts[1] === userNorm) return true;
+            }
+            return false;
+        });
+        
+        results.push({ 
+            q: item.q, 
+            user: userInputVal, 
+            ans: expectedAnswers.join(' / '), 
+            isCorrect 
+        });
+        
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item"><strong>${w.q}</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[어법 고치기 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q} -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_어법_고치기.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

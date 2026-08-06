@@ -1,0 +1,1217 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gb202p3p02</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; width: 95%; max-width: 600px; padding: 30px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); text-align: center; }
+        .hidden { display: none; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; margin-bottom: 20px; border-left: 4px solid var(--primary-color); }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #E2E8F0; border-radius: 8px; box-sizing: border-box; }
+        #sentence-display { min-height: 60px; padding: 15px; border: 2px dashed #CBD5E0; border-radius: 12px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; background: #fff; }
+        .word-chip { padding: 10px 16px; background: #EDF2F7; border-radius: 25px; cursor: pointer; font-weight: 600; transition: 0.2s; border: 1px solid #E2E8F0; user-select: none; }
+        .word-chip:hover { background: #E2E8F0; }
+        .word-chip.used { opacity: 0.3; cursor: default; pointer-events: none; }
+        .word-chip.in-sentence { background: var(--primary-color); color: white; border: none; }
+        #chips-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 30px; }
+        button.btn-main { width: 100%; padding: 16px; background: var(--primary-color); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button.btn-reset { background: #A0AEC0; margin-top: 5px; }
+        .korean-text { font-size: 1.1rem; font-weight: bold; color: #1A365D; margin-bottom: 15px; }
+        .progress-bar { width: 100%; height: 6px; background: #EDF2F7; border-radius: 3px; margin-bottom: 20px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>gb202p3p02</h2>
+        <div class="guide-box">순서 배열 테스트를 시작합니다.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="korean-text" id="korean-display"></div>
+        <div id="english-frame-display" class="hidden" style="font-size: 1.05rem; font-weight: 600; color: #2B6CB0; background: #EBF8FF; border: 1px solid #BEE3F8; padding: 10px 14px; border-radius: 8px; margin-bottom: 15px; text-align: center;"></div>
+        <div class="guide-box">💡 아래 단어들을 순서대로 클릭하여 문장을 완성하세요. (배열된 단어를 누르면 지워집니다)</div>
+        <div id="sentence-display"></div>
+        <div id="chips-container"></div>
+        <button class="btn-main" id="submit-btn" onclick="submitAnswer()">정답 제출</button>
+        <button class="btn-main btn-reset" onclick="resetSentence()">지우기</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:#E53E3E;">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "korean": "저는 이발을 해 주러 노인들 집을 방문하기 시작했습니다.",
+    "q": "I started visiting elderly people at home ______.",
+    "words": [
+      "to give",
+      "a haircut",
+      "them"
+    ],
+    "ans": [
+      "to give them a haircut",
+      "I started visiting elderly people at home to give them a haircut."
+    ]
+  },
+  {
+    "korean": "한 소년이 엄마에게 다가가 종이 한 장을 주었다.",
+    "q": "A boy came to his mother and ______.",
+    "words": [
+      "a piece of paper",
+      "her",
+      "gave"
+    ],
+    "ans": [
+      "gave her a piece of paper",
+      "A boy came to his mother and gave her a piece of paper."
+    ]
+  },
+  {
+    "korean": "우리는 다른 병사들에게 모든 음식을 주었습니다.",
+    "q": "______.",
+    "words": [
+      "the other soldiers",
+      "we",
+      "all the food",
+      "gave"
+    ],
+    "ans": [
+      "We gave the other soldiers all the food.",
+      "we gave the other soldiers all the food"
+    ]
+  },
+  {
+    "korean": "사람들은 다양한 크기의 동전을 만들어 그것에 각기 다른 가치를 부여했다.",
+    "q": "People made coins of different sizes and ______.",
+    "words": [
+      "different",
+      "gave",
+      "values",
+      "them"
+    ],
+    "ans": [
+      "gave them different values",
+      "People made coins of different sizes and gave them different values."
+    ]
+  },
+  {
+    "korean": "은행은 사람들에게 영수증으로 종잇조각을 주었다.",
+    "q": "______.",
+    "words": [
+      "paper slips",
+      "the banks",
+      "people",
+      "gave",
+      "as receipts"
+    ],
+    "ans": [
+      "The banks gave people paper slips as receipts.",
+      "The banks gave people paper slips as receipts"
+    ]
+  },
+  {
+    "korean": "무언가를 볼 때, 여러분의 눈은 뇌로 그 정보를 보낸다.",
+    "q": "When you see something, ______.",
+    "words": [
+      "the information",
+      "send",
+      "your eyes",
+      "your brain"
+    ],
+    "ans": [
+      "your eyes send your brain the information",
+      "When you see something, your eyes send your brain the information."
+    ]
+  },
+  {
+    "korean": "수미는 친절하게 그녀의 공책을 나에게 보여 주었다.",
+    "q": "______.",
+    "words": [
+      "notebook",
+      "Sumi",
+      "me",
+      "showed",
+      "kindly",
+      "her"
+    ],
+    "ans": [
+      "Sumi kindly showed me her notebook.",
+      "Sumi kindly showed me her notebook"
+    ]
+  },
+  {
+    "korean": "공연이 끝난 다음에, 우리는 아이들에게 그 인형들을 주었다.",
+    "q": "After the show, ______.",
+    "words": [
+      "we",
+      "the dolls",
+      "gave",
+      "the children"
+    ],
+    "ans": [
+      "we gave the children the dolls",
+      "After the show, we gave the children the dolls."
+    ]
+  },
+  {
+    "korean": "이 게임은 내가 너를 더 잘 알게 될 기회를 줄 거야.",
+    "q": "This game will ______.",
+    "words": [
+      "me",
+      "give",
+      "you",
+      "a chance",
+      "to know",
+      "to get",
+      "better"
+    ],
+    "ans": [
+      "give you a chance to get to know me better",
+      "This game will give you a chance to get to know me better."
+    ]
+  },
+  {
+    "korean": "내 이름을 말해줄 수는 없어.",
+    "q": "______.",
+    "words": [
+      "my name",
+      "I",
+      "tell",
+      "cannot",
+      "you"
+    ],
+    "ans": [
+      "I cannot tell you my name.",
+      "I cannot tell you my name"
+    ]
+  },
+  {
+    "korean": "당신의 생일 파티에서 누군가 당신에게 선물을 주는데 당신은 그것이 마음에 들지 않는다.",
+    "q": "______ at your birthday party, and you don't like it.",
+    "words": [
+      "a gift",
+      "someone",
+      "you",
+      "gives"
+    ],
+    "ans": [
+      "Someone gives you a gift",
+      "Someone gives you a gift at your birthday party, and you don't like it."
+    ]
+  },
+  {
+    "korean": "나는 그들에게 Navruz 날의 행사 모습의 사진을 좀 보여주었다.",
+    "q": "______.",
+    "words": [
+      "activities",
+      "I",
+      "showed",
+      "some pictures",
+      "on Navruz",
+      "them",
+      "of"
+    ],
+    "ans": [
+      "I showed them some pictures of activities on Navruz.",
+      "I showed them some pictures of activities on Navruz"
+    ]
+  },
+  {
+    "korean": "엄마는 우리에게 우즈베키스탄의 음식인 Sumalak을 만들어 주셨다.",
+    "q": "______.",
+    "words": [
+      "Sumalak, an Uzbekistani food",
+      "my mom",
+      "us",
+      "cooked"
+    ],
+    "ans": [
+      "My mom cooked us Sumalak, an Uzbekistani food.",
+      "My mom cooked us Sumalak, an Uzbekistani food"
+    ]
+  },
+  {
+    "korean": "저는 낚시를 하러 가고 친구들에게 음식을 요리해 주고 싶어요.",
+    "q": "I want to go fishing and ______.",
+    "words": [
+      "some food",
+      "cook",
+      "my friends"
+    ],
+    "ans": [
+      "cook my friends some food",
+      "I want to go fishing and cook my friends some food."
+    ]
+  },
+  {
+    "korean": "부탁이 하나 있습니다.",
+    "q": "______.",
+    "words": [
+      "like",
+      "I",
+      "a favor",
+      "you",
+      "would",
+      "ask",
+      "to"
+    ],
+    "ans": [
+      "I would like to ask you a favor.",
+      "I would like to ask you a favor"
+    ]
+  },
+  {
+    "korean": "제발 마지막으로 기회를 주십시오.",
+    "q": "Please ______.",
+    "words": [
+      "last chance",
+      "one",
+      "me",
+      "give"
+    ],
+    "ans": [
+      "give me one last chance",
+      "Please give me one last chance."
+    ]
+  },
+  {
+    "korean": "제가 당신에게 간판에 대한 조언을 좀 할 수 있을까요?",
+    "q": "______?",
+    "words": [
+      "can",
+      "you",
+      "some advice",
+      "give",
+      "about",
+      "I",
+      "your sign"
+    ],
+    "ans": [
+      "Can I give you some advice about your sign",
+      "Can I give you some advice about your sign?"
+    ]
+  },
+  {
+    "korean": "여러분의 글을 우리에게 보내주세요!",
+    "q": "Please ______!",
+    "words": [
+      "articles",
+      "send",
+      "your",
+      "us"
+    ],
+    "ans": [
+      "send us your articles",
+      "Please send us your articles!"
+    ]
+  },
+  {
+    "korean": "내 경험으로 나는 중요한 교훈을 배웠어.",
+    "q": "______.",
+    "words": [
+      "my experience",
+      "important",
+      "me",
+      "an",
+      "has given",
+      "lesson"
+    ],
+    "ans": [
+      "My experience has given me an important lesson.",
+      "My experience has given me an important lesson"
+    ]
+  },
+  {
+    "korean": "경기가 끝난 후, 한 선생님은 내게 사진들을 보여주셨다.",
+    "q": "______.",
+    "words": [
+      "Mr. Han",
+      "showed",
+      "me",
+      "the",
+      "pictures"
+    ],
+    "ans": [
+      "Mr. Han showed me the pictures.",
+      "Mr. Han showed me the pictures"
+    ]
+  },
+  {
+    "korean": "당신은 속담이 당신에게 교훈을 가르쳐준다고 배워 왔습니다.",
+    "q": "You've learned that ______.",
+    "words": [
+      "lessons",
+      "you",
+      "proverbs",
+      "teach"
+    ],
+    "ans": [
+      "proverbs teach you lessons",
+      "You've learned that proverbs teach you lessons."
+    ]
+  },
+  {
+    "korean": "그는 나에게 그것을 극복하는 방법에 대한 몇 가지 조언을 친절하게 해 주었다.",
+    "q": "______",
+    "words": [
+      "me",
+      "it",
+      "overcoming",
+      "gave",
+      "kindly",
+      "tips",
+      "on",
+      "he"
+    ],
+    "ans": [
+      "He kindly gave me tips on overcoming it.",
+      "He kindly gave me tips on overcoming it"
+    ]
+  },
+  {
+    "korean": "이번에만 빌려 주는 거야.",
+    "q": "______",
+    "words": [
+      "lend",
+      "some money",
+      "you",
+      "only",
+      "this time",
+      "I'll"
+    ],
+    "ans": [
+      "I'll lend you some money only this time.",
+      "I'll lend you some money only this time"
+    ]
+  },
+  {
+    "korean": "그들은 나에게 많은 즐거움을 준다.",
+    "q": "______",
+    "words": [
+      "give",
+      "lots",
+      "me",
+      "of",
+      "they",
+      "enjoyment"
+    ],
+    "ans": [
+      "They give me lots of enjoyment.",
+      "They give me lots of enjoyment"
+    ]
+  },
+  {
+    "korean": "그녀는 나에게 사진을 안 보냈어.",
+    "q": "______",
+    "words": [
+      "photos",
+      "any",
+      "didn't",
+      "me",
+      "send",
+      "she"
+    ],
+    "ans": [
+      "She didn't send me any photos.",
+      "She didn't send me any photos"
+    ]
+  },
+  {
+    "korean": "그는 Jenny에게 그녀가 항상 원하던 작은 개 한 마리를 선물했습니다.",
+    "q": "______ she always wanted.",
+    "words": [
+      "the",
+      "gave",
+      "Jenny",
+      "dog",
+      "little",
+      "he"
+    ],
+    "ans": [
+      "He gave Jenny the little dog",
+      "He gave Jenny the little dog she always wanted."
+    ]
+  },
+  {
+    "korean": "왕은 Lapio에 대해 걱정했고, 현자에게 정의를 그에게 가르쳐 달라고 요청했습니다.",
+    "q": "The King was worried about Lapio and ______.",
+    "words": [
+      "a wise man",
+      "asked",
+      "to",
+      "teach",
+      "him",
+      "justice"
+    ],
+    "ans": [
+      "asked a wise man to teach him justice",
+      "The King was worried about Lapio and asked a wise man to teach him justice."
+    ]
+  },
+  {
+    "korean": "현자는 Lapio를 축하해주며 그에게 약간의 음식을 나누어 주었습니다.",
+    "q": "The wise man congratulated Lapio and ______.",
+    "words": [
+      "him",
+      "gave",
+      "some",
+      "food"
+    ],
+    "ans": [
+      "gave him some food",
+      "The wise man congratulated Lapio and gave him some food."
+    ]
+  },
+  {
+    "korean": "한 가난한 남자가 그들에게 식사를 대접했습니다.",
+    "q": "______.",
+    "words": [
+      "served",
+      "poor",
+      "man",
+      "a",
+      "a",
+      "meal",
+      "them"
+    ],
+    "ans": [
+      "A poor man served them a meal.",
+      "A poor man served them a meal"
+    ]
+  },
+  {
+    "korean": "Lapio는 그들에게 자신의 금을 주고 싶었습니다.",
+    "q": "______.",
+    "words": [
+      "his",
+      "gold",
+      "to",
+      "give",
+      "wanted",
+      "them",
+      "Lapio"
+    ],
+    "ans": [
+      "Lapio wanted to give them his gold.",
+      "Lapio wanted to give them his gold"
+    ]
+  },
+  {
+    "korean": "그는 우리에게 큰 미소를 지었고 우리의 이름을 하나씩 불러주셨다.",
+    "q": "______ and he called our names one by one.",
+    "words": [
+      "gave",
+      "us",
+      "smile",
+      "a",
+      "he",
+      "big"
+    ],
+    "ans": [
+      "He gave us a big smile",
+      "He gave us a big smile and he called our names one by one."
+    ]
+  },
+  {
+    "korean": "아빠께서 내게 교과서를 사줄 수 없었을 때, 그가 내게 그것들을 사주었습니다.",
+    "q": "______, ______.",
+    "words": [
+      "my dad",
+      "me",
+      "buy",
+      "couldn't",
+      "school books",
+      "when",
+      "me",
+      "them",
+      "he",
+      "for",
+      "bought"
+    ],
+    "ans": [
+      "When my dad couldn't buy me school books, he bought them for me.",
+      "When my dad couldn't buy me school books, he bought them for me"
+    ]
+  },
+  {
+    "korean": "자네는 내 친구에 대한 나쁜 이야기를 나에게 하려고 하면서도 그 이야기가 진실인지 확신도 없다는 말인가?",
+    "q": "______, and you're not sure that it's true?",
+    "words": [
+      "something bad",
+      "you",
+      "me",
+      "friend",
+      "about",
+      "want to",
+      "tell",
+      "my"
+    ],
+    "ans": [
+      "you want to tell me something bad about my friend",
+      "Do you want to tell me something bad about my friend, and you're not sure that it's true?"
+    ]
+  },
+  {
+    "korean": "대체로, 이 아름다운 민화는 우리에게 즐겁고 행복한 날을 바라는 새해의 소망을 보여줍니다.",
+    "q": "All in all, ______.",
+    "words": [
+      "good and happy days",
+      "shows",
+      "this beautiful folk painting",
+      "us",
+      "a new year's wish for"
+    ],
+    "ans": [
+      "this beautiful folk painting shows us a new year's wish for good and happy days",
+      "All in all, this beautiful folk painting shows us a new year's wish for good and happy days."
+    ]
+  },
+  {
+    "korean": "이 그림은 우리에게 금강산을 보여줍니다.",
+    "q": "______.",
+    "words": [
+      "the painting",
+      "us",
+      "Mt. Geumgang",
+      "shows"
+    ],
+    "ans": [
+      "The painting shows us Mt. Geumgang.",
+      "The painting shows us Mt. Geumgang"
+    ]
+  },
+  {
+    "korean": "5단계에서 떨어지는 얼음 조각이 그것에게 이 에너지를 주는 것입니다.",
+    "q": "______.",
+    "words": [
+      "it",
+      "gives",
+      "in Step 5",
+      "this energy",
+      "the piece of falling ice"
+    ],
+    "ans": [
+      "The piece of falling ice gives it this energy in Step 5.",
+      "The piece of falling ice gives it this energy in Step 5"
+    ]
+  },
+  {
+    "korean": "강아지를 훈련시키는 방법을 말씀해 주시겠어요?",
+    "q": "______?",
+    "words": [
+      "dogs",
+      "me",
+      "can",
+      "tell",
+      "you",
+      "how to train"
+    ],
+    "ans": [
+      "Can you tell me how to train dogs",
+      "Can you tell me how to train dogs?"
+    ]
+  },
+  {
+    "korean": "강아지가 앉으면, 먹이를 조금 주세요.",
+    "q": "When she sits, ______.",
+    "words": [
+      "little",
+      "a",
+      "her",
+      "give",
+      "food"
+    ],
+    "ans": [
+      "give her a little food",
+      "When she sits, give her a little food."
+    ]
+  },
+  {
+    "korean": "무엇을 해야 할지 제가 알려 주지요.",
+    "q": "______.",
+    "words": [
+      "you",
+      "tell",
+      "will",
+      "do",
+      "what",
+      "to",
+      "I"
+    ],
+    "ans": [
+      "I will tell you what to do.",
+      "I will tell you what to do"
+    ]
+  },
+  {
+    "korean": "그녀는 나에게 종이꽃과 ‘Happy Mother's Day’라고 쓰여 있는 귀여운 카드를 주었죠.",
+    "q": "______ which said, 'Happy Mother's Day.'",
+    "words": [
+      "she",
+      "me",
+      "and",
+      "a paper flower",
+      "a cute card",
+      "gave"
+    ],
+    "ans": [
+      "she gave me a paper flower and a cute card",
+      "She gave me a paper flower and a cute card which said, 'Happy Mother's Day.'"
+    ]
+  },
+  {
+    "korean": "그들은 아이들에게 “개똥이”와 같은 나쁜 이름들을 지어 주곤 했습니다. 그들은 또한 이런 이름들이 아이들에게 행운을 가져다줄 것이라고 믿었습니다.",
+    "q": "They used to ______ . They believed names like this would ______ , too.",
+    "words": [
+      "such as",
+      "give",
+      "children",
+      "bad names",
+      "\"Gaeddongi\"",
+      "good",
+      "bring",
+      "children",
+      "luck"
+    ],
+    "ans": [
+      "give children bad names such as \"Gaeddongi\" ... bring children good luck",
+      "They used to give children bad names such as \"Gaeddongi\". They believed names like this would bring children good luck, too."
+    ]
+  },
+  {
+    "korean": "그는 심지어 우리들의 발을 보호할 신발을 만들어 주기도 했습니다.",
+    "q": "______.",
+    "words": [
+      "feet",
+      "our",
+      "made",
+      "even",
+      "us",
+      "shoes",
+      "he",
+      "to protect"
+    ],
+    "ans": [
+      "He even made us shoes to protect our feet.",
+      "He even made us shoes to protect our feet"
+    ]
+  },
+  {
+    "korean": "2005년, 그는 브라스 밴드를 만들어서 우리에게 음악을 연주하는 법을 가르쳤습니다.",
+    "q": "In 2005, he formed a brass band, and ______.",
+    "words": [
+      "taught",
+      "play",
+      "to",
+      "how",
+      "us",
+      "music"
+    ],
+    "ans": [
+      "taught us how to play music",
+      "In 2005, he formed a brass band, and taught us how to play music."
+    ]
+  },
+  {
+    "korean": "그는 우리들에게 영어와 수학을 가르치기 시작했습니다.",
+    "q": "______.",
+    "words": [
+      "and",
+      "started",
+      "English",
+      "math",
+      "teaching",
+      "us",
+      "he"
+    ],
+    "ans": [
+      "He started teaching us English and math.",
+      "He started teaching us English and math"
+    ]
+  },
+  {
+    "korean": "나는 너에게 우유니 소금사막에 대한 놀라운 무언가를 이야기해 주고 싶구나.",
+    "q": "______.",
+    "words": [
+      "something amazing",
+      "to",
+      "you",
+      "tell",
+      "I",
+      "would like",
+      "about Salar de Uyuni"
+    ],
+    "ans": [
+      "I would like to tell you something amazing about Salar de Uyuni.",
+      "I would like to tell you something amazing about Salar de Uyuni"
+    ]
+  },
+  {
+    "korean": "엄마가 그것이 오로라라고 말씀해 주셨어.",
+    "q": "______.",
+    "words": [
+      "told",
+      "me",
+      "that it was an aurora",
+      "my mom"
+    ],
+    "ans": [
+      "My mom told me that it was an aurora.",
+      "My mom told me that it was an aurora"
+    ]
+  },
+  {
+    "korean": "저희들에게 미술 치료의 몇 가지 예들을 보여 주시겠어요?",
+    "q": "______?",
+    "words": [
+      "some examples of",
+      "could",
+      "show",
+      "us",
+      "art therapy",
+      "you"
+    ],
+    "ans": [
+      "Could you show us some examples of art therapy",
+      "Could you show us some examples of art therapy?"
+    ]
+  },
+  {
+    "korean": "제가 더 큰 꿀단지를 당신에게 드릴게요.",
+    "q": "______.",
+    "words": [
+      "you",
+      "will",
+      "give",
+      "I",
+      "a bigger jar of",
+      "honey"
+    ],
+    "ans": [
+      "I will give you a bigger jar of honey.",
+      "I will give you a bigger jar of honey"
+    ]
+  },
+  {
+    "korean": "공짜로 당신에게 꿀을 줄 수는 없어요.",
+    "q": "______.",
+    "words": [
+      "you",
+      "give",
+      "honey",
+      "I",
+      "for free",
+      "cannot"
+    ],
+    "ans": [
+      "I cannot give you honey for free.",
+      "I cannot give you honey for free"
+    ]
+  },
+  {
+    "korean": "그들을 큰 박수로 맞아 주세요!",
+    "q": "Please ______!",
+    "words": [
+      "them",
+      "a big hand",
+      "give"
+    ],
+    "ans": [
+      "give them a big hand",
+      "Please give them a big hand!"
+    ]
+  },
+  {
+    "korean": "공연이 끝날 무렵에 그들은 관객에게 채소 수프를 제공합니다.",
+    "q": "At the end of their performances, ______.",
+    "words": [
+      "audience",
+      "the",
+      "serve",
+      "vegetable soup",
+      "they"
+    ],
+    "ans": [
+      "they serve the audience vegetable soup",
+      "At the end of their performances, they serve the audience vegetable soup."
+    ]
+  },
+  {
+    "korean": "여러분의 친구들이 여러분에게 조언을 할 때 화내지 마세요.",
+    "q": "______, please don't get upset.",
+    "words": [
+      "your",
+      "friends",
+      "you",
+      "give",
+      "when",
+      "advice"
+    ],
+    "ans": [
+      "When your friends give you advice",
+      "When your friends give you advice, please don't get upset."
+    ]
+  },
+  {
+    "korean": "지난주 아이들 중 한 명이 나에게 감사 카드를 주었을 때, 나는 무척 행복했습니다.",
+    "q": "When ______ last week, I was so happy.",
+    "words": [
+      "a thank-you card",
+      "me",
+      "one of the children",
+      "gave"
+    ],
+    "ans": [
+      "one of the children gave me a thank-you card",
+      "When one of the children gave me a thank-you card last week, I was so happy."
+    ]
+  },
+  {
+    "korean": "그들에게 좋은 조언을 해주는 건 어떨까요?",
+    "q": "______",
+    "words": [
+      "them",
+      "advice",
+      "we",
+      "give",
+      "good",
+      "could",
+      "?"
+    ],
+    "ans": [
+      "Could we give them good advice?",
+      "Could we give them good advice"
+    ]
+  },
+  {
+    "korean": "제가 마법 수프를 좀 만들 수 있도록 제게 냄비를 빌려 주시겠어요?",
+    "q": "______ so I can make some magic soup?",
+    "words": [
+      "you",
+      "a pot",
+      "lend",
+      "me",
+      "can"
+    ],
+    "ans": [
+      "Can you lend me a pot",
+      "Can you lend me a pot so I can make some magic soup?"
+    ]
+  },
+  {
+    "korean": "제게 냄비를 빌려주셔서 감사해요.",
+    "q": "______.",
+    "words": [
+      "lending",
+      "the pot",
+      "you",
+      "me",
+      "for",
+      "thank"
+    ],
+    "ans": [
+      "Thank you for lending me the pot.",
+      "Thank you for lending me the pot"
+    ]
+  },
+  {
+    "korean": "그들은 그것이 그들에게 불운을 가져다줄지도 모른다고 믿는다.",
+    "q": "They believe ______.",
+    "words": [
+      "bring",
+      "them",
+      "may",
+      "luck",
+      "it",
+      "bad"
+    ],
+    "ans": [
+      "it may bring them bad luck",
+      "They believe it may bring them bad luck."
+    ]
+  },
+  {
+    "korean": "그는 그의 모든 용기를 내서, 그녀에게 “Sally, 일요일에 영화를 보러 가자.”라고 되어 있는 쪽지를 썼다.",
+    "q": "He gathered all of his courage and ______ which said, \"Sally, let's go to the movies on Sunday.\"",
+    "words": [
+      "her",
+      "a",
+      "wrote",
+      "note"
+    ],
+    "ans": [
+      "wrote her a note",
+      "He gathered all of his courage and wrote her a note which said, \"Sally, let's go to the movies on Sunday.\""
+    ]
+  },
+  {
+    "korean": "부모님은 아이들에게 빨간 봉투에 든 돈을 준다.",
+    "q": "______.",
+    "words": [
+      "parents",
+      "money",
+      "their children",
+      "in red envelopes",
+      "give"
+    ],
+    "ans": [
+      "Parents give their children money in red envelopes.",
+      "Parents give their children money in red envelopes"
+    ]
+  },
+  {
+    "korean": "오늘 소라가 집에 왔을 때, 그녀의 엄마는 소라에게 편지를 주셨다.",
+    "q": "Today when Sora got home, ______.",
+    "words": [
+      "her",
+      "gave",
+      "mother",
+      "her",
+      "a letter"
+    ],
+    "ans": [
+      "her mother gave her a letter",
+      "Today when Sora got home, her mother gave her a letter."
+    ]
+  },
+  {
+    "korean": "그녀는 우리에게 한국어를 읽고 쓰는 법을 가르쳐 주세요.",
+    "q": "______.",
+    "words": [
+      "us",
+      "she",
+      "Korean",
+      "teaches",
+      "how to read and write"
+    ],
+    "ans": [
+      "She teaches us how to read and write Korean.",
+      "She teaches us Korean how to read and write"
+    ]
+  },
+  {
+    "korean": "그녀는 또한 우리에게 한국에 대해서 많은 것을 말해 줘요.",
+    "q": "______.",
+    "words": [
+      "about Korea",
+      "us",
+      "she",
+      "also",
+      "tells",
+      "a lot"
+    ],
+    "ans": [
+      "She also tells us a lot about Korea.",
+      "She also tells us a lot about Korea"
+    ]
+  },
+  {
+    "korean": "나는 당신에게 한국어로 편지를 쓰고 싶어요.",
+    "q": "______.",
+    "words": [
+      "want",
+      "to",
+      "I",
+      "you",
+      "write",
+      "a letter",
+      "in Korean"
+    ],
+    "ans": [
+      "I want to write you a letter in Korean.",
+      "I want to write you a letter in Korean"
+    ]
+  },
+  {
+    "korean": "소라는 그녀의 엄마에게 Carlos가 편지에 쓴 한국어 낱말들을 보여 드렸다.",
+    "q": "______ that Carlos put in the letter.",
+    "words": [
+      "the Korean words",
+      "her mother",
+      "showed",
+      "Sora"
+    ],
+    "ans": [
+      "Sora showed her mother the Korean words",
+      "Sora showed her mother the Korean words that Carlos put in the letter."
+    ]
+  },
+  {
+    "korean": "그녀는 자신이 아는 웹 사이트를 그들에게 보여 주었고, 부모님에게 여쭤 본 후에 더 많은 정보를 제공하겠다고 약속했다.",
+    "q": "______ and promised to provide more information after asking her parents.",
+    "words": [
+      "the website she knew",
+      "showed",
+      "them",
+      "she"
+    ],
+    "ans": [
+      "She showed them the website she knew",
+      "She showed them the website she knew and promised to provide more information after asking her parents."
+    ]
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    let activeChips = [];
+
+    function normalizeStr(str) {
+        if (!str) return '';
+        if (Array.isArray(str)) str = str.join(' ');
+        return String(str).toLowerCase().replace(/[.,?!~']/g, '').replace(/s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('korean-display').innerText = item.korean || '';
+        const frameEl = document.getElementById('english-frame-display');
+        const engFrame = item.q || item.englishFrame || item.sentence || '';
+        if (engFrame) {
+            frameEl.innerText = engFrame;
+            frameEl.classList.remove('hidden');
+        } else {
+            frameEl.classList.add('hidden');
+        }
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+        resetSentence();
+    }
+
+    function resetSentence() {
+        activeChips = [];
+        renderChips();
+    }
+
+    function renderChips() {
+        const item = quizSet[currentIdx];
+        const container = document.getElementById('chips-container');
+        const display = document.getElementById('sentence-display');
+        container.innerHTML = '';
+        display.innerHTML = '';
+
+        if (!item._shuffledWords) {
+            let words = Array.isArray(item.words) ? item.words : String(item.words || '').split(' ');
+            item._shuffledWords = [...words].sort(() => Math.random() - 0.5);
+        }
+
+        item._shuffledWords.forEach((w, idx) => {
+            const isUsed = activeChips.some(c => c.id === idx);
+            const chip = document.createElement('div');
+            chip.className = 'word-chip' + (isUsed ? ' used' : '');
+            chip.innerText = w;
+            if (!isUsed) {
+                chip.onclick = () => {
+                    activeChips.push({ id: idx, word: w });
+                    renderChips();
+                };
+            }
+            container.appendChild(chip);
+        });
+
+        activeChips.forEach((c, selIdx) => {
+            const chip = document.createElement('div');
+            chip.className = 'word-chip in-sentence';
+            chip.innerText = c.word;
+            chip.title = '클릭하여 삭제';
+            chip.onclick = () => {
+                activeChips.splice(selIdx, 1);
+                renderChips();
+            };
+            display.appendChild(chip);
+        });
+    }
+
+    function submitAnswer() {
+        if (activeChips.length === 0) return alert("단어를 선택하여 문장을 완성하세요.");
+        const userSentence = activeChips.map(c => c.word).join(" ");
+        const item = quizSet[currentIdx];
+        const rawAns = item.ans || item.answer || '';
+        const expectedList = Array.isArray(rawAns) ? rawAns : [rawAns];
+        
+        const engFrame = item.q || item.englishFrame || item.sentence || '';
+        let constructedFull = '';
+        if (engFrame && engFrame.includes('______')) {
+            constructedFull = engFrame.replace(/______+/g, userSentence);
+        }
+
+        const isCorrect = expectedList.some(targetAns => {
+            const normUser = normalizeStr(userSentence);
+            const normTarget = normalizeStr(targetAns);
+            if (normUser === normTarget) return true;
+            if (constructedFull && normalizeStr(constructedFull) === normTarget) return true;
+            return false;
+        });
+
+        results.push({
+            korean: (item.korean ? item.korean : '') + (engFrame ? (' [문맥: ' + engFrame + ']') : ''),
+            user: userSentence,
+            ans: expectedList.join(' / '),
+            isCorrect
+        });
+
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                area.innerHTML += `<div class="wrong-item" style="background:#FFF5F5; padding:12px; border-radius:8px; margin-bottom:10px; border-left:4px solid #E53E3E; text-align:left;"><strong>[${w.korean}]</strong><br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[순서 배열 테스트 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} [${r.korean}] -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_순서배열_결과.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>

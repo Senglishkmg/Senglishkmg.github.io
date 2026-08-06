@@ -1,0 +1,486 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gb202p3p01</title>
+    <style>
+        :root { --primary-color: #4A90E2; --secondary-bg: #F0F4F8; --text-main: #2D3748; --wrong-color: #E53E3E; --correct-color: #38A169; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #F7FAFC; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text-main); }
+        .container { background: white; width: 95%; max-width: 580px; padding: 35px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); margin: 20px; text-align: center; }
+        .hidden { display: none; }
+        h2 { color: #1A365D; margin-bottom: 25px; text-align: center; }
+        .guide-box { background: var(--secondary-bg); padding: 12px; border-radius: 8px; font-size: 0.95rem; color: #4A5568; text-align: center; margin-bottom: 25px; border-left: 4px solid var(--primary-color); font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #E2E8F0; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
+        .answer-input { border-bottom: 2px solid var(--primary-color) !important; border-top:none; border-left:none; border-right:none; border-radius:0 !important; width: 90% !important; display: inline-block !important; text-align: center; font-size: 1.15rem; }
+        button { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-bottom: 12px; }
+        .btn-main { background-color: var(--primary-color); color: white; }
+        .btn-submit { background-color: #2D3748; color: white; margin-top: 20px; }
+        .bogi-box { background: #F8FAFC; border: 2px dashed #94A3B8; padding: 16px; border-radius: 12px; margin-bottom: 22px; text-align: center; }
+        .bogi-header { font-weight: bold; color: #1E293B; margin-bottom: 10px; font-size: 1.05rem; }
+        .bogi-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .chip { background: white; border: 1px solid #CBD5E1; color: #334155; font-weight: 600; font-size: 1rem; padding: 6px 14px; border-radius: 20px; cursor: pointer; user-select: none; transition: all 0.2s; }
+        .chip:hover { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .question-text { font-size: 1.25rem; font-weight: 700; color: #1E293B; margin-bottom: 20px; line-height: 1.6; word-break: keep-all; }
+        .progress-bar { width: 100%; height: 8px; background: #EDF2F7; border-radius: 4px; overflow: hidden; margin-bottom: 25px; }
+        #progress-inner { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        .wrong-item { background: #FFF5F5; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--wrong-color); text-align: left; }
+        .my-ans { color: var(--wrong-color); font-weight: bold; margin-right: 10px; }
+        .correct-ans { color: var(--correct-color); font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setup-page">
+        <h2>gb202p3p01</h2>
+        <div class="guide-box">다음 빈칸에 &lt;보기&gt;에서 알맞은 단어를 골라 쓰시오.</div>
+        <input type="text" id="school" placeholder="학교명">
+        <input type="text" id="student-info" placeholder="학년/반/번호">
+        <input type="text" id="name" placeholder="성명">
+        <button class="btn-main" onclick="prepareQuiz()">시험 시작하기</button>
+    </div>
+    <div id="quiz-page" class="hidden">
+        <div class="progress-bar"><div id="progress-inner"></div></div>
+        <div class="guide-box">💡 &lt;보기&gt;의 단어를 클릭하거나 직접 입력하여 빈칸을 완성하세요.</div>
+        <div class="bogi-box">
+            <div class="bogi-header">&lt;보 기&gt;</div>
+            <div class="bogi-chips" id="bogi-chips"></div>
+        </div>
+        <div class="question-text" id="question-display"></div>
+        <input type="text" id="user-input" class="answer-input" placeholder="정답 입력" autocomplete="off">
+        <button class="btn-submit" onclick="submitAnswer()">다음 문제</button>
+    </div>
+    <div id="result-page" class="hidden">
+        <h2>테스트 완료</h2>
+        <div style="font-size: 1.2rem; margin-bottom: 20px;"><strong id="res-name"></strong> 학생: <span id="res-score" style="color:var(--primary-color); font-weight:bold;">0</span> / 10점</div>
+        <div id="wrong-section" class="hidden">
+            <h3 style="text-align:left; color:var(--wrong-color);">🔍 오답 체크</h3>
+            <div id="wrong-list"></div>
+        </div>
+        <button class="btn-main" onclick="downloadResult()">결과 파일 저장</button>
+        <button style="background:none; border:none; color:#A0AEC0; cursor:pointer;" onclick="location.reload()">새 문제로 다시 풀기</button>
+    </div>
+</div>
+<script>
+    const allQuestions = [
+  {
+    "q": "저는 이발을 해 주러 노인들 집을 방문하기 시작했습니다.\nI started visiting elderly people at home to ______ them a haircut.",
+    "options": ["give", "send", "show", "tell"],
+    "ans": "give"
+  },
+  {
+    "q": "한 소년이 엄마에게 다가가 종이 한 장을 주었다.\nA boy came to his mother and ______ her a piece of paper.",
+    "options": ["give", "send", "show", "tell"],
+    "ans": "gave"
+  },
+  {
+    "q": "우리는 모든 음식을 다른 병사들에게 주었습니다.\nWe ______ the other soldiers all the food.",
+    "options": ["give", "send", "show", "tell"],
+    "ans": "gave"
+  },
+  {
+    "q": "사람들은 다양한 크기의 동전을 만들어 그것에 각기 다른 가치를 부여했다.\nPeople made coins of different sizes and ______ them different values.",
+    "options": ["give", "send", "show", "tell"],
+    "ans": "gave"
+  },
+  {
+    "q": "은행은 사람들에게 영수증으로 종잇조각을 주었다.\nThe banks ______ people paper slips as receipts.",
+    "options": ["give", "send", "show", "tell"],
+    "ans": "gave"
+  },
+  {
+    "q": "무언가를 볼 때, 여러분의 눈은 그 정보를 뇌로 보낸다.\nWhen you see something, your eyes ______ your brain the information.",
+    "options": ["give", "send", "show", "tell"],
+    "ans": "send"
+  },
+  {
+    "q": "수미는 친절하게 그녀의 공책을 나에게 보여 주었다.\nSumi kindly ______ me her notebook.",
+    "options": ["give", "send", "show", "tell"],
+    "ans": "showed"
+  },
+  {
+    "q": "공연이 끝난 다음에, 우리는 그 인형들을 아이들에게 주었다.\nAfter the show, we ______ the children the dolls.",
+    "options": ["give", "send", "show", "tell"],
+    "ans": "gave"
+  },
+  {
+    "q": "이 게임은 내가 너를 더 잘 알게 될 기회를 줄 거야.\nThis game will ______ me a chance to get to know you better.",
+    "options": ["give", "send", "show", "tell"],
+    "ans": "give"
+  },
+  {
+    "q": "내 이름을 말해줄 수는 없어.\nI cannot ______ you my name.",
+    "options": ["give", "send", "show", "tell"],
+    "ans": "tell"
+  },
+  {
+    "q": "당신의 생일 파티에서 누군가 당신에게 선물을 주는데 당신은 그것이 마음에 들지 않는다.\nSomeone ______ you a gift at your birthday party, and you don't like it.",
+    "options": ["give", "send", "show", "ask", "teach", "cook"],
+    "ans": "gives"
+  },
+  {
+    "q": "나는 그들에게 Navruz 날의 행사 모습의 사진을 좀 보여주었다.\nI ______ them some pictures of activities on Navruz.",
+    "options": ["give", "send", "show", "ask", "teach", "cook"],
+    "ans": "showed"
+  },
+  {
+    "q": "엄마는 우리에게 우즈베키스탄의 음식인 Sumalak을 만들어 주셨다.\nMy mom ______ us Sumalak, an Uzbekistani food.",
+    "options": ["give", "send", "show", "ask", "teach", "cook"],
+    "ans": "cooked"
+  },
+  {
+    "q": "저는 낚시를 하러 가고 친구들을 위해 음식을 요리해 보고 싶어요.\nI want to go fishing and ______ my friends some food.",
+    "options": ["give", "send", "show", "ask", "teach", "cook"],
+    "ans": "cook"
+  },
+  {
+    "q": "부탁이 하나 있습니다.\nI would like to ______ you a favor.",
+    "options": ["give", "send", "show", "ask", "teach", "cook"],
+    "ans": "ask"
+  },
+  {
+    "q": "제발 마지막으로 기회를 주십시오.\nPlease ______ me one last chance.",
+    "options": ["give", "send", "show", "ask", "teach", "cook"],
+    "ans": "give"
+  },
+  {
+    "q": "제가 당신에게 간판에 대한 조언을 좀 할 수 있을까요?\nCan I ______ you some advice about your sign?",
+    "options": ["give", "send", "show", "ask", "teach", "cook"],
+    "ans": "give"
+  },
+  {
+    "q": "여러분의 글을 우리에게 보내주세요!\nPlease ______ us your articles!",
+    "options": ["give", "send", "show", "ask", "teach", "cook"],
+    "ans": "send"
+  },
+  {
+    "q": "경기가 끝난 후, 한 선생님은 내게 사진들을 보여주셨다.\nAfter the game, Mr. Han ______ me the pictures.",
+    "options": ["give", "send", "show", "ask", "teach", "cook"],
+    "ans": "showed"
+  },
+  {
+    "q": "당신은 속담이 당신에게 교훈을 가르쳐준다고 배워 왔습니다.\nYou've learned that proverbs ______ you lessons.",
+    "options": ["give", "send", "show", "ask", "teach", "cook"],
+    "ans": "teach"
+  },
+  {
+    "q": "그는 나에게 그것을 극복하는 방법에 대한 몇 가지 조언을 친절하게 해 주었다.\nHe kindly ______ me tips on overcoming it.",
+    "options": ["teach", "give", "lend", "send", "serve"],
+    "ans": "gave"
+  },
+  {
+    "q": "이번에만 빌려 주는 거야.\nI'll ______ you some money only this time.",
+    "options": ["teach", "give", "lend", "send", "serve"],
+    "ans": "lend"
+  },
+  {
+    "q": "그들은 나에게 많은 즐거움을 준다.\nThey ______ me lots of enjoyment.",
+    "options": ["teach", "give", "lend", "send", "serve"],
+    "ans": "give"
+  },
+  {
+    "q": "그녀는 나에게 사진을 안 보냈어.\nShe didn't ______ me any photos.",
+    "options": ["teach", "give", "lend", "send", "serve"],
+    "ans": "send"
+  },
+  {
+    "q": "그는 Jenny에게 그녀가 항상 원하던 작은 개 한 마리를 선물했습니다.\nHe ______ Jenny the little dog she always wanted.",
+    "options": ["teach", "give", "lend", "send", "serve"],
+    "ans": "gave"
+  },
+  {
+    "q": "왕은 Lapio에 대해 걱정했고, 현자에게 정의를 그에게 가르쳐 달라고 요청했습니다.\nThe King was worried about Lapio and asked a wise man to ______ him justice.",
+    "options": ["teach", "give", "lend", "send", "serve"],
+    "ans": "teach"
+  },
+  {
+    "q": "현자는 Lapio를 축하해주며 그에게 약간의 음식을 나누어 주었습니다.\nThe wise man congratulated Lapio and ______ him some food.",
+    "options": ["teach", "give", "lend", "send", "serve"],
+    "ans": "gave"
+  },
+  {
+    "q": "한 가난한 남자가 그들에게 식사를 대접했습니다.\nA poor man ______ them a meal.",
+    "options": ["teach", "give", "lend", "send", "serve"],
+    "ans": "served"
+  },
+  {
+    "q": "Lapio는 그들에게 자신의 금을 주고 싶었습니다.\nLapio wanted to ______ them his gold.",
+    "options": ["teach", "give", "lend", "send", "serve"],
+    "ans": "give"
+  },
+  {
+    "q": "그는 우리에게 큰 미소를 지었고 우리의 이름을 하나씩 불러주셨다.\nHe ______ us a big smile and he called our names one by one.",
+    "options": ["teach", "give", "lend", "send", "serve"],
+    "ans": "gave"
+  },
+  {
+    "q": "아빠께서 내게 교과서를 사줄 수 없었을 때, 그가 내게 그것들을 사주었습니다.\nWhen my dad couldn't ______ me school books, he ______ them for me.",
+    "options": ["buy", "tell", "give", "show"],
+    "ans": ["buy", "bought"]
+  },
+  {
+    "q": "자네는 내 친구에 대한 나쁜 이야기를 나에게 하려고 하면서도 그 이야기가 진실인지 확신도 없다는 말인가?\nYou want to ______ me something bad about my friend, and you're not sure that it's true?",
+    "options": ["buy", "tell", "give", "show"],
+    "ans": "tell"
+  },
+  {
+    "q": "대체로, 이 아름다운 민화는 우리에게 즐겁고 행복한 날을 바라는 새해의 소망을 보여줍니다.\nAll in all, this beautiful folk painting ______ us a new year's wish for good and happy days.",
+    "options": ["buy", "tell", "give", "show"],
+    "ans": "shows"
+  },
+  {
+    "q": "이 그림은 우리에게 금강산을 보여줍니다.\nThe painting ______ us Mt. Geumgang.",
+    "options": ["buy", "tell", "give", "show"],
+    "ans": "shows"
+  },
+  {
+    "q": "5단계에서 떨어지는 얼음 조각이 이 에너지를 주는 것입니다.\nThe piece of falling ice in Step 5 ______ it this energy.",
+    "options": ["buy", "tell", "give", "show"],
+    "ans": "gives"
+  },
+  {
+    "q": "강아지를 훈련시키는 방법을 말씀해 주시겠어요?\nCan you ______ me how to train dogs?",
+    "options": ["buy", "tell", "give", "show"],
+    "ans": "tell"
+  },
+  {
+    "q": "강아지가 앉으면, 먹이를 조금 주세요.\nWhen she sits, ______ her a little food.",
+    "options": ["buy", "tell", "give", "show"],
+    "ans": "give"
+  },
+  {
+    "q": "무엇을 해야 할지 제가 알려 주지요.\nI will ______ you what to do.",
+    "options": ["buy", "tell", "give", "show"],
+    "ans": "tell"
+  },
+  {
+    "q": "그 애는 나에게 종이꽃과 ‘Happy Mother's Day’라고 쓰여 있는 귀여운 카드를 주었죠.\nShe ______ me a paper flower and a cute card which said, 'Happy Mother's Day.'",
+    "options": ["buy", "tell", "give", "show"],
+    "ans": "gave"
+  },
+  {
+    "q": "그들은 아이들에게 “개똥이”와 같은 나쁜 이름들을 지어 주곤 했습니다. 그들은 또한 이런 이름들이 아이들에게 행운을 가져다줄 것이라고 믿었습니다.\nThey used to ______ children bad names such as \"Gaeddongi.\" They believed names like this would ______ children good luck, too.",
+    "options": ["give", "tell", "bring", "make", "teach", "show"],
+    "ans": ["give", "bring"]
+  },
+  {
+    "q": "그는 심지어 우리들의 발을 보호할 신발을 만들어 주기도 했습니다.\nHe even ______ us shoes to protect our feet.",
+    "options": ["give", "tell", "bring", "make", "teach", "show"],
+    "ans": "made"
+  },
+  {
+    "q": "2005년, 그는 브라스 밴드를 만들어서 우리에게 음악을 연주하는 법을 가르쳤습니다.\nIn 2005, he formed a brass band, and ______ us how to play music.",
+    "options": ["give", "tell", "bring", "make", "teach", "show"],
+    "ans": "taught"
+  },
+  {
+    "q": "그는 우리들에게 영어와 수학을 가르치기 시작했습니다.\nHe started ______ us English and math.",
+    "options": ["give", "tell", "bring", "make", "teach", "show"],
+    "ans": "teaching"
+  },
+  {
+    "q": "나는 너에게 우유니 소금사막에 대한 놀라운 무언가를 이야기해 주고 싶구나.\nI would like to ______ you something amazing about Salar de Uyuni.",
+    "options": ["give", "tell", "bring", "make", "teach", "show"],
+    "ans": "tell"
+  },
+  {
+    "q": "엄마가 그것이 오로라라고 말씀해 주셨어.\nMy mom ______ me that it was an aurora.",
+    "options": ["give", "tell", "bring", "make", "teach", "show"],
+    "ans": "told"
+  },
+  {
+    "q": "저희들에게 미술 치료의 몇 가지 예들을 보여 주시겠어요?\nCould you ______ us some examples of art therapy?",
+    "options": ["give", "tell", "bring", "make", "teach", "show"],
+    "ans": "show"
+  },
+  {
+    "q": "제가 더 큰 꿀단지를 당신에게 드릴게요.\nI will ______ you a bigger jar of honey.",
+    "options": ["give", "tell", "bring", "make", "teach", "show"],
+    "ans": "give"
+  },
+  {
+    "q": "공짜로 당신에게 꿀을 줄 수는 없어요.\nI cannot ______ you honey for free.",
+    "options": ["give", "tell", "bring", "make", "teach", "show"],
+    "ans": "give"
+  },
+  {
+    "q": "그들을 큰 박수로 맞아 주세요!\nPlease ______ them a big hand!",
+    "options": ["write", "give", "lend", "bring", "serve"],
+    "ans": "give"
+  },
+  {
+    "q": "공연이 끝날 무렵에 그들은 관객에게 채소 수프를 제공합니다.\nAt the end of their performances, they ______ the audience vegetable soup.",
+    "options": ["write", "give", "lend", "bring", "serve"],
+    "ans": "serve"
+  },
+  {
+    "q": "여러분의 친구들이 여러분에게 조언을 할 때 화내지 마세요.\nWhen your friends ______ you advice, please don't get upset.",
+    "options": ["write", "give", "lend", "bring", "serve"],
+    "ans": "give"
+  },
+  {
+    "q": "지난주 아이들 중 한 명이 나에게 감사 카드를 주었을 때, 나는 무척 행복했습니다.\nWhen one of the children ______ me a thank-you card last week, I was so happy.",
+    "options": ["write", "give", "lend", "bring", "serve"],
+    "ans": "gave"
+  },
+  {
+    "q": "그들에게 좋은 조언을 해주는 건 어떨까요?\nCould we ______ them good advice?",
+    "options": ["write", "give", "lend", "bring", "serve"],
+    "ans": "give"
+  },
+  {
+    "q": "제가 마법 수프를 좀 만들 수 있도록 제게 냄비를 빌려 주시겠어요?\nCan you ______ me a pot so I can make some magic soup?",
+    "options": ["write", "give", "lend", "bring", "serve"],
+    "ans": "lend"
+  },
+  {
+    "q": "제게 냄비를 빌려주셔서 감사해요.\nThank you for ______ me the pot.",
+    "options": ["write", "give", "lend", "bring", "serve"],
+    "ans": "lending"
+  },
+  {
+    "q": "그들은 그것이 그들에게 불운을 가져다줄지도 모른다고 믿는다.\nThey believe it may ______ them bad luck.",
+    "options": ["write", "give", "lend", "bring", "serve"],
+    "ans": "bring"
+  },
+  {
+    "q": "그는 그의 모든 용기를 내서, 그녀에게 “Sally, 일요일에 영화를 보러 가자.”라고 되어 있는 쪽지를 썼다.\nHe gathered all of his courage and ______ her a note which said, \"Sally, let's go to the movies on Sunday.\"",
+    "options": ["write", "give", "lend", "bring", "serve"],
+    "ans": "wrote"
+  },
+  {
+    "q": "부모님은 아이들에게 빨간 봉투에 든 돈을 준다.\nParents ______ their children money in red envelopes.",
+    "options": ["give", "teach", "show", "tell", "write"],
+    "ans": "give"
+  },
+  {
+    "q": "오늘 소라가 집에 왔을 때, 그녀의 엄마는 소라에게 편지를 주셨다.\nToday when Sora got home, her mother ______ her a letter.",
+    "options": ["give", "teach", "show", "tell", "write"],
+    "ans": "gave"
+  },
+  {
+    "q": "그녀는 우리에게 한국어를 읽고 쓰는 법을 가르쳐 주세요.\nShe ______ us how to read and write Korean.",
+    "options": ["give", "teach", "show", "tell", "write"],
+    "ans": "teaches"
+  },
+  {
+    "q": "그녀는 또한 우리에게 한국에 대해서 많은 것을 말해 줘요.\nShe also ______ us a lot about Korea.",
+    "options": ["give", "teach", "show", "tell", "write"],
+    "ans": "tells"
+  },
+  {
+    "q": "나는 당신에게 한국어로 편지를 쓰고 싶어요.\nI want to ______ you a letter in Korean.",
+    "options": ["give", "teach", "show", "tell", "write"],
+    "ans": "write"
+  },
+  {
+    "q": "소라는 그녀의 엄마에게 Carlos가 편지에 쓴 한국어 낱말들을 보여 드렸다.\nSora ______ her mother the Korean words that Carlos put in the letter.",
+    "options": ["give", "teach", "show", "tell", "write"],
+    "ans": "showed"
+  },
+  {
+    "q": "그녀는 자신이 아는 웹 사이트를 그들에게 보여 주었고, 부모님에게 여쭤 본 후에 더 많은 정보를 제공하겠다고 약속했다.\nShe ______ them the website she knew and promised to provide more information after asking her parents.",
+    "options": ["give", "teach", "show", "tell", "write"],
+    "ans": "showed"
+  }
+];
+    let quizSet = [], currentIdx = 0, score = 0, results = [], userInfo = {};
+    
+    function normalize(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/[.,?!~']/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    function prepareQuiz() {
+        userInfo = {
+            school: document.getElementById('school').value.trim(),
+            grade: document.getElementById('student-info').value.trim(),
+            name: document.getElementById('name').value.trim()
+        };
+        if (!userInfo.name) return alert("성명을 입력하세요.");
+        if (!Array.isArray(allQuestions) || allQuestions.length < 10) {
+            document.body.innerHTML = '<div class="container"><p style="color:red; text-align:center;">오류: 퀴즈를 생성하기에 문제 수가 부족합니다. PDF 파일을 확인해주세요.</p></div>';
+            return;
+        }
+        quizSet = [...allQuestions].sort(() => Math.random() - 0.5).slice(0, 10);
+        currentIdx = 0; score = 0; results = [];
+        document.getElementById('setup-page').classList.add('hidden');
+        document.getElementById('quiz-page').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (currentIdx >= quizSet.length) { finishQuiz(); return; }
+        const item = quizSet[currentIdx];
+        document.getElementById('question-display').innerText = (currentIdx + 1) + ". " + (item.q || '');
+        
+        const chipsArea = document.getElementById('bogi-chips');
+        chipsArea.innerHTML = '';
+        const optionsList = Array.isArray(item.options) ? item.options : (item.options ? item.options.split(',').map(s => s.trim()) : []);
+        optionsList.forEach(opt => {
+            const btn = document.createElement('span');
+            btn.className = 'chip';
+            btn.innerText = opt;
+            btn.onclick = () => {
+                document.getElementById('user-input').value = opt;
+            };
+            chipsArea.appendChild(btn);
+        });
+
+        const userInput = document.getElementById('user-input');
+        userInput.value = '';
+        userInput.focus();
+        document.getElementById('progress-inner').style.width = ((currentIdx + 1) / 10 * 100) + "%";
+    }
+
+    function submitAnswer() {
+        const userInputVal = document.getElementById('user-input').value.trim();
+        if (!userInputVal) return alert("답을 입력하세요.");
+        const item = quizSet[currentIdx];
+        
+        const expectedAnswers = Array.isArray(item.ans) ? item.ans : [item.ans];
+        const isCorrect = expectedAnswers.some(ans => normalize(ans) === normalize(userInputVal));
+        
+        results.push({ 
+            q: item.q, 
+            options: item.options, 
+            user: userInputVal, 
+            ans: expectedAnswers.join(' / '), 
+            isCorrect 
+        });
+        
+        if (isCorrect) score++;
+        currentIdx++;
+        loadQuestion();
+    }
+
+    document.getElementById('user-input').onkeypress = (e) => { if(e.key === 'Enter') submitAnswer(); };
+
+    function finishQuiz() {
+        document.getElementById('quiz-page').classList.add('hidden');
+        document.getElementById('result-page').classList.remove('hidden');
+        document.getElementById('res-name').innerText = userInfo.name;
+        document.getElementById('res-score').innerText = score;
+        const wrongList = results.filter(r => !r.isCorrect);
+        if (wrongList.length > 0) {
+            document.getElementById('wrong-section').classList.remove('hidden');
+            const area = document.getElementById('wrong-list');
+            area.innerHTML = '';
+            wrongList.forEach(w => {
+                const optStr = Array.isArray(w.options) ? w.options.join(', ') : w.options;
+                area.innerHTML += `<div class="wrong-item"><strong>${w.q}</strong><br>&lt;보기&gt; ${optStr}<br>내 답: <span style="color:red">${w.user}</span><br>정답: <span style="color:green">${w.ans}</span></div>`;
+            });
+        }
+    }
+
+    function downloadResult() {
+        const txt = `[보기에서 골라 써넣기 결과] 성명: ${userInfo.name}\n점수: ${score}/10\n\n` + results.map(r => `${r.isCorrect?'[O]':'[X]'} ${r.q} -> (내답: ${r.user} / 정답: ${r.ans})`).join('\n\n');
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${userInfo.name}_보기에서_골라_써넣기.txt`; a.click(); URL.revokeObjectURL(a.href);
+    }
+</script>
+</body>
+</html>
